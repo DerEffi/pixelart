@@ -1,53 +1,91 @@
+#include <main.h>
 #include <Arduino.h>
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 
-#define RES_X 64
-#define RES_Y 64
-#define COLOR_DEPTH 5
+MatrixPanel_I2S_DMA *panel = nullptr;
 
-//MatrixPanel_I2S_DMA dma_display;
-MatrixPanel_I2S_DMA *dma_display = nullptr;
+//TODO populate with real boot sequence
+uint8_t bootimg[12288] = {};
+
+// Display static images on led matrix by pixelarray
+void panel_display_static(uint8_t *pixels, bool overwrite = true) {
+
+	if(overwrite)
+		panel->clearScreen();
+
+	int i = 0;
+	while(i + 2 < sizeof(pixels)) {
+		
+		int y = (i/3) % PANEL_X;
+		int x = (i/3 - y) / PANEL_X;
+		panel->drawPixelRGB888(x, y, pixels[i], pixels[i+1], pixels[i+2]);
+		i+=3;
+
+	}
+}
+
+// Initialize LED Matrix
+void panel_setup() {
+
+	HUB75_I2S_CFG mxconfig(
+		PANEL_X,
+		PANEL_Y,
+		PANEL_CHAIN,
+		{
+			PANEL_GPIO_R1,
+			PANEL_GPIO_G1,
+			PANEL_GPIO_B1,
+			PANEL_GPIO_R2,
+			PANEL_GPIO_G2,
+			PANEL_GPIO_B2,
+			PANEL_GPIO_A,
+			PANEL_GPIO_B,
+			PANEL_GPIO_C,
+			PANEL_GPIO_D,
+			PANEL_GPIO_E,
+			PANEL_GPIO_LAT,
+			PANEL_GPIO_OE,
+			PANEL_GPIO_CLK
+		},
+		PANEL_DRIVER,
+		PANEL_DOUBLE_BUFFER,
+		PANEL_I2C_SPEED,
+		PANEL_LATCH_BLINK,
+		PANEL_CLOCK_PHASE
+	);
+
+	// Display Setup
+	panel = new MatrixPanel_I2S_DMA(mxconfig);
+	panel->begin();
+	panel->clearScreen();
+	panel->setPanelBrightness(128); //TODO Add hardware and save in eeprom
+
+}
+
+// Try connect to existing wifi network
+void wifi_connect() {
+
+}
+
+// Host own wifi network
+void wifi_host() {
+
+}
+
+// Initialize Wifi if enabled
+void wifi_setup() {
+
+}
 
 void setup() {
 
-	Serial.begin(9600);
+	Serial.begin(9600); //TODO remove serial connection
 
-  // Module configuration
-  HUB75_I2S_CFG mxconfig(
-    RES_X,
-    RES_Y,
-    1,
-	{
-		25,		//R1
-		26,		//G1
-		27,		//B1
-		14,		//R2
-		12,		//G2
-		13,		//B2
-		23,		//A
-		19,		//B
-		5,		//C
-		17,		//D
-		18,		//E
-		4,		//LAT
-		15,		//OE
-		16		//CLK
-	}
-  );
-
-  mxconfig.latch_blanking = 1;
-  mxconfig.clkphase = false;
-  mxconfig.driver = HUB75_I2S_CFG::SHIFTREG;
-  mxconfig.i2sspeed = HUB75_I2S_CFG::HZ_10M;
-
-  // Display Setup
-  dma_display = new MatrixPanel_I2S_DMA(mxconfig);
-  dma_display->begin();
-  dma_display->setBrightness(128); //0-255
-  dma_display->clearScreen();
-  dma_display->fillScreen(dma_display->color565(255, 255, 255));
+	panel_setup();
+	panel_display_static(bootimg);
 
 }
 
 void loop() {
+
 }

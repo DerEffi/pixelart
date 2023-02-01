@@ -1,0 +1,45 @@
+/**************
+*  LED Panel  *
+***************/
+
+#define PANEL_X 64
+#define PANEL_Y 64
+#define PANEL_CHAIN 1
+#define PANEL_DRIVER HUB75_I2S_CFG::SHIFTREG
+#define PANEL_DOUBLE_BUFFER false
+#define PANEL_I2C_SPEED HUB75_I2S_CFG::HZ_10M
+#define PANEL_LATCH_BLINK 1
+#define PANEL_CLOCK_PHASE false
+
+//GPIO
+#define PANEL_GPIO_R1 25
+#define PANEL_GPIO_G1 26
+#define PANEL_GPIO_B1 27
+#define PANEL_GPIO_R2 14
+#define PANEL_GPIO_G2 12
+#define PANEL_GPIO_B2 13
+#define PANEL_GPIO_A 23
+#define PANEL_GPIO_B 19
+#define PANEL_GPIO_C 5
+#define PANEL_GPIO_D 17
+#define PANEL_GPIO_E 18
+#define PANEL_GPIO_LAT 4
+#define PANEL_GPIO_OE 15
+#define PANEL_GPIO_CLK 1
+
+
+
+/*********
+*  Wifi  *
+**********/
+
+#define WIFI_HOST false // Host own wifi network
+#define WIFI_CONNECT true // Connect to existing network
+
+// Wifi information for hosting own network
+#define WIFI_AP_SSID ""
+#define WIFI_AP_PASSWORD ""
+
+// Wifi information for connection to existing network 
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
