@@ -1,4 +1,49 @@
 /**************
+*  GPIO Pins  *
+***************/
+
+//LED Panel
+#define GPIO_LEDPANEL_R1        35
+#define GPIO_LEDPANEL_G1        36
+#define GPIO_LEDPANEL_B1        37
+#define GPIO_LEDPANEL_R2        38
+#define GPIO_LEDPANEL_G2        39
+#define GPIO_LEDPANEL_B2        40
+#define GPIO_LEDPANEL_A         41
+#define GPIO_LEDPANEL_B         42
+#define GPIO_LEDPANEL_C         2
+#define GPIO_LEDPANEL_D         1
+#define GPIO_LEDPANEL_E         44
+#define GPIO_LEDPANEL_CLK       47
+#define GPIO_LEDPANEL_LAT       48
+#define GPIO_LEDPANEL_OE        45
+
+//Buttons
+#define GPIO_BTN_1              14
+#define GPIO_BTN_2              13
+#define GPIO_ROT1_BTN           12
+#define GPIO_ROT1_B             11
+#define GPIO_ROT1_A             10
+#define GPIO_ROT2_BTN           9
+#define GPIO_ROT2_B             46
+#define GPIO_ROT2_A             3
+#define GPIO_ROT3_BTN           8
+#define GPIO_ROT3_B             18
+#define GPIO_ROT3_A             17
+
+//SD Card
+#define GPIO_SD_CS              -1
+#define GPIO_SD_SCLK            -1
+#define GPIO_SD_MOSI            -1
+#define GPIO_SD_MISO            -1
+
+//RTC
+#define GPIO_RTC_SCL            -1
+#define GPIO_RTC_SDA            -1
+
+
+
+/**************
 *  LED Panel  *
 ***************/
 
@@ -7,25 +52,9 @@
 #define PANEL_CHAIN 1
 #define PANEL_DRIVER HUB75_I2S_CFG::SHIFTREG
 #define PANEL_DOUBLE_BUFFER false
-#define PANEL_I2C_SPEED HUB75_I2S_CFG::HZ_10M
+#define PANEL_I2C_SPEED HUB75_I2S_CFG::HZ_20M
 #define PANEL_LATCH_BLINK 1
-#define PANEL_CLOCK_PHASE false
-
-//GPIO
-#define PANEL_GPIO_R1 25
-#define PANEL_GPIO_G1 26
-#define PANEL_GPIO_B1 27
-#define PANEL_GPIO_R2 14
-#define PANEL_GPIO_G2 12
-#define PANEL_GPIO_B2 13
-#define PANEL_GPIO_A 23
-#define PANEL_GPIO_B 19
-#define PANEL_GPIO_C 5
-#define PANEL_GPIO_D 17
-#define PANEL_GPIO_E 18
-#define PANEL_GPIO_LAT 4
-#define PANEL_GPIO_OE 15
-#define PANEL_GPIO_CLK 1
+#define PANEL_CLOCK_PHASE true
 
 
 
