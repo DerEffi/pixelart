@@ -31,15 +31,15 @@
 #define GPIO_ROT3_B             18
 #define GPIO_ROT3_A             17
 
-//SD Card
-#define GPIO_SD_CS              -1
-#define GPIO_SD_SCLK            -1
-#define GPIO_SD_MOSI            -1
-#define GPIO_SD_MISO            -1
-
 //RTC
-#define GPIO_RTC_SCL            -1
-#define GPIO_RTC_SDA            -1
+#define GPIO_RTC_SCL            16
+#define GPIO_RTC_SDA            15
+
+//SD Card
+#define GPIO_SD_CS              7
+#define GPIO_SD_SCLK            6
+#define GPIO_SD_MOSI            5
+#define GPIO_SD_MISO            4
 
 
 
