@@ -19,8 +19,8 @@
 #define GPIO_LEDPANEL_OE        45
 
 //Buttons
-#define GPIO_BTN_1              14
-#define GPIO_BTN_2              13
+#define GPIO_BTN1              14
+#define GPIO_BTN2              13
 #define GPIO_ROT1_BTN           12
 #define GPIO_ROT1_B             11
 #define GPIO_ROT1_A             10
@@ -72,3 +72,12 @@
 // Wifi information for connection to existing network 
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
+
+
+
+
+/*********
+*  Misc  *
+**********/
+
+#define PREFERENCES_NAMESPACE "pixelart"
