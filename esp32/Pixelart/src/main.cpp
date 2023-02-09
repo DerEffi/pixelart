@@ -7,6 +7,9 @@
 #include <ESPAsyncWebServer.h>
 #include <HTTPClient.h>
 #include <time.h>
+#include <Wire.h>
+#include <RTClib.h>
+#include <ESP32Time.h>
 
 
 
@@ -78,6 +81,9 @@ bool volatile rot3_b_flag = false;
 
 
 //Timers
+RTC_DS3231 rtc_ext;
+ESP32Time rtc_int(gmtOffset_sec);
+bool rtc_ext_enabled = false;
 hw_timer_t * timer_overlay = NULL;
 
 
@@ -198,11 +204,24 @@ void IRAM_ATTR set_brightness(uint8_t value, bool show_overlay) {
 
 
 /***********
-**	Wifi  **
+**	Misc  **
 ************/
+void rtc_internal_adjust() {
+	DateTime time = rtc_ext.now();
+	rtc_int.setTime(time.second(), time.minute(), time.hour(), time.day(), time.month(), time.year());
+}
+
+void rtc_external_adjust() {
+	struct tm timeinfo;
+	if(getLocalTime(&timeinfo, 5000))
+	{
+		rtc_ext.adjust(DateTime(timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
+	}
+}
 
 void wifi_on_connected() {
 	configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+	rtc_external_adjust();
 }
 
 
@@ -339,7 +358,8 @@ void gpio_setup() {
 	attachInterrupt(GPIO_ROT3_B, trigger_rot3_b, FALLING);
 	attachInterrupt(GPIO_ROT3_BTN, trigger_rot3_btn, FALLING);
 
-	i2cInit(1, GPIO_RTC_SDA, GPIO_RTC_SCL, 100000);
+	Wire.setPins(GPIO_RTC_SDA, GPIO_RTC_SCL);
+  	Wire.begin();
 
 }
 
@@ -454,6 +474,15 @@ void preferences_load() {
 //Init timers
 void timer_setup() {
 
+	if(rtc_ext.begin()) {
+		rtc_ext.disable32K();
+		rtc_ext.disableAlarm(1);
+		rtc_ext.disableAlarm(2);
+		rtc_ext.clearAlarm(1);
+		rtc_ext.clearAlarm(2);
+		rtc_ext_enabled = true;
+	}
+
 	//Overlay Timer
 	timer_overlay = timerBegin(3, 80, true);
 	timerAttachInterrupt(timer_overlay, disable_overlay, true);
@@ -467,10 +496,10 @@ void setup() {
 
 	preferences_load();
 	gpio_setup();
+	timer_setup();
 	wifi_setup();
 	server_setup();
 	spffs_setup();
-	timer_setup();
 	panel_setup();
 
 	display_full(testimg);
@@ -526,6 +555,20 @@ void loop() {
 		if(getLocalTime(&timeInfo, 10))
 		{
 			Serial.println(&timeInfo, "%d.%m.%Y %H:%M:%S");
+		}
+		if(rtc_ext_enabled) {
+			DateTime now = rtc_ext.now();
+			Serial.print(now.day());
+			Serial.print(".");
+			Serial.print(now.month());
+			Serial.print(".");
+			Serial.print(now.year());
+			Serial.print(" ");
+			Serial.print(now.hour());
+			Serial.print(":");
+			Serial.print(now.minute());
+			Serial.print(":");
+			Serial.println(now.second());
 		}
 	}
 	
