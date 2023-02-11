@@ -1,11 +1,16 @@
 #include <main.h>
 #include <Arduino.h>
+
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
-#include <Preferences.h>
-#include <WiFi.h>
 #include <SPIFFS.h>
+#include <Preferences.h>
+
+#include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <AsyncJson.h>
+
 #include <time.h>
 #include <Wire.h>
 #include <RTClib.h>
@@ -42,8 +47,7 @@ enum overlay_type {
 Preferences preferences;
 bool booted = false;
 unsigned long ms_current;
-unsigned long ms_wifi_connected = 0;
-unsigned long ms_wifi_start = 0;
+bool requested_reset = false;
 
 overlay_type volatile overlay = NONE;
 uint8_t volatile brightness = 128;
@@ -58,12 +62,16 @@ const char* wifi_ssid = WIFI_SSID_DEFAULT;
 const char* wifi_ap_ssid = WIFI_AP_SSID_DEFAULT;
 const char* wifi_password = WIFI_PASSWORD_DEFAULT;
 const char* wifi_ap_password = WIFI_AP_PASSWORD_DEFAULT;
+unsigned long ms_wifi_connected = 0;
+unsigned long ms_wifi_start = 0;
+
+
+//Server
 AsyncWebServer server(80);
 HTTPClient http;
-
-const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = 3600;
-const int   daylightOffset_sec = 3600;
+const char* api_key;
+unsigned long ms_api_key_requested = 0;
+unsigned long ms_api_key_approved = 0;
 
 
 //LED Panel
@@ -80,11 +88,20 @@ bool volatile rot3_a_flag = false;
 bool volatile rot3_b_flag = false;
 
 
-//Timers
+//RTC
 RTC_DS3231 rtc_ext;
-ESP32Time rtc_int(gmtOffset_sec);
+ESP32Time rtc_int(0);
 bool rtc_ext_enabled = false;
+const char* ntp_server = "pool.ntp.org";
+const char* timezone = "CET-1CEST,M3.5.0,M10.5.0/3";
+bool update_time = true;
+unsigned long ms_rtc_ext_adjust = 0;
+
+
+//Timers
 hw_timer_t * timer_overlay = NULL;
+
+
 
 
 
@@ -213,15 +230,32 @@ void rtc_internal_adjust() {
 
 void rtc_external_adjust() {
 	struct tm timeinfo;
-	if(getLocalTime(&timeinfo, 5000))
+	if(getLocalTime(&timeinfo, 500))
 	{
 		rtc_ext.adjust(DateTime(timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
 	}
+	ms_rtc_ext_adjust = 0;
 }
 
 void wifi_on_connected() {
-	configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-	rtc_external_adjust();
+	configTzTime(timezone, ntp_server);
+	ms_rtc_ext_adjust = millis() + 5000;
+}
+
+const char * generate_uid(){
+  /* Change to allowable characters */
+  const char possible[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  static char uid[33];
+  for(int p = 0, i = 0; i < 32; i++){
+    int r = random(0, strlen(possible));
+    uid[p++] = possible[r];
+  }
+  uid[32] = '\0';
+  return uid;
+}
+
+bool verify_api_key(AsyncWebServerRequest * request) {
+	return request->hasHeader("apiKey") && request->getHeader("apiKey")->value().equals(api_key);
 }
 
 
@@ -231,13 +265,23 @@ void wifi_on_connected() {
 **	Interrupts  **
 ******************/
 
+//next button
 void IRAM_ATTR trigger_btn1() {
 }
 
+//mode button
 void IRAM_ATTR trigger_btn2() {
 }
 
+//menu button
 void IRAM_ATTR trigger_btn3() {
+
+	//approve api key for server
+	unsigned long now = millis();
+	if(ms_api_key_requested != 0 && ms_api_key_requested + 30000 > now) {
+		ms_api_key_approved = now;
+		ms_api_key_requested = 0;
+	}
 }
 
 
@@ -289,6 +333,7 @@ void IRAM_ATTR trigger_rot2_btn() {
 }
 
 
+//brightness rot
 void IRAM_ATTR trigger_rot3_a() {
 	if(rot3_a_flag && digitalRead(GPIO_ROT3_B) == LOW) {
 		rot3_a_flag = false;
@@ -405,6 +450,111 @@ void panel_setup() {
 void server_setup() {
 	if(WiFi.getMode() != WIFI_MODE_NULL) {
 		server.begin();
+
+		server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+			//TODO Point to sd card if arrived
+			request->send(200, "text/plain", "Hello");
+		});
+
+		server.on("/status", HTTP_GET, [](AsyncWebServerRequest * request) {
+			if(verify_api_key(request)) {
+				AsyncJsonResponse *response = new AsyncJsonResponse();
+				response->setContentType("application/json");
+				response->setCode(200);
+				JsonVariant& root = response->getRoot();
+
+				root["on_time"] = ms_current;
+				root["wifi_ap"] = wifi_connect;
+				root["wifi_sta"] = wifi_host;
+				root["wifi_setup_complete"] = wifi_setup_complete;
+				root["wifi_ip"] = WiFi.localIP();
+				root["wifi_ap_ip"] = WiFi.softAPIP();
+				root["wifi_hostname"] = WiFi.getHostname();
+				root["time"] = rtc_int.getLocalEpoch();
+				root["time_ext_connected"] = rtc_ext_enabled;
+
+				response->setLength();
+				request->send(response);
+			} else {
+				request->send(403, "application/json", "{}");
+			}
+		});
+
+		server.on("/settings", HTTP_GET, [](AsyncWebServerRequest * request) {
+			if(verify_api_key(request)) {
+				AsyncJsonResponse *response = new AsyncJsonResponse();
+				response->setContentType("application/json");
+				response->setCode(200);
+				JsonVariant& root = response->getRoot();
+
+				root["brightness"] = brightness;
+				root["wifi_connect"] = wifi_connect;
+				root["wifi_host"] = wifi_host;
+				root["wifi_ssid"] = wifi_ssid;
+				root["wifi_ap_ssid"] = wifi_ap_ssid;
+				root["wifi_ap_password"] = wifi_ap_password;
+				root["updateTime"] = update_time;
+				root["ntpServer"] = ntp_server;
+				root["timezone"] = timezone;
+				
+				response->setLength();
+				request->send(response);
+			} else {
+				request->send(403, "application/json", "{}");
+			}
+		});
+
+		server.on("/settings", HTTP_POST, [](AsyncWebServerRequest * request) {
+			if(verify_api_key(request)) {
+				//TODO set settings
+				request->send(200, "application/json", "{}");
+			} else {
+				request->send(403, "application/json", "{}");
+			}
+		});
+
+		server.on("/apiKey", HTTP_DELETE, [](AsyncWebServerRequest * request) {
+			if(verify_api_key(request)) {
+				preferences.begin(PREFERENCES_NAMESPACE, false);
+				api_key = generate_uid();
+				preferences.putString("api_key", api_key);
+				preferences.end();
+				request->send(200);
+			} else {
+				request->send(403, "application/json", "{}");
+			}
+		});
+
+		server.on("/apiKey", HTTP_GET, [](AsyncWebServerRequest * request) {
+			AsyncJsonResponse *response = new AsyncJsonResponse();
+			response->setContentType("application/json");
+			JsonVariant& root = response->getRoot();
+
+			if(ms_api_key_approved != 0 && ms_api_key_approved + 15000 > millis()) {
+				response->setCode(200);
+				root["apiKey"] = api_key;
+				ms_api_key_approved = 0;
+				ms_api_key_requested = 0;
+			} else {
+				ms_api_key_requested = millis();
+				request->send(204, "application/json", "{}");
+			}
+			
+			response->setLength();
+			request->send(response);
+		});
+
+		server.on("/reset", HTTP_GET, [](AsyncWebServerRequest * request) {
+			if(verify_api_key(request)) {
+				preferences.begin(PREFERENCES_NAMESPACE, false);
+				preferences.clear();
+				preferences.end();
+				request->send(200);
+				requested_reset = true;
+			} else {
+				request->send(403, "application/json", "{}");
+			}
+		});
 	}
 }
 
@@ -424,15 +574,14 @@ void wifi_setup() {
 	}
 }
 
-//
-
 //Load preferences from flash
 void preferences_load() {
-	preferences.begin(PREFERENCES_NAMESPACE, true);
+
+	preferences.begin(PREFERENCES_NAMESPACE, false);
 	
 	//settings
 	if(preferences.isKey("brightness"))
-		brightness = preferences.getShort("brightness", 128);
+		brightness = preferences.getShort("brightness", brightness);
 	
 	//wifi
 	if(preferences.isKey("wifi_connect"))
@@ -442,16 +591,34 @@ void preferences_load() {
 		wifi_host = preferences.getBool("wifi_host", WIFI_HOST_DEFAULT);
 	
 	if(preferences.isKey("wifi_ssid"))
-		wifi_ssid = preferences.getString("wifi_ssid", WIFI_SSID_DEFAULT).c_str();
+		wifi_ssid = strdup(preferences.getString("wifi_ssid", WIFI_SSID_DEFAULT).c_str());
 	
 	if(preferences.isKey("wifi_ap_ssid"))
-		wifi_ap_ssid = preferences.getString("wifi_ap_ssid", WIFI_AP_SSID_DEFAULT).c_str();
+		wifi_ap_ssid = strdup(preferences.getString("wifi_ap_ssid", WIFI_AP_SSID_DEFAULT).c_str());
 	
 	if(preferences.isKey("wifi_password"))
-		wifi_password = preferences.getString("wifi_password", WIFI_PASSWORD_DEFAULT).c_str();
+		wifi_password = strdup(preferences.getString("wifi_password", WIFI_PASSWORD_DEFAULT).c_str());
 	
 	if(preferences.isKey("wifi_ap_password"))
-		wifi_ap_password = preferences.getString("wifi_ap_password", WIFI_AP_PASSWORD_DEFAULT).c_str();
+		wifi_ap_password = strdup(preferences.getString("wifi_ap_password", WIFI_AP_PASSWORD_DEFAULT).c_str());
+
+	//ntp
+	if(preferences.isKey("ntpServer"))
+		ntp_server = strdup(preferences.getString("ntpServer", ntp_server).c_str());
+
+	if(preferences.isKey("timezone"))
+		timezone = strdup(preferences.getString("timezone", timezone).c_str());
+
+	if(preferences.isKey("update_time"))
+		update_time = preferences.getBool("update_time", update_time);
+
+	//Server
+	if(preferences.isKey("api_key")) {
+		api_key = strdup(preferences.getString("api_key", api_key).c_str());
+	} else {
+		api_key = generate_uid();
+		preferences.putString("api_key", api_key);
+	}
 
 	preferences.end();
 }
@@ -459,6 +626,8 @@ void preferences_load() {
 //Init timers
 void timer_setup() {
 
+	setenv("TZ", timezone, 1);
+	tzset();
 	if(rtc_ext.begin()) {
 		rtc_ext.disable32K();
 		rtc_ext.disableAlarm(1);
@@ -532,11 +701,25 @@ void loop() {
 		}
 	}
 
+	//RTC adjustment after message received
+	if(ms_rtc_ext_adjust > 0 && ms_rtc_ext_adjust <= ms_current) {
+		rtc_external_adjust();
+	}
+
+	//Execute reset from api request
+	if(requested_reset) {
+		ESP.restart();
+	}
+
 	//TODO remove tests
 	if(ms_current - ms_test >= 5000) {
 		ms_test = ms_current;
 		
-		Serial.println(WiFi.localIP().toString());
+		// Serial.println(WiFi.localIP().toString());
+		// Serial.println(rtc_int.getDateTime());
+		// Serial.println(rtc_ext.now().timestamp());
+		// Serial.println(api_key);
+		// Serial.println(ESP.getFreeHeap());
 	}
 	
 	delay(10);
