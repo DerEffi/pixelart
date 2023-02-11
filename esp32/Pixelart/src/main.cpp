@@ -46,18 +46,18 @@ unsigned long ms_wifi_connected = 0;
 unsigned long ms_wifi_start = 0;
 
 overlay_type volatile overlay = NONE;
-uint8_t volatile brightness = 0;
+uint8_t volatile brightness = 128;
 bool volatile brightness_change = false;
 
 
 //Wifi
-bool wifi_connect = false;
-bool wifi_host = false;
+bool wifi_connect = WIFI_CONNECT_DEFAULT;
+bool wifi_host = WIFI_HOST_DEFAULT;
 bool wifi_setup_complete = true;
-const char* wifi_ssid = "";
-const char* wifi_ap_ssid = "";
-const char* wifi_password = "";
-const char* wifi_ap_password = "";
+const char* wifi_ssid = WIFI_SSID_DEFAULT;
+const char* wifi_ap_ssid = WIFI_AP_SSID_DEFAULT;
+const char* wifi_password = WIFI_PASSWORD_DEFAULT;
+const char* wifi_ap_password = WIFI_AP_PASSWORD_DEFAULT;
 AsyncWebServer server(80);
 HTTPClient http;
 
@@ -232,15 +232,12 @@ void wifi_on_connected() {
 ******************/
 
 void IRAM_ATTR trigger_btn1() {
-	Serial.println("BTN1");
 }
 
 void IRAM_ATTR trigger_btn2() {
-	Serial.println("BTN2");
 }
 
 void IRAM_ATTR trigger_btn3() {
-	Serial.println("BTN3");
 }
 
 
@@ -406,7 +403,9 @@ void panel_setup() {
 
 //Server setup
 void server_setup() {
-	server.begin();
+	if(WiFi.getMode() != WIFI_MODE_NULL) {
+		server.begin();
+	}
 }
 
 // Initialize Wifi if enabled
@@ -434,39 +433,25 @@ void preferences_load() {
 	//settings
 	if(preferences.isKey("brightness"))
 		brightness = preferences.getShort("brightness", 128);
-	else
-		brightness = 128;
 	
 	//wifi
 	if(preferences.isKey("wifi_connect"))
 		wifi_connect = preferences.getBool("wifi_connect", WIFI_CONNECT_DEFAULT);
-	else
-		wifi_connect = WIFI_CONNECT_DEFAULT;
 
 	if(preferences.isKey("wifi_host"))
 		wifi_host = preferences.getBool("wifi_host", WIFI_HOST_DEFAULT);
-	else
-		wifi_host = WIFI_HOST_DEFAULT;
 	
 	if(preferences.isKey("wifi_ssid"))
 		wifi_ssid = preferences.getString("wifi_ssid", WIFI_SSID_DEFAULT).c_str();
-	else
-		wifi_ssid = WIFI_SSID_DEFAULT;
 	
 	if(preferences.isKey("wifi_ap_ssid"))
 		wifi_ap_ssid = preferences.getString("wifi_ap_ssid", WIFI_AP_SSID_DEFAULT).c_str();
-	else
-		wifi_ap_ssid = WIFI_AP_SSID_DEFAULT;
 	
 	if(preferences.isKey("wifi_password"))
 		wifi_password = preferences.getString("wifi_password", WIFI_PASSWORD_DEFAULT).c_str();
-	else
-		wifi_password = WIFI_PASSWORD_DEFAULT;
 	
 	if(preferences.isKey("wifi_ap_password"))
 		wifi_ap_password = preferences.getString("wifi_ap_password", WIFI_AP_PASSWORD_DEFAULT).c_str();
-	else
-		wifi_ap_password = WIFI_AP_PASSWORD_DEFAULT;
 
 	preferences.end();
 }
@@ -481,6 +466,7 @@ void timer_setup() {
 		rtc_ext.clearAlarm(1);
 		rtc_ext.clearAlarm(2);
 		rtc_ext_enabled = true;
+		rtc_internal_adjust();
 	}
 
 	//Overlay Timer
@@ -551,25 +537,6 @@ void loop() {
 		ms_test = ms_current;
 		
 		Serial.println(WiFi.localIP().toString());
-		struct tm timeInfo;
-		if(getLocalTime(&timeInfo, 10))
-		{
-			Serial.println(&timeInfo, "%d.%m.%Y %H:%M:%S");
-		}
-		if(rtc_ext_enabled) {
-			DateTime now = rtc_ext.now();
-			Serial.print(now.day());
-			Serial.print(".");
-			Serial.print(now.month());
-			Serial.print(".");
-			Serial.print(now.year());
-			Serial.print(" ");
-			Serial.print(now.hour());
-			Serial.print(":");
-			Serial.print(now.minute());
-			Serial.print(":");
-			Serial.println(now.second());
-		}
 	}
 	
 	delay(10);
