@@ -1,13 +1,20 @@
-<img id="img" src="./testimg.jpg" style="image-rendering: pixelated;" width="512" height="512" onload="onImgLoad()" />
-<canvas id="canvas" width="64" height="64" style="height: 512px; width: 512px; image-rendering: pixelated;"></canvas>
+<img id="img" src="./pixelated_twitch.jpg" style="image-rendering: pixelated;" width="512" height="512" onload="onImgLoad()" />
+<canvas id="canvas" style="height: 512px; width: 512px; image-rendering: pixelated;"></canvas>
 
 <script>
 
 	var ctx;
+	var pixeldataarray;
 
 	function onImgLoad() {
+	
+		var height = 32;
+		var width = height;
+	
 		var canvas = document.getElementById("canvas");
-
+		canvas.height = height;
+		canvas.width = width;
+		
 		var img = document.getElementById("img");
 
 		ctx = canvas.getContext("2d");
@@ -16,38 +23,40 @@
 		ctx.msImageSmoothingEnabled = false;
 		ctx.imageSmoothingEnabled = false;
 
-		ctx.drawImage(img, 0, 0, 64, 64);
+		ctx.drawImage(img, 0, 0, width, height);
+		pixeldataarray = JSON.stringify(getPixelArray(width, height)).replaceAll("[", "{").replaceAll("]", "}");
 
-		console.log(JSON.stringify({
+		console.dir({
 			type: "static image",
-			rows: 64,
-			cols: 64,
-			data: getPixelArray()
-		}));
+			rows: height,
+			cols: width,
+			data: pixeldataarray
+		});
+		console.log(pixeldataarray);
 	}
 
-	function getPixelArray() {
+	function getPixelArray(width = 64, height = 64) {
 
 		var pixels = [];
 
-		for(var y = 0; y < 64; y++) {
+		for(var y = 0; y < height; y++) {
 			pixels[y] = [];
-			for(var x = 0; x < 64; x++) {
+			for(var x = 0; x < width; x++) {
 				var pixel = ctx.getImageData(x, y, 1, 1);
-				pixels[y][x] = rgb565(pixel.data[0], pixel.data[1], pixel.data[2])
+				pixels[y][x] = pixel.data[3] == 0 ? 0 : rgb565(pixel.data[0], pixel.data[1], pixel.data[2])
 			}
 		}
 
 		return pixels;
 	}
 
-	function setConvertedPixels() {
+	function setConvertedPixels(width = 64, height = 64) {
 		var pixels = getPixelArray();
 		
 		var id = ctx.createImageData(1,1);
 
-		for(var y = 0; y < 64; y++) {
-			for(var x = 0; x < 64; x++) {
+		for(var y = 0; y < height; y++) {
+			for(var x = 0; x < width; x++) {
 				var pixel = rgb888(pixels[y][x]);
 				id.data[0]   = pixel.r;
 				id.data[1]   = pixel.g;
