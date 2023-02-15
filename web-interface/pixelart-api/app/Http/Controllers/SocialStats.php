@@ -68,8 +68,8 @@ class SocialStats extends Controller
             return Cache::get("twitch_auth");
         } else {
             $tokenResponse = Http::asForm()->post("https://id.twitch.tv/oauth2/token", [
-                "client_id" => env("TWITCH_CLIENT_ID"),
-                "client_secret" => env("TWITCH_CLIENT_SECRET"),
+                "client_id" => config("socials.twitch.client_id"),
+                "client_secret" => config("socials.twitch.client_secret"),
                 "grant_type" => "client_credentials"
             ]);
 
@@ -97,13 +97,13 @@ class SocialStats extends Controller
         return Cache::rememberForever("twitch_channel_".$login, function() use ($login) {
             $response = Http::withHeaders([
                 "Authorization" => "Bearer ".$this->getTwitchToken(),
-                "Client-Id" => env("TWITCH_CLIENT_ID")
+                "Client-Id" => config("socials.twitch.client_id")
             ])->get("https://api.twitch.tv/helix/users?login=".$login);
 
             if($response->status() == 401) {
                 $response = Http::withHeaders([
                     "Authorization" => "Bearer ".$this->getTwitchToken(true),
-                    "Client-Id" => env("TWITCH_CLIENT_ID")
+                    "Client-Id" => config("socials.twitch.client_id")
                 ])->get("https://api.twitch.tv/helix/users?login=".$login);
             }
 
@@ -128,13 +128,13 @@ class SocialStats extends Controller
         return Cache::remember("twitch_user_".$userId."_follower", 60, function() use ($userId) {
             $response = Http::withHeaders([
                 "Authorization" => "Bearer ".$this->getTwitchToken(),
-                "Client-Id" => env("TWITCH_CLIENT_ID")
+                "Client-Id" => config("socials.twitch.client_id")
             ])->get("https://api.twitch.tv/helix/users/follows?first=1&to_id=".$userId);
 
             if($response->status() == 401) {
                 $response = Http::withHeaders([
                     "Authorization" => "Bearer ".$this->getTwitchToken(true),
-                    "Client-Id" => env("TWITCH_CLIENT_ID")
+                    "Client-Id" => config("socials.twitch.client_id")
                 ])->get("https://api.twitch.tv/helix/users/follows?first=1&to_id=".$userId);
             }
 
@@ -159,13 +159,13 @@ class SocialStats extends Controller
         return Cache::remember("twitch_user_".$userId."_viewer", 30, function() use ($userId) {
             $response = Http::withHeaders([
                 "Authorization" => "Bearer ".$this->getTwitchToken(),
-                "Client-Id" => env("TWITCH_CLIENT_ID")
+                "Client-Id" => config("socials.twitch.client_id")
             ])->get("https://api.twitch.tv/helix/streams?user_id=".$userId);
 
             if($response->status() == 401) {
                 $response = Http::withHeaders([
                     "Authorization" => "Bearer ".$this->getTwitchToken(true),
-                    "Client-Id" => env("TWITCH_CLIENT_ID")
+                    "Client-Id" => config("socials.twitch.client_id")
                 ])->get("https://api.twitch.tv/helix/streams?user_id=".$userId);
             }
 
@@ -194,7 +194,7 @@ class SocialStats extends Controller
             ];
         } else {
 
-            $response = Http::get("https://www.googleapis.com/youtube/v3/channels?part=statistics&forUsername=".$username."&key=".env("YOUTUBE_API_KEY"));
+            $response = Http::get("https://www.googleapis.com/youtube/v3/channels?part=statistics&forUsername=".$username."&key=".config("socials.youtube.api_key"));
 
             $response->throwUnlessStatus(200);
 
