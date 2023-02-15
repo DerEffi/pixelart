@@ -17,4 +17,5 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware("apikey")->group(function() {
     Route::get("/socials", [SocialStats::class, "get"]);
+    Route::post("/socials", [SocialStats::class, "post"]);
 });

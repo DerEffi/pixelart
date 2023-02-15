@@ -62,6 +62,46 @@ class SocialStats extends Controller
         }
     }
 
+    public function post(Request $request) {
+
+        try {
+            $socials = $request->all();
+            $validator = Validator::make($socials, [
+                "*.t" => "required|in:y,t",
+                "*.c" => "required|min:4|max:60"
+            ]);
+            if($validator->fails())
+                return response()->json(["message" => "wrong request format. Instead use [{'t': 'y' | 't', 'c': %channelname%}]"], 400);
+
+            $socials = collect($socials)->map(function($social) {
+
+                try {
+                    switch($social["t"]) {
+                        case "t":
+                            $social["f"] = (int)$this->getTwitchFollower($this->getTwitchUserId($social["c"]));
+                            $social["v"] = (int)$this->getTwitchViewer($this->getTwitchUserId($social["c"]));
+                            break;
+                        case "y":
+                            $ytStats = $this->getYoutubeChannel($social["c"]);
+                            $social["f"] = (int)$ytStats["subs"];
+                            $social["v"] = (int)$ytStats["views"];
+                            break;
+                    }
+                } catch(\Exception $e) {
+                    $social["f"] = 0;
+                    $social["v"] = 0;
+                    return $social;
+                }
+
+                return $social;
+            });
+
+            return response()->json($socials);
+        } catch(\Exception $e) {
+            dd($e);
+            return response()->json(["message" => "post body is required to have a valid json array of requested channel data"], 400);
+        }
+    }
 
     private function getTwitchToken($fromCache = true) {
         if($fromCache && Cache::has("twitch_auth")) {

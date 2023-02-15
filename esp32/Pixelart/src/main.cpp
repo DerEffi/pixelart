@@ -51,23 +51,10 @@ enum overlay_type {
 };
 
 enum display_mode {
-	TWITCH_SUBS,
-	TWITCH_LIVE,
-	YOUTUBE_SUBS,
-	YOUTUBE_LIVE,
-	STATIC,
-	DIASHOW,
+	SOCIALS,
+	IMAGES,
 	CLOCK_DIGITAL,
 	CLOCK_ANALOG
-};
-
-struct twitch_channel {
-	char* display_name;
-	char* name;
-	bool live;
-	unsigned int subs;
-	unsigned int viewer;
-	unsigned long ms_last_request;
 };
 
 //settings
@@ -95,7 +82,6 @@ unsigned long ms_wifi_start = 0;
 
 //Server
 AsyncWebServer server(80);
-AsyncHTTPSRequest request;
 const char* api_key;
 unsigned long ms_api_key_requested = 0;
 unsigned long ms_api_key_approved = 0;
@@ -103,17 +89,17 @@ unsigned long ms_api_key_approved = 0;
 
 //LED Panel
 MatrixPanel_I2S_DMA *panel = nullptr;
-display_mode current_mode = TWITCH_SUBS;
+display_mode current_mode = SOCIALS;
 bool display_change = false;
 
 uint16_t current_image[PANEL_X][PANEL_Y] = {};
 
-const char* twitch_client_id = TWITCH_CLIENT_ID;
-const char* twitch_client_secret = TWITCH_CLIENT_SECRET;
-twitch_channel * twitch_channels = {};
-int twitch_channel_current = 0;
-int viewcount = 0;
-int followcount = 0;
+AsyncHTTPSRequest http_socials;
+const char* socials_api_key = SOCIALS_API_KEY;
+const char* socials_request_server = SOCIALS_API_SERVER;
+int socials_response_check = 0;
+const char* socials_request = "[{\"t\":\"t\",\"c\":\"dhalucard\",\"d\":\"@Dhalucard\"},{\"t\":\"t\",\"c\":\"a_teto\",\"d\":\"@Teto\"},{\"t\":\"y\",\"c\":\"dhalucard\",\"d\":\"@Dhalucard\"}]";
+int socials_channel_current = 0;
 
 //Interrupt flags
 bool volatile rot1_a_flag = false;
@@ -138,28 +124,32 @@ unsigned long ms_rtc_ext_adjust = 0;
 hw_timer_t * timer_overlay = NULL;
 
 
+/**************
+**	Socials  **
+***************/
 
+void on_socials_response(){
+	if(http_socials.responseHTTPcode() == 200) {
+		Serial.println(http_socials.responseText());
+	}
+}
 
-/*************
-**	Twitch  **
-**************/
+void socials_refresh() {
+	if(http_socials.readyState() == readyStateUnsent || http_socials.readyState() == readyStateDone) {
+		char request_url[strlen(socials_request_server) + 9];
+		strcpy(request_url, socials_request_server);
+		strcat(request_url, "/socials");
+		bool openResult = http_socials.open("POST", request_url);
 
-void twitch_request_token() {
-	String httpRequestData = (String)"client_id=" + twitch_client_id + "&client_secret=" + twitch_client_secret + "&grant_type=client_credentials";
-	static bool requestOpenResult;
-	if (request.readyState() == readyStateUnsent || request.readyState() == readyStateDone)
-  	{
-		requestOpenResult = request.open("GET", "https://worldtimeapi.org/api/timezone/America/Toronto.txt");
-		request.
-
-		if (requestOpenResult)
-		{
-		// Only send() if open() returns true, or crash
-		request.send();
+		if(openResult) {
+			http_socials.setReqHeader("Authorization", socials_api_key);
+			http_socials.setReqHeader("Content-Type", "application/json");
+			http_socials.setReqHeader("Accept", "application/json");
+			if(http_socials.send(socials_request)) {
+				socials_response_check = millis() + 250;
+			}
 		}
-  	}
-	http.init("POST", "https://id.twitch.tv/oauth2/token", "application/x-www-form-urlencoded", httpRequestData);
-	http.send();
+	}
 }
 
 
@@ -185,7 +175,7 @@ void rtc_external_adjust() {
 void wifi_on_connected() {
 	configTzTime(timezone, ntp_server);
 	ms_rtc_ext_adjust = millis() + 5000;
-	twitch_request_token();
+	socials_refresh();
 }
 
 const char * generate_uid(){
@@ -347,8 +337,8 @@ void display_twitch_channel(const char * channel, unsigned int subs, unsigned in
 
 void display_current() {
 	switch(current_mode) {
-		case TWITCH_SUBS:
-			display_twitch_channel("@Dennsen86", followcount, viewcount);
+		case SOCIALS:
+			display_twitch_channel("@Dennsen86", 1, 1);
 			break;
 		default:
 			display_full(current_image, false);
@@ -499,20 +489,6 @@ void IRAM_ATTR trigger_rot3_btn() {
 /************
 **	Setup  **
 *************/
-
-void onHttpResponse(void *arg, AsyncClient *c, void *data, size_t len){
-	
-	Serial.println(len);
-	uint8_t *d = (uint8_t *)data;
-	for (size_t i = 0; i < len; i++) {
-		Serial.write(d[i]);
-	}
-}
-
-//http setup
-void http_setup() {
-	http.aClient->onData(onHttpResponse);
-}
 
 //Initialize GPIO Pins
 void gpio_setup() {
@@ -772,11 +748,14 @@ void preferences_load() {
 	}
 
 	//APIs
-	if(preferences.isKey("twitch_client_id"))
-		twitch_client_id = strdup(preferences.getString("twitch_client_id", twitch_client_id).c_str());
+	if(preferences.isKey("socials_request"))
+		socials_request = strdup(preferences.getString("socials_request", socials_request).c_str());
 
-	if(preferences.isKey("twitch_client_secret"))
-		twitch_client_secret = strdup(preferences.getString("twitch_client_secret", twitch_client_secret).c_str());
+	if(preferences.isKey("socials_api_key"))
+		socials_api_key = strdup(preferences.getString("socials_api_key", socials_api_key).c_str());
+
+	if(preferences.isKey("socials_request_server"))
+		socials_request_server = strdup(preferences.getString("socials_request_server", socials_request_server).c_str());
 
 
 	preferences.end();
@@ -876,8 +855,18 @@ void loop() {
 		ESP.restart();
 	}
 
+	//Routine for async http
+	if(socials_response_check != 0 && socials_response_check <= ms_current) {
+		if(http_socials.readyState() == readyStateDone) {
+			socials_response_check = 0;
+			on_socials_response();
+		} else {
+			socials_response_check += 250;
+		}
+	}
+
 	//TODO remove tests
-	if(ms_current - ms_test >= 5000) {
+	if(ms_current - ms_test >= 1000) {
 		ms_test = ms_current;
 		
 		// Serial.println(WiFi.localIP().toString());
@@ -885,6 +874,7 @@ void loop() {
 		// Serial.println(rtc_ext.now().timestamp());
 		// Serial.println(api_key);
 		// Serial.println(ESP.getFreeHeap());
+		// Serial.println(http_socials.readyState());
 	}
 	
 	delay(10);
