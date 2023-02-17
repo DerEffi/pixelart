@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 
 class SocialStats extends Controller
 {
+    //staring from get url param
     public function get(Request $request) {
 
         try {
@@ -32,36 +33,15 @@ class SocialStats extends Controller
             if($validator->fails())
                 return response()->json(["message" => "wrong request format. Instead use [{'t': 'y' | 't', 'c': %channelname%}]"], 400);
 
-            $socials = collect($socials)->map(function($social) {
-
-                try {
-                    switch($social["t"]) {
-                        case "t":
-                            $social["f"] = (int)$this->getTwitchFollower($this->getTwitchUserId($social["c"]));
-                            $social["v"] = (int)$this->getTwitchViewer($this->getTwitchUserId($social["c"]));
-                            break;
-                        case "y":
-                            $ytStats = $this->getYoutubeChannel($social["c"]);
-                            $social["f"] = (int)$ytStats["subs"];
-                            $social["v"] = (int)$ytStats["views"];
-                            break;
-                    }
-                } catch(\Exception $e) {
-                    $social["f"] = 0;
-                    $social["v"] = 0;
-                    return $social;
-                }
-
-                return $social;
-            });
+            $socials = $this->retrieveSocials($socials);
 
             return response()->json($socials);
         } catch(\Exception $e) {
-            dd($e);
             return response()->json(["message" => "get parameter 'socials' is required to have a valid base64 encoded json array of requested channel data"], 400);
         }
     }
 
+    //starting from post body data
     public function post(Request $request) {
 
         try {
@@ -73,36 +53,103 @@ class SocialStats extends Controller
             if($validator->fails())
                 return response()->json(["message" => "wrong request format. Instead use [{'t': 'y' | 't', 'c': %channelname%}]"], 400);
 
-            $socials = collect($socials)->map(function($social) {
-
-                try {
-                    switch($social["t"]) {
-                        case "t":
-                            $social["f"] = (int)$this->getTwitchFollower($this->getTwitchUserId($social["c"]));
-                            $social["v"] = (int)$this->getTwitchViewer($this->getTwitchUserId($social["c"]));
-                            break;
-                        case "y":
-                            $ytStats = $this->getYoutubeChannel($social["c"]);
-                            $social["f"] = (int)$ytStats["subs"];
-                            $social["v"] = (int)$ytStats["views"];
-                            break;
-                    }
-                } catch(\Exception $e) {
-                    $social["f"] = 0;
-                    $social["v"] = 0;
-                    return $social;
-                }
-
-                return $social;
-            });
+            $socials = $this->retrieveSocials($socials);
 
             return response()->json($socials);
         } catch(\Exception $e) {
-            dd($e);
             return response()->json(["message" => "post body is required to have a valid json array of requested channel data"], 400);
         }
     }
 
+    /**
+     * It takes an array of socials, retrieves the stats from the cache if they exist, else it requests
+     * them from the API, then it returns the socials with the stats
+     *
+     * @param array socials An array of socials to retrieve.
+     *
+     * @return An array of socials with the following keys:
+     * - t: The type of social (y for youtube, t for twitch)
+     * - c: The channel name
+     * - d: The display name
+     * - f: The number of followers/subs
+     * - v: The number of views
+     */
+    private function retrieveSocials(array $socials) {
+        $socials = collect($socials);
+
+        //Try getting youtube socials from cache else request from youtube
+        $youtube = $socials->filter(function($social) {
+            return $social["t"] == "y";
+        })->map(function($social) {
+            $social["id"] = $this->getYoutubeChannelId($social["c"]);
+            $social["v"] = Cache::get("youtube_channel_views_".$social["id"]);
+            $social["f"] = Cache::get("youtube_channel_subs_".$social["id"]);
+
+            return $social;
+        });
+
+        $youtubeResponse = null;
+        if(!$youtube->every(function($social) {
+            return $social["v"] != null && $social["f"] != null;
+        })) {
+            $youtubeResponse = collect($this->requestYoutubeChannelStats($youtube->map(function($social){ return $social["id"]; })->toArray()));
+        }
+
+        //Try getting twitch socials from cache else request from twitch
+        $twitch = $socials->filter(function($social) {
+            return $social["t"] == "t";
+        })->map(function($social) {
+            $social["id"] = $this->getTwitchUserId($social["c"]);
+            $social["v"] = Cache::get("twitch_user_views_".$social["id"]);
+            $social["f"] = Cache::get("twitch_user_follower_".$social["id"]) ?? $this->getTwitchFollower($social["id"]);
+
+            return $social;
+        });
+
+        $twitchResponse = null;
+        if(!$twitch->every(function($social) {
+            return $social["v"] != null;
+        })) {
+            $twitchResponse = collect($this->requestTwitchViewers($twitch->map(function($social){ return $social["id"]; })->toArray()));
+        }
+
+        //Merge socials
+        return $socials->map(function($social) use ($youtube, $twitch, $youtubeResponse, $twitchResponse) {
+            switch($social["t"]) {
+                case "y":
+                    $social = array_merge($social, $youtube->firstOrFail(function($channel) use ($social) { return $channel["c"] == $social["c"]; }));
+                    if(isset($youtubeResponse))
+                        $social = array_merge($social, $youtubeResponse->firstOrFail(function($channel) use ($social) { return $channel["id"] == $social["id"]; }));
+                    break;
+                case "t":
+                    $social = array_merge($social = $twitch->firstOrFail(function($channel) use ($social) { return $channel["c"] == $social["c"]; }));
+                    if(isset($twitchResponse)) {
+                        $updatedViews = $twitchResponse->first(function($channel) use ($social) { return $channel["id"] == $social["id"]; });
+                        if($updatedViews)
+                            $social = array_merge($social, $updatedViews);
+                    }
+                    break;
+            }
+
+            return [
+                "t" => $social["t"],
+                "c" => $social["c"],
+                "d" => $social["d"] ?? $social["c"],
+                "f" => $social["f"] ? $this->formatNumber($social["f"]) : null,
+                "v" => $social["v"] && $social["v"] != -1 ? $this->formatNumber($social["v"]) : null,
+            ];
+        });
+    }
+
+    /**
+     * It gets a token from twitch, and if it's not in the cache, it will cache it for the duration of
+     * the token minus 60 seconds
+     *
+     * @param fromCache If true, the function will try to get the token from the cache. If it's not
+     * there, it will request a new one.
+     *
+     * @return The access token for the twitch api
+     */
     private function getTwitchToken($fromCache = true) {
         if($fromCache && Cache::has("twitch_auth")) {
             return Cache::get("twitch_auth");
@@ -130,11 +177,67 @@ class SocialStats extends Controller
         }
     }
 
+    /**
+     * It takes an array of twitch usernames and returns an array of objects containing the username
+     * and id of each user
+     *
+     * @param array logins An array of twitch usernames
+     *
+     * @return An array of user objects with the login and id of the user.
+     */
+    private function requestTwitchUserIds(array $logins) {
+
+        $url = "https://api.twitch.tv/helix/users";
+
+        $counter = 0;
+        foreach($logins as $login) {
+            $url .= $counter == 0 ? "?login=".$login : "&login=".$login;
+            $counter++;
+        }
+
+        $response = Http::withHeaders([
+            "Authorization" => "Bearer ".$this->getTwitchToken(),
+            "Client-Id" => config("socials.twitch.client_id")
+        ])->get($url);
+
+        if($response->status() == 401) {
+            $response = Http::withHeaders([
+                "Authorization" => "Bearer ".$this->getTwitchToken(true),
+                "Client-Id" => config("socials.twitch.client_id")
+            ])->get($url);
+        }
+
+        $response->throwUnlessStatus(200);
+
+        $validator = Validator::make($response->collect()->toArray(), [
+            "data" => "required|array",
+            "data.*.id" => "required",
+            "data.*.login" => "required"
+        ]);
+        if($validator->fails())
+            return throw new AuthorizationException("Failed to retrive data from twitch");
+
+        return collect($response["data"]).map(function($user) {
+            return [
+                "login" => $user["login"],
+                "id" => $user["id"],
+            ];
+        });
+    }
+
+    /**
+     * It gets the user id of a twitch user
+     *
+     * @param login The login of the user you want to get the id of
+     * @param fromCache If you want to get the user id from cache or not.
+     *
+     * @return The user id of the twitch user.
+     */
     private function getTwitchUserId($login, $fromCache = true) {
         if(!$fromCache)
-            Cache::forget("twitch_channel_".$login);
+            Cache::forget("twitch_user_id_".$login);
 
-        return Cache::rememberForever("twitch_channel_".$login, function() use ($login) {
+        return Cache::rememberForever("twitch_user_id_".$login, function() use ($login) {
             $response = Http::withHeaders([
                 "Authorization" => "Bearer ".$this->getTwitchToken(),
                 "Client-Id" => config("socials.twitch.client_id")
@@ -149,10 +252,9 @@ class SocialStats extends Controller
 
             $response->throwUnlessStatus(200);
 
-            $validator = Validator::make([
-                "id" => $response["data"][0]["id"]
-            ], [
-                "id" => "required"
+            $validator = Validator::make($response->collect()->toArray(), [
+                "data" => "required|array|min:1",
+                "data.*.id" => "required"
             ]);
             if($validator->fails())
                 return throw new AuthorizationException("Failed to retrive data from twitch");
@@ -161,11 +263,19 @@ class SocialStats extends Controller
         });
     }
 
+    /**
+     * It gets the number of followers of a twitch user
+     *
+     * @param userId The user id of the user you want to get the follower count of.
+     * @param fromCache If you want to get the data from cache or not.
+     *
+     * @return The number of followers the user has.
+     */
     private function getTwitchFollower($userId, $fromCache = true) {
         if(!$fromCache)
-            Cache::forget("twitch_user_".$userId."_follower");
+            Cache::forget("twitch_user_follower_".$userId);
 
-        return Cache::remember("twitch_user_".$userId."_follower", 60, function() use ($userId) {
+        return Cache::remember("twitch_user_follower_".$userId, 3600, function() use ($userId) {
             $response = Http::withHeaders([
                 "Authorization" => "Bearer ".$this->getTwitchToken(),
                 "Client-Id" => config("socials.twitch.client_id")
@@ -192,72 +302,138 @@ class SocialStats extends Controller
         });
     }
 
-    private function getTwitchViewer($userId, $fromCache = true) {
-        if(!$fromCache)
-            Cache::forget("twitch_user_".$userId."_viewer");
+    /**
+     * It takes an array of user ids, makes a request to the twitch api, and returns an array of user
+     * ids and their viewer count
+     *
+     * @param array userIds An array of user ids to request the viewer count for.
+     *
+     * @return An array of user ids and their current viewer count.
+     */
+    private function requestTwitchViewers(array $userIds) {
 
-        return Cache::remember("twitch_user_".$userId."_viewer", 30, function() use ($userId) {
+        $url = "https://api.twitch.tv/helix/streams";
+
+        $counter = 0;
+        foreach($userIds as $userId) {
+            $url .= $counter == 0 ? "?user_id=".$userId : "&user_id=".$userId;
+            $counter++;
+        }
+
+        $response = Http::withHeaders([
+            "Authorization" => "Bearer ".$this->getTwitchToken(),
+            "Client-Id" => config("socials.twitch.client_id")
+        ])->get($url);
+
+        if($response->status() == 401) {
             $response = Http::withHeaders([
-                "Authorization" => "Bearer ".$this->getTwitchToken(),
+                "Authorization" => "Bearer ".$this->getTwitchToken(true),
                 "Client-Id" => config("socials.twitch.client_id")
-            ])->get("https://api.twitch.tv/helix/streams?user_id=".$userId);
+            ])->get($url);
+        }
 
-            if($response->status() == 401) {
-                $response = Http::withHeaders([
-                    "Authorization" => "Bearer ".$this->getTwitchToken(true),
-                    "Client-Id" => config("socials.twitch.client_id")
-                ])->get("https://api.twitch.tv/helix/streams?user_id=".$userId);
-            }
+        $response->throwUnlessStatus(200);
 
-            $response->throwUnlessStatus(200);
+        $validator = Validator::make($response->collect()->toArray(), [
+            "data" => "array",
+            "data.*.viewer_count" => "required|numeric",
+            "data.*.user_id" => "required",
+        ]);
+        if($validator->fails()) {
+            return throw new AuthorizationException("Failed to retrive data from twitch");
+        }
 
-            if(empty($response["data"]))
-                return 0;
+        foreach($userIds as $userId) {
+            Cache::put("twitch_user_views_".$userId, -1, 60);
+        }
 
-            $validator = Validator::make([
-                "viewer_count" => $response["data"][0]["viewer_count"]
-            ], [
-                "viewer_count" => "required|numeric"
-            ]);
-            if($validator->fails())
-                return throw new AuthorizationException("Failed to retrive data from twitch");
+        if(!$response["data"])
+            return [];
 
-            return $response["data"][0]["viewer_count"];
+        return collect($response["data"])->map(function($user) {
+
+            Cache::put("twitch_user_views_".$user["user_id"], $user["viewer_count"], 60);
+
+            return [
+                "v" => $user["viewer_count"],
+                "id" => $user["user_id"],
+            ];
         });
     }
 
-    private function getYoutubeChannel($username, $fromCache = true) {
-        if($fromCache && Cache::has("youtube_user_".$username."_views")  && Cache::has("youtube_user_".$username."_subs")) {
-            return [
-                "views" => Cache::get("youtube_user_".$username."_views"),
-                "subs" => Cache::get("youtube_user_".$username."_subs"),
-            ];
-        } else {
+    /**
+     * It takes an array of channel ids, makes a request to the youtube api, validates the response,
+     * and returns an array of objects containing the channel id, view count, and follower count
+     *
+     * @param channelIds An array of channel ids to request stats for.
+     *
+     * @return An array of objects with the following properties:
+     * - id
+     * - v
+     * - f
+     */
+    private function requestYoutubeChannelStats($channelIds) {
+        $response = Http::get("https://www.googleapis.com/youtube/v3/channels?part=statistics&id=".join(",", $channelIds)."&key=".config("socials.youtube.api_key"));
 
-            $response = Http::get("https://www.googleapis.com/youtube/v3/channels?part=statistics&forUsername=".$username."&key=".config("socials.youtube.api_key"));
+        $response->throwUnlessStatus(200);
+
+        $validator = Validator::make($response->collect()->toArray(), [
+            "items" => "required|array|size:".sizeof($channelIds),
+            "items.*.id" => "required",
+            "items.*.statistics.viewCount" => "required|numeric",
+            "items.*.statistics.subscriberCount" => "required|numeric"
+        ]);
+        if($validator->fails())
+            return throw new AuthorizationException("Failed to retrive data from youtube");
+
+        return collect($response["items"])->map(function($item) {
+
+            Cache::put("youtube_channel_views_".$item["id"], $item["statistics"]["viewCount"], 3600);
+            Cache::put("youtube_channel_subs_".$item["id"], $item["statistics"]["subscriberCount"], 3600);
+
+            return [
+                "id" => $item["id"],
+                "v" => $item["statistics"]["viewCount"],
+                "f" => $item["statistics"]["subscriberCount"],
+            ];
+        });
+    }
+
+    /**
+     * It gets the channel id from youtube, and caches it forever
+     *
+     * @param channelName The name of the channel you want to get the id for.
+     * @param fromCache If set to true, the function will try to get the channel id from the cache. If
+     * it's not there, it will make a request to the youtube api and cache the result.
+     *
+     * @return The channel ID of the channel name provided.
+     */
+    private function getYoutubeChannelId($channelName, $fromCache = true): string {
+        return Cache::rememberForever("youtube_channel_id_".$channelName, function() use ($channelName) {
+            $response = Http::get("https://www.googleapis.com/youtube/v3/search?part=id&maxResults=1&q=".$channelName."&key=".config("socials.youtube.api_key"));
 
             $response->throwUnlessStatus(200);
 
-            if(empty($response["items"]) || empty($response["items"][0]["statistics"]))
-                return [
-                    "views" => 0,
-                    "subs" => 0,
-                ];
-
-            $validator = Validator::make($response["items"][0]["statistics"], [
-                "viewCount" => "required|numeric",
-                "subscriberCount" => "required|numeric"
+            $validator = Validator::make($response->collect()->toArray(), [
+                "items" => "required|array|min:1",
+                "items.*.id.channelId" => "required"
             ]);
             if($validator->fails())
                 return throw new AuthorizationException("Failed to retrive data from youtube");
 
-            Cache::put("youtube_user_".$username."_views", $response["items"][0]["statistics"]["viewCount"], 3600);
-            Cache::put("youtube_user_".$username."_subs", $response["items"][0]["statistics"]["subscriberCount"], 3600);
+            return $response["items"][0]["id"]["channelId"];
+        });
+    }
 
-            return [
-                "views" => $response["items"][0]["statistics"]["viewCount"],
-                "subs" => $response["items"][0]["statistics"]["subscriberCount"],
-            ];
-        }
+    /**
+     * It takes a number and returns a string with the number formatted with a thousand separator
+     *
+     * @param number The number to format.
+     *
+     * @return string The number is being formatted with a period as the thousands separator and a
+     * comma as the decimal separator.
+     */
+    private function formatNumber($number): string {
+        return number_format($number, 0, ",", ".");
     }
 }
