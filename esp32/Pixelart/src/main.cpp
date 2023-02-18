@@ -43,29 +43,29 @@ const double slope_animation = 0;
 
 //structs
 enum overlay_type {
-	NO_OVERLAY,
-	BRIGHTNESS,
-	ANIMATION_SPEED,
-	DIASHOW_SPEED,
-	DISPLAY_MODE
+	OVERLAY_NONE,
+	OVERLAY_BRIGHTNESS,
+	OVERLAY_ANIMATION_SPEED,
+	OVERLAY_DIASHOW_SPEED,
+	OVERLAY_TEXT
 };
 
 enum display_mode {
-	SOCIALS,
-	IMAGES,
-	CLOCK_DIGITAL,
-	CLOCK_ANALOG
+	MODE_SOCIALS,
+	MODE_IMAGES,
+	MODE_CLOCK,
 };
 
 //settings
 Preferences preferences;
-bool booted = false;
-unsigned long ms_current;
+bool volatile booted = false;
+unsigned long ms_current = 0;
 bool requested_reset = false;
 
-overlay_type volatile overlay = NO_OVERLAY;
+overlay_type volatile overlay = OVERLAY_NONE;
+const char* overlay_text = "";
+unsigned long ms_overlay = 0;
 uint8_t volatile brightness = 128;
-bool volatile brightness_change = false;
 
 
 //Wifi
@@ -89,8 +89,8 @@ unsigned long ms_api_key_approved = 0;
 
 //LED Panel
 MatrixPanel_I2S_DMA *panel = nullptr;
-display_mode current_mode = SOCIALS;
-bool display_change = false;
+display_mode current_mode = MODE_SOCIALS;
+bool volatile display_change = false;
 
 uint16_t current_image[PANEL_X][PANEL_Y] = {};
 
@@ -98,7 +98,9 @@ AsyncHTTPSRequest http_socials;
 const char* socials_api_key = SOCIALS_API_KEY;
 const char* socials_request_server = SOCIALS_API_SERVER;
 int socials_response_check = 0;
-const char* socials_request = "[{\"t\":\"t\",\"c\":\"dhalucard\",\"d\":\"@Dhalucard\"},{\"t\":\"t\",\"c\":\"a_teto\",\"d\":\"@Teto\"},{\"t\":\"y\",\"c\":\"dhalucard\",\"d\":\"@Dhalucard\"}]";
+const char* socials_request = SOCIALS_REQUEST;
+DynamicJsonDocument socials_response_doc(8000);
+JsonArray socials_response = socials_response_doc.to<JsonArray>();
 int socials_channel_current = 0;
 
 //Interrupt flags
@@ -108,6 +110,16 @@ bool volatile rot2_a_flag = false;
 bool volatile rot2_b_flag = false;
 bool volatile rot3_a_flag = false;
 bool volatile rot3_b_flag = false;
+
+bool volatile btn1_pressed = false;
+bool volatile btn2_pressed = false;
+bool volatile btn3_pressed = false;
+bool volatile rot1_pressed = false;
+bool volatile rot2_pressed = false;
+bool volatile rot3_pressed = false;
+int volatile rot1_clicks = 0;
+int volatile rot2_clicks = 0;
+int volatile rot3_clicks = 0;
 
 
 //RTC
@@ -120,9 +132,6 @@ bool update_time = true;
 unsigned long ms_rtc_ext_adjust = 0;
 
 
-//Timers
-hw_timer_t * timer_overlay = NULL;
-
 
 /**************
 **	Socials  **
@@ -130,7 +139,11 @@ hw_timer_t * timer_overlay = NULL;
 
 void on_socials_response(){
 	if(http_socials.responseHTTPcode() == 200) {
-		Serial.println(http_socials.responseText());
+		DeserializationError error = deserializeJson(socials_response_doc, http_socials.responseText());
+		if(!error) {
+			socials_response = socials_response_doc.as<JsonArray>();
+			display_change = true;
+		}
 	}
 }
 
@@ -194,26 +207,6 @@ bool verify_api_key(AsyncWebServerRequest * request) {
 	return request->hasHeader("apiKey") && request->getHeader("apiKey")->value().equals(api_key);
 }
 
-void format_number(unsigned long x, const char** dst) {
-	char number[25];
-	sprintf(number, "%lu", x);
-	int size = strlen(number);
-    char formatted[32];
-	
-	int formatted_i = 0;
-	for(int i = 0; i < size; i++){
-		if(i != 0 && (size - i) % 3 == 0) {
-			formatted[formatted_i] = '.';
-			formatted_i++;
-		}
-		formatted[formatted_i] = number[i];
-		formatted_i++;
-	}
-	formatted[formatted_i] = '\0';
-	
-	*dst = strdup(formatted);
-}
-
 
 
 
@@ -224,11 +217,11 @@ void format_number(unsigned long x, const char** dst) {
 //Display overlay menu for io switches
 void display_overlay() {
 	
-	if(overlay != NO_OVERLAY) {
+	if(overlay != OVERLAY_NONE) {
 		//Background
 		panel->fillRect(0, 0, 64, 11, 0);
 		
-		if(overlay == BRIGHTNESS) {
+		if(overlay == OVERLAY_BRIGHTNESS) {
 			//Progress Bar
 			panel->drawRect(2, 2, 49, 7, 0xFFFF);
 
@@ -250,11 +243,11 @@ void display_overlay() {
 			panel->drawPixel(59, 7, 0xFFFF);
 
 			panel->drawPixel(57, 5, 0xFFFF);
-		} else if(overlay == ANIMATION_SPEED) {
+		} else if(overlay == OVERLAY_ANIMATION_SPEED) {
 
-		} else if(overlay == DIASHOW_SPEED) {
+		} else if(overlay == OVERLAY_DIASHOW_SPEED) {
 
-		} else if(overlay == DISPLAY_MODE) {
+		} else if(overlay == OVERLAY_TEXT) {
 
 		}
 	}
@@ -293,8 +286,8 @@ void display_frame(int size, uint16_t *pixels[3]) {
 }
 
 //Displays twitch channel with respective viewers / subs
-void display_twitch_channel(const char * channel, unsigned int subs, unsigned int viewer = 0);
-void display_twitch_channel(const char * channel, unsigned int subs, unsigned int viewer) {
+void display_twitch_channel(const char * channel, const char* subs, const char* viewer = "0");
+void display_twitch_channel(const char * channel, const char* subs, const char* viewer) {
 	
 	//transparent background
 	panel->clearScreen();
@@ -318,11 +311,9 @@ void display_twitch_channel(const char * channel, unsigned int subs, unsigned in
 	panel->write(channel);
 
 	//counter
-	const char* counter;
-	format_number(viewer == 0 ? subs : viewer, &counter);
-	panel->getTextBounds(counter, 0, 0, &x1, &y1, &width, &height);
+	panel->getTextBounds(subs, 0, 0, &x1, &y1, &width, &height);
 	panel->setCursor(PANEL_X > width ? .5 * (PANEL_X - width) : 0, 53);
-	panel->write(counter);
+	panel->write(subs);
 
 	if(viewer != 0) {
 	} else {
@@ -337,8 +328,15 @@ void display_twitch_channel(const char * channel, unsigned int subs, unsigned in
 
 void display_current() {
 	switch(current_mode) {
-		case SOCIALS:
-			display_twitch_channel("@Dennsen86", 1, 1);
+		case MODE_SOCIALS:
+			if(socials_response.size() > 0) {
+				if(socials_response.size() < socials_channel_current)
+					socials_channel_current = 0;
+				display_twitch_channel((const char*)socials_response[socials_channel_current]["d"], (const char*)socials_response[socials_channel_current]["f"], (const char*)socials_response[socials_channel_current]["v"]);
+			} else {
+				//TODO loading screen
+				display_twitch_channel("Loading...", "");
+			}
 			break;
 		default:
 			display_full(current_image, false);
@@ -359,53 +357,21 @@ void spffs_setup() {
 
 
 
-/***************
-**	Settings  **
-****************/
-
-void IRAM_ATTR enable_overlay(overlay_type type) {
-	overlay = type;
-	timerRestart(timer_overlay);
-	timerAlarmEnable(timer_overlay);
-}
-
-void IRAM_ATTR disable_overlay() {
-	overlay = NO_OVERLAY;
-	timerAlarmDisable(timer_overlay);
-	display_change = true;
-}
-
-void IRAM_ATTR set_brightness(uint8_t value, bool show_overlay) {
-	brightness = value;
-	brightness_change = true;
-	if(show_overlay)
-		enable_overlay(BRIGHTNESS);
-}
-
-
-
 
 /*****************
 **	Interrupts  **
 ******************/
 
-//next button
 void IRAM_ATTR trigger_btn1() {
+	btn1_pressed = true;
 }
 
-//mode button
 void IRAM_ATTR trigger_btn2() {
+	btn2_pressed = true;
 }
 
-//menu button
 void IRAM_ATTR trigger_btn3() {
-
-	//approve api key for server
-	unsigned long now = millis();
-	if(ms_api_key_requested != 0 && ms_api_key_requested + 30000 > now) {
-		ms_api_key_approved = now;
-		ms_api_key_requested = 0;
-	}
+	btn3_pressed = true;
 }
 
 
@@ -413,7 +379,7 @@ void IRAM_ATTR trigger_rot1_a() {
 	if(rot1_a_flag && digitalRead(GPIO_ROT1_B) == LOW) {
 		rot1_a_flag = false;
 		rot1_b_flag = false;
-		//TODO Function Code turned left
+		rot1_clicks--;
 	} else {
 		rot1_b_flag = true;
 	}
@@ -423,13 +389,14 @@ void IRAM_ATTR trigger_rot1_b() {
 	if(rot1_b_flag && digitalRead(GPIO_ROT1_A) == LOW) {
 		rot1_a_flag = false;
 		rot1_b_flag = false;
-		//TODO Function Code turned right
+		rot1_clicks++;
 	} else {
 		rot1_a_flag = true;
 	}
 }
 
 void IRAM_ATTR trigger_rot1_btn() {
+	rot1_pressed = true;
 }
 
 
@@ -437,7 +404,7 @@ void IRAM_ATTR trigger_rot2_a() {
 	if(rot2_a_flag && digitalRead(GPIO_ROT2_B) == LOW) {
 		rot2_a_flag = false;
 		rot2_b_flag = false;
-		//TODO Function Code turned left
+		rot2_clicks--;
 	} else {
 		rot2_b_flag = true;
 	}
@@ -447,23 +414,22 @@ void IRAM_ATTR trigger_rot2_b() {
 	if(rot2_b_flag && digitalRead(GPIO_ROT2_A) == LOW) {
 		rot2_a_flag = false;
 		rot2_b_flag = false;
-		//TODO Function Code turned right
+		rot2_clicks++;
 	} else {
 		rot2_a_flag = true;
 	}
 }
 
 void IRAM_ATTR trigger_rot2_btn() {
+	rot2_pressed = true;
 }
 
 
-//brightness rot
 void IRAM_ATTR trigger_rot3_a() {
 	if(rot3_a_flag && digitalRead(GPIO_ROT3_B) == LOW) {
 		rot3_a_flag = false;
 		rot3_b_flag = false;
-
-		set_brightness(brightness = (brightness & 0B11100000) == 0 ? 24 : brightness - 8, true);
+		rot3_clicks--;
 	} else {
 		rot3_b_flag = true;
 	}
@@ -473,14 +439,14 @@ void IRAM_ATTR trigger_rot3_b() {
 	if(rot3_b_flag && digitalRead(GPIO_ROT3_A) == LOW) {
 		rot3_a_flag = false;
 		rot3_b_flag = false;
-
-		set_brightness((brightness & 0B11111000) == 248 ? 248 : brightness + 8, true);
+		rot3_clicks++;
 	} else {
 		rot3_a_flag = true;
 	}
 }
 
 void IRAM_ATTR trigger_rot3_btn() {
+	rot3_pressed = true;
 }
 
 
@@ -757,12 +723,15 @@ void preferences_load() {
 	if(preferences.isKey("socials_request_server"))
 		socials_request_server = strdup(preferences.getString("socials_request_server", socials_request_server).c_str());
 
+	if(preferences.isKey("socials_channel_current"))
+		socials_channel_current = preferences.getInt("socials_channel_current", socials_channel_current);
+
 
 	preferences.end();
 }
 
-//Init timers
-void timer_setup() {
+//Init rtc
+void time_setup() {
 
 	setenv("TZ", timezone, 1);
 	tzset();
@@ -775,21 +744,27 @@ void timer_setup() {
 		rtc_ext_enabled = true;
 		rtc_internal_adjust();
 	}
+}
 
-	//Overlay Timer
-	timer_overlay = timerBegin(3, 80, true);
-	timerAttachInterrupt(timer_overlay, disable_overlay, true);
-	timerAlarmWrite(timer_overlay, 3000000, false);
-
+void booted_setup() {
+	bool volatile btn1_pressed = false;
+	bool volatile btn2_pressed = false;
+	bool volatile btn3_pressed = false;
+	bool volatile rot1_pressed = false;
+	bool volatile rot2_pressed = false;
+	bool volatile rot3_pressed = false;
+	int volatile rot1_clicks = 0;
+	int volatile rot2_clicks = 0;
+	int volatile rot3_clicks = 0;
+	booted = true;
 }
 
 void setup() {
 	Serial.begin(9600); //TODO remove after testing
-	//while(!Serial); //TODO remove after testing
 
 	preferences_load();
 	gpio_setup();
-	timer_setup();
+	time_setup();
 	wifi_setup();
 	server_setup();
 	spffs_setup();
@@ -797,7 +772,7 @@ void setup() {
 
 	display_current();
 	
-	booted = true; //TODO move after boot sequence if implemented
+	booted_setup(); //TODO move after boot sequence if implemented
 }
 
 
@@ -811,26 +786,98 @@ void loop() {
 
 	ms_current = millis();
 
+	//display changes
 	if(booted) {
 
-		//Change panel parameters
-		if(brightness_change) {
-			brightness_change = false;
+		//diashow speed rot
+		if(rot1_clicks != 0) {
 
+			rot1_clicks = 0;
+		}
+
+		//animation speed rot
+		if(rot2_clicks != 0) {
+			//TODO
+
+			rot2_clicks = 0;
+		}
+
+		//brightness rot
+		if(rot3_clicks != 0) {
+
+			int current_brightness = (brightness & 0B11100000);
+			brightness = current_brightness == 0 ? 24 : (current_brightness == 248 ? 248 : brightness + (rot3_clicks * 8));
+			overlay = OVERLAY_BRIGHTNESS;
+			ms_overlay = ms_current + 3000;
 			panel->setPanelBrightness(brightness);
-			
-			display_current();
+			display_change = true;
 
 			preferences.begin(PREFERENCES_NAMESPACE);
 			preferences.putShort("brightness", brightness);
 			preferences.end();
+
+			rot3_clicks = 0;
 		}
 
+		//next button
+		if(btn1_pressed) {
+			//TODO
+			
+			btn1_pressed = false;
+		}
+
+		//mode button
+		if(btn2_pressed) {
+			//TODO
+			
+			btn2_pressed = false;
+		}
+
+		//menu button
+		if(btn3_pressed) {
+			//approve api key for server if requested
+			if(ms_api_key_requested != 0 && ms_api_key_requested + 30000 > ms_current) {
+				ms_api_key_approved = ms_current;
+				ms_api_key_requested = 0;
+			}
+			
+			btn3_pressed = false;
+		}
+
+
+		//rot1 button
+		if(rot1_pressed) {
+			//TODO
+			
+			rot1_pressed = false;
+		}
+
+		//rot2 button
+		if(rot2_pressed) {
+			//TODO
+			
+			rot2_pressed = false;
+		}
+
+		//rot3 button
+		if(rot3_pressed) {
+			//TODO
+			
+			rot3_pressed = false;
+		}
+
+
+		//check overlay time
+		if(ms_overlay != 0 && ms_overlay < ms_current) {
+			overlay = OVERLAY_NONE;
+			display_change = true;
+		}
+
+		//refresh display if needed
 		if(display_change) {
 			display_change = false;
 			display_current();
 		}
-
 	}
 
 	//Wifi routine
@@ -866,7 +913,7 @@ void loop() {
 	}
 
 	//TODO remove tests
-	if(ms_current - ms_test >= 1000) {
+	if(ms_current - ms_test >= 5000) {
 		ms_test = ms_current;
 		
 		// Serial.println(WiFi.localIP().toString());
@@ -875,7 +922,7 @@ void loop() {
 		// Serial.println(api_key);
 		// Serial.println(ESP.getFreeHeap());
 		// Serial.println(http_socials.readyState());
+
+		// Serial.println(socials_response.size());
 	}
-	
-	delay(10);
 }
