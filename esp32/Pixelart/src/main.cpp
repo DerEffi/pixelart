@@ -76,15 +76,15 @@ const char* wifi_ssid = WIFI_SSID_DEFAULT;
 const char* wifi_ap_ssid = WIFI_AP_SSID_DEFAULT;
 const char* wifi_password = WIFI_PASSWORD_DEFAULT;
 const char* wifi_ap_password = WIFI_AP_PASSWORD_DEFAULT;
-unsigned long ms_wifi_connected = 0;
-unsigned long ms_wifi_start = 0;
+unsigned long ms_wifi_routine = 0;
+unsigned long ms_wifi_reconnect = 0;
 
 
 //Server
 AsyncWebServer server(80);
 const char* api_key;
-unsigned long ms_api_key_requested = 0;
-unsigned long ms_api_key_approved = 0;
+unsigned long ms_api_key_request = 0;
+unsigned long ms_api_key_approve = 0;
 
 
 //LED Panel
@@ -129,6 +129,7 @@ bool rtc_ext_enabled = false;
 const char* ntp_server = "pool.ntp.org";
 const char* timezone = "CET-1CEST,M3.5.0,M10.5.0/3";
 bool update_time = true;
+bool rtc_ext_adjust = false;
 unsigned long ms_rtc_ext_adjust = 0;
 
 
@@ -182,12 +183,14 @@ void rtc_external_adjust() {
 	{
 		rtc_ext.adjust(DateTime(timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
 	}
+	rtc_ext_adjust = false;
 	ms_rtc_ext_adjust = 0;
 }
 
 void wifi_on_connected() {
 	configTzTime(timezone, ntp_server);
-	ms_rtc_ext_adjust = millis() + 5000;
+	ms_rtc_ext_adjust = millis() + 10000;
+	rtc_ext_adjust = true;
 	socials_refresh();
 }
 
@@ -621,13 +624,13 @@ void server_setup() {
 			response->setContentType("application/json");
 			JsonVariant& root = response->getRoot();
 
-			if(ms_api_key_approved != 0 && ms_api_key_approved + 15000 > millis()) {
+			if(ms_api_key_approve > millis()) {
 				response->setCode(200);
 				root["apiKey"] = api_key;
-				ms_api_key_approved = 0;
-				ms_api_key_requested = 0;
+				ms_api_key_approve = 0;
+				ms_api_key_request = 0;
 			} else {
-				ms_api_key_requested = millis();
+				ms_api_key_request = millis() + 30000;
 				request->send(204, "application/json", "{}");
 			}
 			
@@ -654,12 +657,13 @@ void wifi_setup() {
 
 	WiFi.setHostname(WIFI_HOSTNAME);
 	WiFi.setAutoReconnect(true);
+	ms_wifi_reconnect = millis() + 60000;
+	wifi_setup_complete = true;
 
 	if(wifi_connect) {
 		WiFi.begin(wifi_ssid, wifi_password);
 		WiFi.waitForConnectResult(250);
 		wifi_setup_complete = false;
-		ms_wifi_start = millis();
 	} else if(wifi_host) {
 		WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
 	}
@@ -836,9 +840,9 @@ void loop() {
 		//menu button
 		if(btn3_pressed) {
 			//approve api key for server if requested
-			if(ms_api_key_requested != 0 && ms_api_key_requested + 30000 > ms_current) {
-				ms_api_key_approved = ms_current;
-				ms_api_key_requested = 0;
+			if(ms_api_key_request > ms_current) {
+				ms_api_key_approve = ms_current + 10000;
+				ms_api_key_request = 0;
 			}
 			
 			btn3_pressed = false;
@@ -881,19 +885,18 @@ void loop() {
 	}
 
 	//Wifi routine
-	if(!wifi_setup_complete && ms_current - ms_wifi_connected >= 5000) {
-		ms_wifi_connected = ms_current;
+	if(!wifi_setup_complete && ms_wifi_routine <= ms_current) {
+		ms_wifi_routine = ms_current + 5000;
 		if(WiFi.waitForConnectResult(100) == WL_CONNECTED) {
 			wifi_setup_complete = true;
 			wifi_on_connected();
-		} else if(ms_current - ms_wifi_start >= 60000) {
-			ms_wifi_start = ms_current;
+		} else if(ms_wifi_reconnect <= ms_current) {
 			wifi_setup();
 		}
 	}
 
 	//RTC adjustment after message received
-	if(ms_rtc_ext_adjust > 0 && ms_rtc_ext_adjust <= ms_current) {
+	if(rtc_ext_adjust && ms_rtc_ext_adjust <= ms_current) {
 		rtc_external_adjust();
 	}
 
@@ -908,13 +911,13 @@ void loop() {
 			socials_response_check = 0;
 			on_socials_response();
 		} else {
-			socials_response_check += 250;
+			socials_response_check += 500;
 		}
 	}
 
 	//TODO remove tests
-	if(ms_current - ms_test >= 5000) {
-		ms_test = ms_current;
+	if(ms_test <= ms_current) {
+		ms_test = ms_current + 5000;
 		
 		// Serial.println(WiFi.localIP().toString());
 		// Serial.println(rtc_int.getDateTime());
