@@ -48,11 +48,16 @@ const uint8_t icon_twitch[120] = {0x0f, 0xff, 0xff, 0xf0, 0x1f, 0xff, 0xff, 0xf0
 const uint8_t icon_youtube_base[96] = {0x0f, 0xff, 0xff, 0xf0, 0x3f, 0xff, 0xff, 0xfc, 0x7f, 0xff, 0xff, 0xfe, 0x7f, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xfe, 0x7f, 0xff, 0xff, 0xfe, 0x3f, 0xff, 0xff, 0xfc, 0x0f, 0xff, 0xff, 0xf0}; //32x24
 const uint8_t icon_youtube_play[24] = {0x80, 0x00, 0xc0, 0x00, 0xf0, 0x00, 0xfc, 0x00, 0xfe, 0x00, 0xff, 0x80, 0xff, 0x80, 0xfe, 0x00, 0xfc, 0x00, 0xf0, 0x00, 0xc0, 0x00, 0x80, 0x00}; //9x12
 
+const uint8_t marks_clock[44][2] = {{0,31},{1,31},{2,31},{3,31},{0,32},{1,32},{2,32},{3,32},{60,31},{61,31},{62,31},{63,31},{60,32},{61,32},{62,32},{63,32},{31,0},{31,1},{31,2},{31,3},{32,0},{32,1},{32,2},{32,3},{31,60},{31,61},{31,62},{31,63},{32,60},{32,61},{32,62},{32,63},{16,5},{47,5},{58,16},{58,47},{5,16},{5,47},{16,58},{47,58},{32,32},{31,31},{32,31},{31,32}};
+
 //slopes for mapping ranges to pixel width
 //? (output_end - output_start) / (input_end - input_start)
 const double slope_brightness = .196;
 const double slope_diashow = 0;
 const double slope_animation = 0;
+
+//conversions
+float divide_sixty = 0.01666666567325592041015625f;
 
 //structs
 enum overlay_type {
@@ -67,6 +72,13 @@ enum display_mode {
 	MODE_SOCIALS,
 	MODE_IMAGES,
 	MODE_CLOCK,
+};
+
+enum clock_type {
+	CLOCK_ANALOG,
+	CLOCK_DIGITAL,
+	CLOCK_DIGITAL_BIG,
+	CLOCK_DIGITAL_DATE
 };
 
 //settings
@@ -107,6 +119,7 @@ bool volatile display_change = false;
 
 uint16_t current_image[64][64] = {};
 
+//Socials
 AsyncHTTPSRequest http_socials;
 const char* socials_api_key = SOCIALS_API_KEY;
 const char* socials_request_server = SOCIALS_API_SERVER;
@@ -116,6 +129,11 @@ const char* socials_request = SOCIALS_REQUEST;
 DynamicJsonDocument socials_response_doc(8000);
 JsonArray socials_response = socials_response_doc.to<JsonArray>();
 int socials_channel_current = 0;
+
+//Clock
+unsigned long ms_clock = 0;
+clock_type current_clock_mode = CLOCK_ANALOG;
+bool clock_seconds = true;
 
 //Interrupt flags
 bool volatile rot1_a_flag = false;
@@ -157,7 +175,8 @@ void on_socials_response(){
 		DeserializationError error = deserializeJson(socials_response_doc, http_socials.responseText());
 		if(!error && socials_response_doc.is<JsonArray>()) {
 			socials_response = socials_response_doc.as<JsonArray>();
-			display_change = true;
+			if(current_mode == MODE_SOCIALS)
+				display_change = true;
 		}
 	}
 
@@ -380,6 +399,51 @@ void display_social_channel(const char * type, const char * channel, const char*
 		panel->flipDMABuffer();
 }
 
+void display_clock() {
+	//TODO modes
+	display_clock_analog();
+}
+
+void display_clock_analog() {
+
+	panel->clearScreen();
+
+	//hands
+	int hour = rtc_int.getHour();
+	int minute = rtc_int.getMinute();
+
+	//hour hand
+	int hourX = (hour >= 6 ? 31 : 32);
+	int hourY = (hour >= 9 || hour <= 3 ? 31 : 32);
+	float radiant_hour = radians(180 - (30 * hour) - (minute / 2));
+	panel->drawLine(hourX + 15 * sin(radiant_hour), hourY + 15 * cos(radiant_hour), hourX, hourY, 0xFFFF);
+	
+	//minute hand
+	int minuteX = (minute >= 30 ? 31 : 32);
+	int minuteY = (minute >= 45 || minute <= 15 ? 31 : 32);
+	float radiant_minute = radians(180 - (6 * minute));
+	panel->drawLine(minuteX + 23 * sin(radiant_minute), minuteY + 23 * cos(radiant_minute), minuteX, minuteY, 0xFFFF);
+	
+	//second hand
+	if(clock_seconds) {
+		int second = rtc_int.getSecond();
+		int secondX = (second >= 30 ? 31 : 32);
+		int secondY = (second >= 45 || second <= 15 ? 31 : 32);
+		float radiant_second = radians(180 - (6 * second));
+		panel->drawLine(secondX + 28 * sin(radiant_second), secondY + 28 * cos(radiant_second), secondX, secondY, 0xF800);
+	}
+
+	//marks
+	for(int mark = 0; mark < 44; mark++) {
+		panel->drawPixel(marks_clock[mark][0], marks_clock[mark][1], 0xFFFF);
+	}
+
+	display_overlay();
+
+	if(PANEL_DOUBLE_BUFFER)
+		panel->flipDMABuffer();
+}
+
 void display_current() {
 	switch(current_mode) {
 		case MODE_SOCIALS:
@@ -394,6 +458,9 @@ void display_current() {
 			} else {
 				display_social_channel("", "Loading", "");
 			}
+			break;
+		case MODE_CLOCK:
+			display_clock();
 			break;
 		default:
 			display_full(current_image, false);
@@ -620,6 +687,7 @@ void server_setup() {
 				root["time"] = rtc_int.getLocalEpoch();
 				root["timeExtConnected"] = rtc_ext_enabled;
 				root["displayMode"] = current_mode;
+				root["clockMode"] = current_clock_mode;
 
 				response->setLength();
 				request->send(response);
@@ -636,6 +704,7 @@ void server_setup() {
 				JsonVariant& root = response->getRoot();
 
 				root["brightness"] = brightness;
+				root["clockSeconds"] = clock_seconds;
 				root["wifiConnect"] = wifi_connect;
 				root["wifiHost"] = wifi_host;
 				root["wifiSSID"] = wifi_ssid;
@@ -783,6 +852,13 @@ void preferences_load() {
 
 	if(preferences.isKey("current_social"))
 		socials_channel_current = preferences.getInt("current_social", socials_channel_current);
+
+	//clock
+	if(preferences.isKey("clock_mode"))
+		current_clock_mode = static_cast<clock_type>(preferences.getInt("clock_mode", current_clock_mode));
+	
+	if(preferences.isKey("clock_seconds"))
+		clock_seconds = preferences.getBool("clock_seconds", clock_seconds);
 
 
 	preferences.end();
@@ -945,6 +1021,11 @@ void loop() {
 			display_change = true;
 		}
 
+		if(current_mode == MODE_CLOCK && ms_clock < ms_current) {
+			ms_clock = ms_current + 1000;
+			display_change = true;
+		}
+
 		//refresh display if needed
 		if(display_change) {
 			display_change = false;
@@ -988,10 +1069,10 @@ void loop() {
 
 	//TODO remove tests
 	if(ms_test <= ms_current) {
-		ms_test = ms_current + 3000;
+		ms_test = ms_current + 5000;
 		
 		// Serial.println(WiFi.localIP().toString());
-		// Serial.println(rtc_int.getDateTime());
+		// Serial.println(rtc_int.getTime());
 		// Serial.println(rtc_ext.now().timestamp());
 		// Serial.println(api_key);
 		// Serial.println(ESP.getFreeHeap());
