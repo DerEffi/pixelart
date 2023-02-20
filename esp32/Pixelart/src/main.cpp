@@ -76,8 +76,8 @@ enum display_mode {
 enum clock_type {
 	CLOCK_ANALOG,
 	CLOCK_DIGITAL,
-	CLOCK_DIGITAL_BIG,
-	CLOCK_DIGITAL_DATE
+	CLOCK_DIGITAL_DATE,
+	CLOCK_DIGITAL_BIG
 };
 
 //settings
@@ -134,6 +134,7 @@ unsigned long ms_clock = 0;
 clock_type current_clock_mode = CLOCK_ANALOG;
 bool clock_seconds = true;
 bool clock_blink = false;
+bool clock_year = true;
 
 //Interrupt flags
 bool volatile rot1_a_flag = false;
@@ -313,22 +314,6 @@ void display_full(uint16_t pixels[64][64], bool save_image = true) {
 		panel->flipDMABuffer();
 }
 
-//! Not working
-//Display only changes of pixels for the next frame
-void display_frame(int size, uint16_t *pixels[3]) {
-
-	//TODO display current image
-
-	for(int i = 0; i < size / 3; i++) {
-		panel->drawPixel(pixels[i][0], pixels[i][1], pixels[i][2]);
-	}
-
-	display_overlay();
-
-	if(PANEL_DOUBLE_BUFFER)
-		panel->flipDMABuffer();
-}
-
 //Displays twitch channel with respective viewers / subs
 void display_social_channel(const char * type, const char * channel, const char* subs, const char* views = "0") {
 
@@ -347,9 +332,7 @@ void display_social_channel(const char * type, const char * channel, const char*
 	int16_t x1, y1;
 	uint16_t width, height;
 	panel->setTextColor(0xFFFF);
-	panel->setTextWrap(false);
 	panel->setTextSize(1);
-	panel->setFont(&Font4x7Fixed);
 
 	//channel name
 	if(channel == NULL || channel == "")
@@ -446,7 +429,7 @@ void display_clock_analog() {
 		panel->flipDMABuffer();
 }
 
-void display_clock_digital() {
+void display_clock_digital(bool withDate) {
 	
 	//transparent background
 	panel->clearScreen();
@@ -456,28 +439,76 @@ void display_clock_digital() {
 	int second = rtc_int.getSecond();
 
 	//text props
-	int16_t x1, y1;
-	uint16_t width, height;
 	panel->setTextColor(0xFFFF);
-	panel->setTextWrap(false);
 	panel->setTextSize(2);
-	panel->setFont(&Font4x7Fixed);
-
+	
 	char clockText[10];
 	int x_start;
+	int y_start = 39;
+
+	if(withDate) {
+		int year = rtc_int.getYear();
+		int month = rtc_int.getMonth() + 1;
+		int day = rtc_int.getDay();
+		y_start = 49;
+		if(clock_year) {
+			x_start = 5;
+			sprintf(clockText, "%02d.%02d.%02d", day, month, year % 100);
+		} else {
+			x_start = 14;
+			sprintf(clockText, "%02d.%02d.", day, month);
+		}
+		panel->setCursor(x_start, clock_seconds ? 29 : 25);
+		panel->write(clockText);
+	}
+
+	
 	if(clock_seconds) {
 		x_start = 5;
 		sprintf(clockText, "%02d:%02d:%02d", hour, minute, second);
 	} else {
-		x_start = 15;
+		x_start = 6;
+		y_start += 4;
+		panel->setTextSize(3);
 		if(clock_blink && second % 2 == 1)
 			sprintf(clockText, "%02d %02d", hour, minute);
 		else
 			sprintf(clockText, "%02d:%02d", hour, minute);
 	}
-	panel->setCursor(x_start, 39);
+
+	panel->setCursor( x_start, y_start);
 	panel->write(clockText);
 
+	display_overlay();
+
+	if(PANEL_DOUBLE_BUFFER)
+		panel->flipDMABuffer();
+}
+
+void display_clock_big() {
+
+	//transparent background
+	panel->clearScreen();
+
+	int hour = rtc_int.getHour(time_format24);
+	int minute = rtc_int.getMinute();
+
+	//text props
+	panel->setFont(&Font4x5Fixed);
+	panel->setTextColor(0xFFFF);
+	panel->setTextSize(5);
+	
+	char clockText[4];
+
+	sprintf(clockText, "%02d", hour);
+	panel->setCursor(14, 25);
+	panel->write(clockText);
+
+	sprintf(clockText, "%02d", minute);
+	panel->setCursor(14, 54);
+	panel->write(clockText);
+
+	panel->setFont(&Font4x7Fixed);
 	display_overlay();
 
 	if(PANEL_DOUBLE_BUFFER)
@@ -490,13 +521,13 @@ void display_clock() {
 			display_clock_analog();
 			break;
 		case CLOCK_DIGITAL:
-			display_clock_digital();
-			break;
-		case CLOCK_DIGITAL_BIG:
-			display_clock_digital();
+			display_clock_digital(false);
 			break;
 		case CLOCK_DIGITAL_DATE:
-			display_clock_digital();
+			display_clock_digital(true);
+			break;
+		case CLOCK_DIGITAL_BIG:
+			display_clock_big();
 			break;
 	}
 }
@@ -711,6 +742,8 @@ void panel_setup() {
 	panel->begin();
 	panel->clearScreen();
 	panel->setPanelBrightness(brightness);
+	panel->setFont(&Font4x7Fixed);
+	panel->setTextWrap(false);
 
 	if(PANEL_DOUBLE_BUFFER)
 		panel->flipDMABuffer();
@@ -774,6 +807,7 @@ void server_setup() {
 				root["time"] = rtc_int.getLocalEpoch();
 				root["displayMode"] = current_clock_mode;
 				root["seconds"] = clock_seconds;
+				root["year"] = clock_year;
 				root["blink"] = clock_blink;
 				root["format24"] = time_format24;
 				root["externalRTCConnected"] = rtc_ext_enabled;
@@ -825,6 +859,10 @@ void server_setup() {
 				if(body.containsKey("blink") && body["blink"].is<bool>()) {
 					clock_blink = body["blink"].as<bool>();
 					preferences.putBool("clock_blink", clock_blink);
+				}
+				if(body.containsKey("year") && body["year"].is<bool>()) {
+					clock_year = body["year"].as<bool>();
+					preferences.putBool("clock_year", clock_year);
 				}
 				if(body.containsKey("format24") && body["format24"].is<bool>()) {
 					time_format24 = body["format24"].as<bool>();
@@ -1017,6 +1055,9 @@ void preferences_load() {
 		
 	if(preferences.isKey("clock_blink"))
 		clock_blink = preferences.getBool("clock_blink", clock_blink);
+		
+	if(preferences.isKey("clock_year"))
+		clock_year = preferences.getBool("clock_year", clock_year);
 
 
 	preferences.end();
