@@ -45,7 +45,7 @@ const GFXglyph Font4x5FixedGlyphs[] PROGMEM = {
   {    26,   1,   1,   2,    0,    0 },   // 0x2E '.'
   {    27,   4,   4,   5,    0,   -3 },   // 0x2F '/'
   {    29,   3,   5,   4,    0,   -4 },   // 0x30 '0'
-  {    32,   3,   5,   4,    1,   -4 },   // 0x31 '1'
+  {    32,   3,   5,   4,    0,   -4 },   // 0x31 '1'
   {    35,   3,   5,   4,    0,   -4 },   // 0x32 '2'
   {    38,   3,   5,   4,    0,   -4 },   // 0x33 '3'
   {    41,   3,   5,   4,    0,   -4 },   // 0x34 '4'
@@ -126,5 +126,5 @@ const GFXglyph Font4x5FixedGlyphs[] PROGMEM = {
 };
 
 const GFXfont Font4x5Fixed PROGMEM = {
-  (uint8_t  *)Font4x5FixedBitmaps, 
-  (GFXglyph *)Font4x5FixedGlyphs, 0x20, 0x7E,  5 };
+  (uint8_t  *)Font4x5FixedBitmaps,  
+  (GFXglyph *)Font4x5FixedGlyphs, 0x20, 0x7E,   5 };
