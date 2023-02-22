@@ -1,4 +1,4 @@
-<img id="img" src="./testimg.jpg" style="image-rendering: pixelated;" width="512" height="512" onload="onImgLoad()" />
+<img id="img" src="./trees.jpg" style="image-rendering: pixelated;" width="512" height="512" onload="onImgLoad()" />
 <canvas id="canvas" style="height: 512px; width: 512px; image-rendering: pixelated;"></canvas>
 
 <script>
@@ -32,7 +32,7 @@
 		var link=document.createElement('a');
 		link.href=window.URL.createObjectURL(blob);
 		link.download="image.pxart";
-		//link.click();
+		link.click();
 	}
 
 	function getPixelByteArray(width = 64, height = 64) {

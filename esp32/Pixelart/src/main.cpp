@@ -4,10 +4,7 @@
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include <Font4x5Fixed.h>
 #include <Font4x7Fixed.h>
-#include <Font5x5Fixed.h>
-#include <Font5x7Fixed.h>
 #include <SPI.h>
-#include <SPIFFS.h>
 #include <SD.h>
 #include <Preferences.h>
 
@@ -38,6 +35,7 @@ uint32_t lastHeap = 0;
 const uint16_t color_twitch = 25108;
 const uint16_t color_youtube = 0xF800;
 const uint16_t color_coral = 0xFC10;
+const uint16_t color_dark_read = 0xBA00;
 
 //bitmaps
 const uint8_t icon_person[7] = {0x78, 0x48, 0x48, 0x78, 0x00, 0xfc, 0x84}; //6x7
@@ -46,6 +44,7 @@ const uint8_t icon_star[7] = {0x10, 0x38, 0xfe, 0x7c, 0x38, 0x6c, 0x44}; //7x7
 const uint8_t icon_heart[7] = {0x66, 0xff, 0xff, 0xff, 0x7e, 0x3c, 0x18}; //8x7
 const uint8_t icon_bell[7] = {0x00, 0x30, 0x78, 0xfc, 0xfc, 0x00, 0x10}; //6x7
 const uint8_t icon_eye[14] = {0x1c, 0x00, 0x22, 0x00, 0x49, 0x00, 0x9c, 0x80, 0x49, 0x00, 0x22, 0x00, 0x1c, 0x00}; //9x7
+const uint8_t icon_card[128] = {0x00, 0xff, 0xff, 0xe0, 0x01, 0xff, 0xff, 0xf0, 0x01, 0xff, 0xff, 0xf0, 0x01, 0x92, 0x49, 0x30, 0x01, 0x92, 0x49, 0x30, 0x01, 0x92, 0x49, 0x30, 0x01, 0x92, 0x49, 0x30, 0x01, 0x92, 0x49, 0x30, 0x01, 0xff, 0xff, 0xf0, 0x01, 0xff, 0xff, 0xf0, 0x01, 0xff, 0xff, 0xf0, 0x03, 0xff, 0xff, 0xf0, 0x07, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x03, 0xff, 0xff, 0xf0, 0x03, 0xff, 0xff, 0xf0, 0x03, 0xff, 0xff, 0xf0, 0x07, 0xff, 0xff, 0xf0, 0x07, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x07, 0xff, 0xff, 0xe0}; //32x32
 
 const uint8_t icon_twitch[120] = {0x0f, 0xff, 0xff, 0xf0, 0x1f, 0xff, 0xff, 0xf0, 0x30, 0x00, 0x00, 0x30, 0x70, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x70, 0xf0, 0x00, 0x00, 0xf0, 0xf0, 0x00, 0x01, 0xe0, 0xff, 0xf1, 0xff, 0xc0, 0xff, 0xf3, 0xff, 0x80, 0xff, 0xf7, 0xff, 0x00, 0xff, 0xff, 0xfe, 0x00, 0x01, 0xc0, 0x00, 0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00}; //28x30
 const uint8_t icon_youtube_base[96] = {0x0f, 0xff, 0xff, 0xf0, 0x3f, 0xff, 0xff, 0xfc, 0x7f, 0xff, 0xff, 0xfe, 0x7f, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xfe, 0x7f, 0xff, 0xff, 0xfe, 0x3f, 0xff, 0xff, 0xfc, 0x0f, 0xff, 0xff, 0xf0}; //32x24
@@ -55,7 +54,7 @@ const uint8_t marks_clock[44][2] = {{0,31},{1,31},{2,31},{3,31},{0,32},{1,32},{2
 
 //slopes for mapping ranges to pixel width
 //? (output_end - output_start) / (input_end - input_start)
-const double slope_brightness = .196;
+const double slope_brightness = .189;
 const double slope_diashow = 0;
 const double slope_animation = 0;
 
@@ -104,7 +103,7 @@ struct image_meta {
 Preferences preferences;
 bool booted = false;
 unsigned long ms_current = 0;
-bool requested_reset = false;
+bool requested_restart = false;
 
 overlay_type overlay = OVERLAY_NONE;
 char* overlay_text = strdup("");
@@ -137,7 +136,8 @@ MatrixPanel_I2S_DMA *panel = nullptr;
 display_mode current_mode = MODE_IMAGES;
 bool display_change = false;
 
-std::vector<image_meta> image_index; 
+std::vector<image_meta> image_index;
+uint16_t selected_image = 0;
 uint16_t current_image[64][64] = {};
 bool image_loaded = false;
 
@@ -168,7 +168,8 @@ bool rot3_b_flag = false;
 
 bool btn1_pressed = false;
 bool btn2_pressed = false;
-bool btn3_pressed = false;
+unsigned long ms_btn3_pressed = 0;
+bool btn3_released = false;
 bool rot1_pressed = false;
 bool rot2_pressed = false;
 bool rot3_pressed = false;
@@ -378,9 +379,9 @@ bool sd_connected() {
 	return success;
 }
 
-bool sd_load_image(char* path) {
-	if(SD.exists(path)) {
-		File file = SD.open(path);
+bool sd_load_image(image_meta image) {
+	if(SD.exists(image.image)) {
+		File file = SD.open(image.image);
 
 		int x = 0;
 		int y = 0;
@@ -390,7 +391,7 @@ bool sd_load_image(char* path) {
 		char color_data[buffersize] = {};
 
 		//read in 4 pixelmatrix lines because of array size limit
-		while(length > position + buffersize) {
+		while(length > position) {
 			file.seek(position);
 			file.readBytes(color_data, buffersize);
 
@@ -407,6 +408,8 @@ bool sd_load_image(char* path) {
 
 			position += buffersize;
 		}
+
+		//TODO animation
 
 		return true;
 	}
@@ -432,9 +435,9 @@ void display_overlay() {
 			//Progress Bar
 			panel->drawRect(2, 2, 49, 7, 0xFFFF);
 
-			//maps brightness range to progress bar width
+			//maps brightness range to progress bar width (max: 45px)
 			//? floor(output_start + (slope * (input - input_start)) + 0.5)
-			panel->fillRect(4, 4, floor((1 + slope_brightness * (brightness - 24)) + .5), 3, 0xFFFF);
+			panel->fillRect(4, 4, floor((1 + slope_brightness * (brightness - 16)) + .5), 3, 0xFFFF);
 		
 			//Sun icon
 			panel->drawBitmap(54, 2, icon_sun, 7, 7, 0xFFFF);
@@ -443,32 +446,61 @@ void display_overlay() {
 		} else if(overlay == OVERLAY_DIASHOW_SPEED) {
 
 		} else if(overlay == OVERLAY_TEXT) {
+			int16_t x1, y1;
+			uint16_t width, height;
+			panel->setTextColor(0xFFFF);
+			panel->setTextSize(1);
 
+			panel->getTextBounds(overlay_text, 0, 2, &x1, &y1, &width, &height);
+			panel->setCursor(64 > width ? .5 * (64 - width) : 0, 9);
+			panel->write(overlay_text);
 		}
 	}
 }
 
-// load image into current pixelarray
-void load_current_image(uint16_t pixels[64][64]) {
-	for(int y = 0; y < 64; y++) {
-		for(int x = 0; x < 64; x++) {
-			current_image[y][x] = pixels[y][x];
-		}
+void display_overlay(overlay_type type, char* text = strdup("")) {
+	overlay = type;
+	if(overlay != OVERLAY_TEXT)
+		free(text);
+
+	switch(overlay) {
+		case OVERLAY_TEXT:
+			free(overlay_text);
+			overlay_text = text;
+			break;
+		case OVERLAY_BRIGHTNESS:
+			panel->setPanelBrightness(brightness);
+			break;
 	}
+
+	ms_overlay = ms_current + 2000;
+	display_change = true;
 }
 
 // Display static images on led matrix by pixelarray
-void display_full(uint16_t pixels[64][64], bool save_image = true) {
+void display_loaded_image() {
 	for(int y = 0; y < 64; y++) {
 		for(int x = 0; x < 64; x++) {
-			if(save_image)
-				current_image[y][x] = pixels[y][x];
-			panel->drawPixel(x, y, pixels[y][x]);
+			panel->drawPixel(x, y, current_image[y][x]);
 		}
 	}
 
 	display_overlay();
 
+	if(PANEL_DOUBLE_BUFFER)
+		panel->flipDMABuffer();
+}
+
+void display_card_missing() {
+	//transparent background
+	panel->clearScreen();
+
+	//social icon
+	panel->drawBitmap(15, 15, icon_card, 32, 32, color_dark_read);
+
+	display_overlay();
+
+	//print on screen
 	if(PANEL_DOUBLE_BUFFER)
 		panel->flipDMABuffer();
 }
@@ -722,7 +754,11 @@ void display_current() {
 			}
 			break;
 		case MODE_IMAGES:
-			display_full(current_image, false);
+			if(image_loaded) {
+				display_loaded_image();
+			} else {
+				display_card_missing();
+			}
 			break;
 	}
 }
@@ -743,9 +779,13 @@ void IRAM_ATTR trigger_btn2() {
 }
 
 void IRAM_ATTR trigger_btn3() {
-	btn3_pressed = true;
+	if(digitalRead(GPIO_BTN3) == LOW) {
+		ms_btn3_pressed = millis() + 10000;
+	} else {
+		btn3_released = ms_btn3_pressed != 0;
+		ms_btn3_pressed = 0;
+	}
 }
-
 
 void IRAM_ATTR trigger_rot1_a() {
 	if(rot1_a_flag && digitalRead(GPIO_ROT1_B) == LOW) {
@@ -851,7 +891,7 @@ void gpio_setup() {
 	//Setting interrupts
 	attachInterrupt(GPIO_BTN1, trigger_btn1, FALLING);
 	attachInterrupt(GPIO_BTN2, trigger_btn2, FALLING);
-	attachInterrupt(GPIO_BTN3, trigger_btn3, FALLING);
+	attachInterrupt(GPIO_BTN3, trigger_btn3, CHANGE);
 	attachInterrupt(GPIO_ROT1_A, trigger_rot1_a, FALLING);
 	attachInterrupt(GPIO_ROT1_B, trigger_rot1_b, FALLING);
 	attachInterrupt(GPIO_ROT1_BTN, trigger_rot1_btn, FALLING);
@@ -868,7 +908,6 @@ void gpio_setup() {
 
 	//SPI
 	SPI.begin(GPIO_SD_SCLK, GPIO_SD_MISO, GPIO_SD_MOSI, GPIO_SD_CS);
-	SD.begin(GPIO_SD_CS, SPI);
 }
 
 // Initialize LED Matrix
@@ -921,23 +960,6 @@ void server_setup() {
 		server.begin();
 		server.onNotFound([](AsyncWebServerRequest *request) {
 			request->send(404, "application/json", String());
-		});
-
-		//webserver
-		server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-			if(sd_connected && SD.exists("/webserver/index.html")) {
-				request->send(SD, "/webserver/index.html", String());
-			} else {
-				request->send(200, "text/plain", "SD Card or Files missing");
-			}
-		});
-
-		server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-			if(sd_connected && SD.exists("/webserver/style.css")) {
-				request->send(SD, "/webserver/style.css", "text/css");
-			} else {
-				request->send(200, "text/plain", "SD Card or Files missing");
-			}
 		});
 
 		//API trigger
@@ -1074,7 +1096,7 @@ void server_setup() {
 				preferences.clear();
 				preferences.end();
 				request->send(200);
-				requested_reset = true;
+				requested_restart = true;
 			} else {
 				request->send(403, "application/json");
 			}
@@ -1146,6 +1168,17 @@ void server_setup() {
 				request->send(403, "application/json");
 			}
 		}));
+
+		//webserver
+		server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+			if(sd_connected && SD.exists("/webserver/index.html")) {
+				request->send(SD, "/webserver/index.html", String());
+			} else {
+				request->send(200, "text/plain", "SD Card or Files missing");
+			}
+		});
+
+		server.serveStatic("/", SD, "/webserver").setDefaultFile("index.html").setCacheControl("max-age=600");
 	}
 }
 
@@ -1182,6 +1215,8 @@ void preferences_load() {
 		brightness = preferences.getShort("brightness", brightness);
 	if(preferences.isKey("current_mode"))
 		current_mode = static_cast<display_mode>(preferences.getInt("current_mode", current_mode));
+	if(preferences.isKey("selected_image"))
+		selected_image = preferences.getInt("selected_image", selected_image);
 	
 	//wifi
 	if(preferences.isKey("wifi_connect"))
@@ -1292,15 +1327,23 @@ void time_setup() {
 void booted_setup() {
 	btn1_pressed = false;
 	btn2_pressed = false;
-	btn3_pressed = false;
+	ms_btn3_pressed = 0;
+	btn3_released = false;
 	rot1_pressed = false;
 	rot2_pressed = false;
 	rot3_pressed = false;
 	rot1_clicks = 0;
 	rot2_clicks = 0;
 	rot3_clicks = 0;
-	booted = true;
+	requested_restart = false;
 
+	if(sd_connected() && image_index.size() > 0) {
+		if(selected_image >= image_index.size())
+			selected_image = 0;
+		image_loaded = sd_load_image(image_index[selected_image]);
+	}
+
+	booted = true;
 	display_current();
 }
 
@@ -1346,14 +1389,9 @@ void loop() {
 
 		//brightness rot
 		if(rot3_clicks != 0) {
-
-			if((rot3_clicks > 0 && brightness < 248) || (rot3_clicks < 0 && brightness > 24)) {
-				brightness += rot3_clicks * 8;
-			}
-			overlay = OVERLAY_BRIGHTNESS;
-			ms_overlay = ms_current + 3000;
-			panel->setPanelBrightness(brightness);
-			display_change = true;
+			int16_t new_brightness = brightness + rot3_clicks * 8;
+			brightness = new_brightness > 248 ? 248 : new_brightness < 16 ? 16 : new_brightness;
+			display_overlay(OVERLAY_BRIGHTNESS);
 
 			preferences.begin(PREFERENCES_NAMESPACE);
 			preferences.putShort("brightness", brightness);
@@ -1364,19 +1402,26 @@ void loop() {
 
 		//next button
 		if(btn1_pressed) {
+			
+			preferences.begin(PREFERENCES_NAMESPACE);
 			if(current_mode == MODE_SOCIALS) {
 				socials_channel_current = socials_channel_current + 1 >= socials_channels.size() ? 0 : socials_channel_current + 1;
-				preferences.begin(PREFERENCES_NAMESPACE);
 				preferences.putInt("current_social", socials_channel_current);
-				preferences.end();
-				display_change = true;
 			} else if(current_mode == MODE_CLOCK) {
 				current_clock_mode = static_cast<clock_type>((current_clock_mode + 1) % CLOCK_TYPE_NUMBER);
-				preferences.begin(PREFERENCES_NAMESPACE);
 				preferences.putInt("clock_mode", current_clock_mode);
-				preferences.end();
-				display_change = true;
+			} else if(current_mode == MODE_IMAGES) {
+				if(sd_connected() && image_index.size() > 0) {
+					if(++selected_image >= image_index.size())
+						selected_image = 0;
+					image_loaded = sd_load_image(image_index[selected_image]);
+				} else {
+					image_loaded = false;
+				}
+				preferences.putInt("selected_image", selected_image);
 			}
+			preferences.end();
+			display_change = true;
 
 			btn1_pressed = false;
 		}
@@ -1384,7 +1429,17 @@ void loop() {
 		//mode button
 		if(btn2_pressed) {
 			current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
-			display_change = true;
+			if(current_mode == MODE_IMAGES) {
+				if(sd_connected() && image_index.size() > 0) {
+					if(selected_image >= image_index.size())
+						selected_image = 0;
+					image_loaded = sd_load_image(image_index[selected_image]);
+				} else {
+					image_loaded = false;
+				}
+			}
+			
+			display_overlay(OVERLAY_TEXT, current_mode == MODE_IMAGES ? strdup("Pictures") : current_mode == MODE_CLOCK ? strdup("Clock") : strdup("Socials"));
 
 			preferences.begin(PREFERENCES_NAMESPACE);
 			preferences.putInt("current_mode", static_cast<int32_t>(current_mode));
@@ -1394,14 +1449,21 @@ void loop() {
 		}
 
 		//menu button
-		if(btn3_pressed) {
+		if(ms_btn3_pressed != 0 && ms_btn3_pressed < ms_current) {
+			ms_btn3_pressed = 0;
+
+			preferences.begin(PREFERENCES_NAMESPACE, false);
+			//TODO preferences.clear();
+			preferences.end();
+			requested_restart = true;
+		} else if(btn3_released) {
 			//approve api key for server if requested
 			if(ms_api_key_request > ms_current) {
 				ms_api_key_approve = ms_current + 5000;
 				ms_api_key_request = 0;
 			}
 			
-			btn3_pressed = false;
+			btn3_released = false;
 		}
 
 
@@ -1438,12 +1500,6 @@ void loop() {
 			ms_clock = ms_current + 1000;
 			display_change = true;
 		}
-
-		//refresh display if needed
-		if(display_change) {
-			display_change = false;
-			display_current();
-		}
 	}
 
 	//Wifi routine
@@ -1463,7 +1519,7 @@ void loop() {
 	}
 
 	//Execute reset from api request
-	if(requested_reset) {
+	if(requested_restart) {
 		ESP.restart();
 	}
 
@@ -1480,9 +1536,15 @@ void loop() {
 		socials_refresh();
 	}
 
+	//refresh display if needed
+	if(display_change) {
+		display_change = false;
+		display_current();
+	}
+
 	//TODO remove tests
 	if(ms_test <= ms_current) {
-		ms_test = ms_current + 2500;
+		ms_test = ms_current + 1000;
 		
 		// Serial.println(WiFi.localIP().toString());
 		// Serial.println(rtc_int.getTime());
@@ -1497,7 +1559,5 @@ void loop() {
 		// 	Serial.println(heap);
 		// 	lastHeap = heap;
 		// }
-
-		sd_connected();
 	}
 }
