@@ -81,6 +81,7 @@
 
 #define VERSION "0.0.1"
 #define PREFERENCES_NAMESPACE "pixelart"
+#define SOCIAL_REFRESH_INTERVAL 25000
 
 #define TIME_UPDATE_AUTO true
 #define TIME_FORMAT24 true
