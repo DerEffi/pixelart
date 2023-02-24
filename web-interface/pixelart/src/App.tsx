@@ -1,22 +1,24 @@
-import React from 'react';
 import './App.scss';
-import "primereact/resources/primereact.min.css";
-import "primeicons/primeicons.css";
-import PrimeReact from 'primereact/api';
-import Footer from './components/shared/Footer';
-import Sidebar from "./components/shared/Sidebar";
-import DataService from './services/DataService';
-import NotFound from './components/pages/NotFound';
 import Generator from './components/pages/Generator';
-import { Routes, Route } from 'react-router-dom';
+import Home from './components/pages/Home';
+import NotFound from './components/pages/NotFound';
+import Footer from './components/shared/Footer';
+import Sidebar from './components/shared/Sidebar';
 import { ISidebarItem } from './models/SidebarItem';
-import { CgMenu } from 'react-icons/cg';
-import { BiDownload, BiImages, BiSun, BiTime, BiWifi } from 'react-icons/bi';
+import DataService from './services/DataService';
+import 'primeicons/primeicons.css';
+import PrimeReact from 'primereact/api';
+import { InputText } from 'primereact/inputtext';
+import 'primereact/resources/primereact.min.css';
+import { Tooltip } from 'primereact/tooltip';
+import React from 'react';
+import { BiDownload, BiImages, BiRefresh, BiSun, BiTime, BiWifi } from 'react-icons/bi';
 import { BsHouseFill } from 'react-icons/bs';
+import { CgMenu } from 'react-icons/cg';
 import { IoShareSocialSharp } from 'react-icons/io5';
 import { TfiLayoutGrid4Alt } from 'react-icons/tfi';
-import Home from './components/pages/Home';
-import { InputText } from 'primereact/inputtext';
+import { Route, Routes } from 'react-router-dom';
+import Settings from './components/pages/Settings';
 
 
 PrimeReact.inputStyle = 'filled';
@@ -25,12 +27,11 @@ interface IAppState {
 	loaded: boolean;
 	sidebar: boolean;
 	dark: boolean;
-	deviceAddress: string;
 }
 
 export default class App extends React.Component<{}, IAppState> {
 
-	private dataService: DataService = new DataService();
+	private dataService: DataService = new DataService(() => {this.setState({});});
 
 	constructor(props: {}) {
 		super(props);
@@ -38,8 +39,7 @@ export default class App extends React.Component<{}, IAppState> {
 		this.state = {
 			loaded: true,
 			sidebar: true,
-			dark: true,
-			deviceAddress: this.dataService.getDeviceAddress()
+			dark: true
 		}
 	}
 
@@ -54,15 +54,19 @@ export default class App extends React.Component<{}, IAppState> {
 		return(
 			<div id='fullpage'>
 				<div className="sidebar-topbar">
+					<Tooltip target=".sidebar-topbar-item" position='bottom' showDelay={250} />
 					<div onClick={() => this.changeSidebar()} className="sidebar-topbar-item">
 						<CgMenu/>
 					</div>
-					<div onClick={() => this.changeTheme()} className="sidebar-topbar-item">
+					<div onClick={() => this.changeTheme()} className="sidebar-topbar-item" data-pr-tooltip="Theme">
 						<BiSun/>
 					</div>
 					{process.env.REACT_APP_ENVIRONMENT !== "device" &&
-						<InputText className="sidebar-topbar-item sidebar-topbar-input"  placeholder='device address' value={this.dataService.getDeviceAddress()} onChange={(e) => { this.setState({deviceAddress: e.target.value}); this.dataService.setDeviceAddress(e.target.value)}} />
+						<InputText className="sidebar-topbar-item sidebar-topbar-input" data-pr-tooltip="Hostname/IP-Address" placeholder='device address' value={this.dataService.getDeviceAddress()} onChange={(e) => { this.dataService.setDeviceAddress(e.target.value)}} />
 					}
+					<div onClick={() => this.dataService.refresh()} className="sidebar-topbar-item" data-pr-tooltip="Refresh">
+						<BiRefresh/>
+					</div>
 				</div>
 				<div id='fullpage-content'>
 					<div id="sidebar" className={this.state.sidebar ? "" : "sidebar-hidden"}>
@@ -70,8 +74,9 @@ export default class App extends React.Component<{}, IAppState> {
 					</div>
 					<div id="sidebar-layout" className={this.state.sidebar ? "" : "sidebar-layout-full"}>
 						<Routes>
-							<Route path="/" element={<Home dataService={this.dataService} />} />
+							<Route path="/settings/*" element={<Settings dataService={this.dataService} />} />
 							<Route path="/images" element={<Generator dataService={this.dataService} />} />
+							<Route path="/" element={<Home dataService={this.dataService} />} />
 							<Route path="*" element={<NotFound/>} />
 						</Routes>
 					</div>

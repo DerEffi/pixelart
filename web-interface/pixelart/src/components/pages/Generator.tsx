@@ -24,7 +24,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 
 				<div className="content">
 					
-                    
+                    TBD Image Generator
 
 				</div>
 				

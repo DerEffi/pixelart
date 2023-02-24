@@ -957,9 +957,15 @@ void panel_setup() {
 void server_setup() {
 	if(WiFi.getMode() != WIFI_MODE_NULL) {
 		
+		DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+		DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
+		DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "*");
 		server.begin();
 		server.onNotFound([](AsyncWebServerRequest *request) {
-			request->send(404, "application/json", String());
+			if(request->method() == HTTP_OPTIONS)
+				request->send(200);
+			else
+				request->send(404, "application/json", String());
 		});
 
 		//API trigger

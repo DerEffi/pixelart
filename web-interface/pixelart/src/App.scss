@@ -163,7 +163,7 @@
 
 a {
     text-decoration: none;
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 body {
@@ -218,6 +218,14 @@ h1, h2, h3, h4, h5, .hl {
 
         &-item {
             padding: .5rem;
+
+            &:not(.sidebar-topbar-input) {
+                cursor: pointer;
+
+                &:hover {
+                    color: var(--primary-color);
+                }
+            }
         }
 
         &-input {
@@ -281,6 +289,12 @@ h1, h2, h3, h4, h5, .hl {
             }
         }
     }
+}
+
+.progress-bar {
+    height: 4px;
+    max-width: 400px;
+    margin: auto;
 }
 
 //Fullview elements
