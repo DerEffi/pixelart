@@ -19,7 +19,7 @@ import { IoShareSocialSharp } from 'react-icons/io5';
 import { TfiLayoutGrid4Alt } from 'react-icons/tfi';
 import { Route, Routes } from 'react-router-dom';
 import Settings from './components/pages/Settings';
-
+import { Toast } from 'primereact/toast';
 
 PrimeReact.inputStyle = 'filled';
 
@@ -32,6 +32,7 @@ interface IAppState {
 export default class App extends React.Component<{}, IAppState> {
 
 	private dataService: DataService = new DataService(() => {this.setState({});});
+	private toast: Toast | null = null;
 
 	constructor(props: {}) {
 		super(props);
@@ -54,29 +55,36 @@ export default class App extends React.Component<{}, IAppState> {
 		return(
 			<div id='fullpage'>
 				<div className="sidebar-topbar">
-					<Tooltip target=".sidebar-topbar-item" position='bottom' showDelay={250} />
-					<div onClick={() => this.changeSidebar()} className="sidebar-topbar-item">
-						<CgMenu/>
-					</div>
-					<div onClick={() => this.changeTheme()} className="sidebar-topbar-item" data-pr-tooltip="Theme">
-						<BiSun/>
-					</div>
-					{process.env.REACT_APP_ENVIRONMENT !== "device" &&
-						<InputText className="sidebar-topbar-item sidebar-topbar-input" data-pr-tooltip="Hostname/IP-Address" placeholder='device address' value={this.dataService.getDeviceAddress()} onChange={(e) => { this.dataService.setDeviceAddress(e.target.value)}} />
-					}
-					<div onClick={() => this.dataService.refresh()} className="sidebar-topbar-item" data-pr-tooltip="Refresh">
-						<BiRefresh/>
+					<div>
+						<div>
+							<Toast ref={(el) => this.toast = el} />
+							<Tooltip target=".sidebar-topbar-item" position='bottom' showDelay={250} />
+							<div onClick={() => this.changeSidebar()} className="sidebar-topbar-item">
+								<CgMenu/>
+							</div>
+							<div onClick={() => this.changeTheme()} className="sidebar-topbar-item" data-pr-tooltip="Theme">
+								<BiSun/>
+							</div>
+							{process.env.REACT_APP_ENVIRONMENT !== "device" &&
+								<InputText className="sidebar-topbar-item sidebar-topbar-input" data-pr-tooltip="Hostname/IP-Address" placeholder='device address' value={this.dataService.getDeviceAddress()} onChange={(e) => { this.dataService.setDeviceAddress(e.target.value)}} />
+							}
+							<div onClick={() => this.dataService.refresh()} className="sidebar-topbar-item" data-pr-tooltip="Refresh">
+								<BiRefresh/>
+							</div>
+						</div>
 					</div>
 				</div>
 				<div id='fullpage-content'>
-					<div id="sidebar" className={this.state.sidebar ? "" : "sidebar-hidden"}>
-						<Sidebar model={SidebarMenu} />
+					<div id="sidebar" className={this.state.sidebar ? "sidebar-visible" : "sidebar-hidden"}>
+						<Sidebar model={SidebarMenu} onLink={() => {if(window.screen.width < 769) {this.changeSidebar(false);}}} />
 					</div>
-					<div id="sidebar-layout" className={this.state.sidebar ? "" : "sidebar-layout-full"}>
+					<div id="sidebar-layout" className={this.state.sidebar ? "sidebar-layout-sidebar" : "sidebar-layout-full"}>
+						
+						<div id="sidebar-block" onClick={() => this.changeSidebar() } />
 						<Routes>
-							<Route path="/settings/*" element={<Settings dataService={this.dataService} />} />
-							<Route path="/images" element={<Generator dataService={this.dataService} />} />
-							<Route path="/" element={<Home dataService={this.dataService} />} />
+							<Route path="/settings/*" element={<Settings dataService={this.dataService} toast={this.toast} />} />
+							<Route path="/images" element={<Generator dataService={this.dataService} toast={this.toast} />} />
+							<Route path="/" element={<Home dataService={this.dataService} toast={this.toast} />} />
 							<Route path="*" element={<NotFound/>} />
 						</Routes>
 					</div>
@@ -121,8 +129,8 @@ const SidebarMenu: ISidebarItem[] = [
 				icon: <BsHouseFill/>
             },
 			{
-                label: 'Images',
-                url: '/images',
+                label: 'Pictures',
+                url: '/pictures',
 				icon: <BiImages/>
             }
         ]
@@ -136,8 +144,8 @@ const SidebarMenu: ISidebarItem[] = [
 				icon: <TfiLayoutGrid4Alt/>
             },
 			{
-                label: 'Images',
-                url: '/settings/images',
+                label: 'Pictures',
+                url: '/settings/pictures',
 				icon: <BiImages/>
             },
 			{

@@ -1,4 +1,5 @@
 import axios, { AxiosResponse, AxiosError } from "axios";
+import { APIError, APIErrorType } from "../models/Errors";
 import { Display, Time, Wifi } from "../models/Settings";
 import { Status } from "../models/Status";
 
@@ -64,14 +65,40 @@ export default class DataService {
     }
 
     public async refresh() {
-        this.data.wifi = await this.requestDevice<Wifi>("GET", "/api/wifi");
-        this.data.time = await this.requestDevice<Time>("GET", "/api/time");
-        this.data.display = await this.requestDevice<Display>("GET", "/api/display");
+        await this.requestDevice<Wifi>("GET", "/api/wifi")
+            .then(resp => {
+                this.data.wifi = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type != APIErrorType.AuthPending)
+                    this.setStatus(Status.disconnected);
+            });
+
+        await this.requestDevice<Time>("GET", "/api/time")
+            .then(resp => {
+                this.data.time = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type != APIErrorType.AuthPending)
+                    this.setStatus(Status.disconnected);
+            });
+
+        await this.requestDevice<Display>("GET", "/api/display")
+            .then(resp => {
+                this.data.display = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type != APIErrorType.AuthPending)
+                    this.setStatus(Status.disconnected);
+            });
     }
 
-    private async requestDevice<ResponseType>(method: string, endpoint: string, data: any = null): Promise<ResponseType | undefined> {
-        if(!this.deviceAddress || this.deviceAddress.length < 5 || this.authInterval !== undefined)
-            return undefined;
+    public async requestDevice<ResponseType>(method: string, endpoint: string, data: any = null): Promise<ResponseType> {
+        if(!this.deviceAddress || this.deviceAddress.length < 5)
+            throw new APIError(APIErrorType.DeviceAddressError, "Please enter your device's address");
+
+        if(this.authInterval !== undefined)
+            throw new APIError(APIErrorType.AuthPending, "Please press the menu button on your device to authorize");
 
         return axios.request({
             method: method,
@@ -82,8 +109,7 @@ export default class DataService {
             data: data
         }).then((resp: AxiosResponse<any, any>) => {
             if(resp.status !== 200) {
-                this.setStatus(Status.disconnected);
-                return undefined;
+                throw new APIError(APIErrorType.ConnectionError, "Error requesting data from your device");
             } else {
                 this.setStatus(Status.connected);
                 return resp.data as ResponseType;
@@ -91,10 +117,9 @@ export default class DataService {
         }).catch((e: AxiosError) => {
             if(e.response?.status === 403) {
                 this.setStatus(Status.unauthorized);
-                return undefined;
+                throw new APIError(APIErrorType.UnauthorizedError, "Please authorize your device");
             } else {
-                this.setStatus(Status.disconnected);
-                return undefined;
+                throw new APIError(APIErrorType.ConnectionError, "Error requesting data from your device");
             }
         });
     }

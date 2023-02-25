@@ -69,9 +69,9 @@ enum overlay_type {
 
 #define DISPLAY_MODE_NUMBER 3
 enum display_mode {
-	MODE_SOCIALS,
 	MODE_IMAGES,
 	MODE_CLOCK,
+	MODE_SOCIALS,
 };
 
 #define CLOCK_TYPE_NUMBER 4
@@ -1148,9 +1148,9 @@ void server_setup() {
 				}
 				if(body.containsKey("displayMode") && body["displayMode"].is<int>()) {
 					current_mode = MODE_CLOCK;
-					preferences.putInt("clock_mode", current_clock_mode);
-					current_clock_mode = body["displayMode"] > CLOCK_TYPE_NUMBER ? CLOCK_ANALOG : static_cast<clock_type>(body["displayMode"]);
 					preferences.putInt("current_mode", current_mode);
+					current_clock_mode = body["displayMode"] > CLOCK_TYPE_NUMBER ? CLOCK_ANALOG : static_cast<clock_type>(body["displayMode"]);
+					preferences.putInt("clock_mode", current_clock_mode);
 				}
 				if(body.containsKey("time") && body["time"].is<int>() && body["time"] > 0) {
 					rtc_int.setTime(body["time"]);
@@ -1165,6 +1165,28 @@ void server_setup() {
 					configTzTime(timezone, ntp_server);
 					ms_rtc_ext_adjust = millis() + 10000;
 					rtc_ext_adjust = true;
+				}
+				
+				preferences.end();
+				display_change = true;
+				request->send(200, "application/json");
+			} else {
+				request->send(403, "application/json");
+			}
+		}));
+		server.addHandler(new AsyncCallbackJsonWebHandler("/api/display", [](AsyncWebServerRequest * request, JsonVariant &json) {
+			if(verify_api_key(request)) {
+				JsonObject body = json.as<JsonObject>();
+				preferences.begin(PREFERENCES_NAMESPACE);
+				
+				if(body.containsKey("displayMode") && body["displayMode"].is<int>()) {
+					current_mode = body["displayMode"] > DISPLAY_MODE_NUMBER ? MODE_IMAGES : static_cast<display_mode>(body["displayMode"]);
+					preferences.putInt("current_mode", current_mode);
+				}
+				if(body.containsKey("brightness") && body["brightness"].is<int>()) {
+					brightness = body["brightness"] > 248 ? 248 : body["brightness"] < 16 ? 16 : body["brightness"];
+					preferences.putShort("brightness", brightness);
+					panel->setBrightness(brightness);
 				}
 				
 				preferences.end();
@@ -1435,6 +1457,9 @@ void loop() {
 		//mode button
 		if(btn2_pressed) {
 			current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
+			if(current_mode == MODE_SOCIALS && !wifi_connect)
+				current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
+
 			if(current_mode == MODE_IMAGES) {
 				if(sd_connected() && image_index.size() > 0) {
 					if(selected_image >= image_index.size())

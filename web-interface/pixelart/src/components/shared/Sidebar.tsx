@@ -4,6 +4,7 @@ import { ISidebarItem } from "../../models/SidebarItem";
 
 export interface ISidebarProps {
     model: ISidebarItem[];
+    onLink?: () => void
 }
 
 export default class Sidebar extends React.Component<ISidebarProps, {}> {
@@ -16,7 +17,7 @@ export default class Sidebar extends React.Component<ISidebarProps, {}> {
                         <li className="sidebar-category" role="none" key={cat.label}>
                             <div className="sidebar-category-label">
                                 { cat.url &&
-                                    <Link to={cat.url}>{cat.icon && cat.icon} {cat.label}</Link>
+                                    <Link onClick={() => {if(this.props.onLink) { this.props.onLink()}}} to={cat.url}>{cat.icon && cat.icon} {cat.label}</Link>
                                 }
                                 { !cat.url &&
                                     <>{cat.icon && cat.icon} {cat.label}</>
@@ -26,7 +27,7 @@ export default class Sidebar extends React.Component<ISidebarProps, {}> {
                                 {cat.items.map(item => {
                                     return(
                                         <li className="sidebar-item" role="none" key={item.label}>
-                                            <Link to={item.url}>{item.icon && item.icon} {item.label}</Link>
+                                            <Link onClick={() => {if(this.props.onLink) { this.props.onLink()}}} to={item.url}>{item.icon && item.icon} {item.label}</Link>
                                         </li>
                                     );
                                 })}

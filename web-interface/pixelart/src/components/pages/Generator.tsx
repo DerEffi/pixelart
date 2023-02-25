@@ -1,8 +1,10 @@
 import DataService from '../../services/DataService';
 import React from 'react';
+import { Toast } from 'primereact/toast';
 
 export interface IGeneratorComponentProps {
 	dataService: DataService;
+	toast: Toast | null;
 }
 
 interface IGeneratorComponentState {

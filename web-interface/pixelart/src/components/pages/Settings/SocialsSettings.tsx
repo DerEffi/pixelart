@@ -2,18 +2,18 @@ import DataService from '../../../services/DataService';
 import React from 'react';
 import { Toast } from 'primereact/toast';
 
-export interface IWifiSettingsComponentProps {
+export interface ISocialsSettingsComponentProps {
 	dataService: DataService;
 	toast: Toast | null;
 }
 
-interface IWifiSettingsComponentState {
+interface ISocialsSettingsComponentState {
 
 }
 
-export default class WifiSettings extends React.Component<IWifiSettingsComponentProps, IWifiSettingsComponentState> {
+export default class SocialsSettings extends React.Component<ISocialsSettingsComponentProps, ISocialsSettingsComponentState> {
 
-	constructor(props: IWifiSettingsComponentProps) {
+	constructor(props: ISocialsSettingsComponentProps) {
 		super(props);
 
 		this.state = {
@@ -26,7 +26,7 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
 
 				<div className="content">
 					
-                    TBD Wifi settings
+                    TBD Socials settings
 
 				</div>
 				
