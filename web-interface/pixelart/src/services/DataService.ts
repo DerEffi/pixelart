@@ -70,7 +70,7 @@ export default class DataService {
                 this.data.wifi = resp
             })
             .catch((e: APIError) => {
-                if(e.type !== APIErrorType.UnauthorizedError && e.type != APIErrorType.AuthPending)
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending)
                     this.setStatus(Status.disconnected);
             });
 
@@ -79,7 +79,7 @@ export default class DataService {
                 this.data.time = resp
             })
             .catch((e: APIError) => {
-                if(e.type !== APIErrorType.UnauthorizedError && e.type != APIErrorType.AuthPending)
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending)
                     this.setStatus(Status.disconnected);
             });
 
@@ -88,7 +88,7 @@ export default class DataService {
                 this.data.display = resp
             })
             .catch((e: APIError) => {
-                if(e.type !== APIErrorType.UnauthorizedError && e.type != APIErrorType.AuthPending)
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending)
                     this.setStatus(Status.disconnected);
             });
     }

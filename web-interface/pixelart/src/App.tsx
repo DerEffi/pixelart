@@ -12,8 +12,8 @@ import { InputText } from 'primereact/inputtext';
 import 'primereact/resources/primereact.min.css';
 import { Tooltip } from 'primereact/tooltip';
 import React from 'react';
-import { BiDownload, BiImages, BiRefresh, BiSun, BiTime, BiWifi } from 'react-icons/bi';
-import { BsHouseFill } from 'react-icons/bs';
+import { BiImages, BiRefresh, BiSun, BiTime, BiWifi } from 'react-icons/bi';
+import { BsGearFill, BsHouseFill } from 'react-icons/bs';
 import { CgMenu } from 'react-icons/cg';
 import { IoShareSocialSharp } from 'react-icons/io5';
 import { TfiLayoutGrid4Alt } from 'react-icons/tfi';
@@ -83,7 +83,7 @@ export default class App extends React.Component<{}, IAppState> {
 						<div id="sidebar-block" onClick={() => this.changeSidebar() } />
 						<Routes>
 							<Route path="/settings/*" element={<Settings dataService={this.dataService} toast={this.toast} />} />
-							<Route path="/images" element={<Generator dataService={this.dataService} toast={this.toast} />} />
+							<Route path="/pictures" element={<Generator dataService={this.dataService} toast={this.toast} />} />
 							<Route path="/" element={<Home dataService={this.dataService} toast={this.toast} />} />
 							<Route path="*" element={<NotFound/>} />
 						</Routes>
@@ -164,9 +164,9 @@ const SidebarMenu: ISidebarItem[] = [
 				icon: <IoShareSocialSharp/>
             },
 			{
-                label: 'Updates',
-                url: '/settings/updates',
-				icon: <BiDownload/>
+                label: 'System',
+                url: '/settings/system',
+				icon: <BsGearFill/>
             },
         ]
     },

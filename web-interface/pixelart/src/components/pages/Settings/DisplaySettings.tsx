@@ -67,8 +67,8 @@ export default class DisplaySettings extends React.Component<IDisplaySettingsCom
 
 					<div>
 						<div className='headline'>Brightness</div>
-						<div style={{display: "flex", alignItems: "center", gap: "1rem", justifyContent: "center", flexWrap: "wrap"}}>
-							<Slider style={{width: "20rem", maxWidth: "70vw"}} value={this.state.brightness} step={8} min={16} max={248} onChange={(e) => this.setState({brightnessChanged: true, brightness: e.value as number})} />
+						<div  className='input-group'>
+							<Slider  className='input-group-field' value={this.state.brightness} step={8} min={16} max={248} onChange={(e) => this.setState({brightnessChanged: true, brightness: e.value as number})} />
 							<div style={{width: "3rem"}}>{this.state.brightness}</div>
 							<Button icon="pi pi-check" style={{borderRadius: "100%"}} disabled={!this.state.brightnessChanged} onClick={() => this.setBrightness(this.state.brightness)} />
 						</div>

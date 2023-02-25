@@ -979,6 +979,8 @@ void server_setup() {
 				root["displayMode"] = current_mode;
 				root["brightness"] = brightness;
 				root["version"] = VERSION;
+				root["freeRam"] = ESP.getFreeHeap();
+				root["refreshRate"] = panel->calculated_refresh_rate;
 
 				response->setLength();
 				request->send(response);
@@ -1154,6 +1156,8 @@ void server_setup() {
 				}
 				if(body.containsKey("time") && body["time"].is<int>() && body["time"] > 0) {
 					rtc_int.setTime(body["time"]);
+					update_time = false;
+					preferences.putBool("update_time", false);
 					if(rtc_ext_enabled) {
 						ms_rtc_ext_adjust = millis() + 1000;
 						rtc_ext_adjust = true;
@@ -1527,8 +1531,9 @@ void loop() {
 			display_change = true;
 		}
 
+		//Clock refresh cycle
 		if(current_mode == MODE_CLOCK && ms_clock < ms_current) {
-			ms_clock = ms_current + 1000;
+			ms_clock = ms_current + 250;
 			display_change = true;
 		}
 	}

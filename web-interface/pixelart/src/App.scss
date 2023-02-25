@@ -245,7 +245,7 @@ h1, h2, h3, h4, h5, .hl {
     max-width: 90%;
 
     &:not(#footer) > * {
-        display: inline-block;
+        //display: inline-block;
 
         & .headline {
             margin-bottom: 1rem;
@@ -383,7 +383,27 @@ img {
     }
 }
 
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
 
+    &-field {
+        width: 20rem;
+        max-width: 70vw;
+    }
+}
+
+.table-group {
+    margin-left: auto;
+    margin-right: auto;
+    
+    & td {
+        padding: .4rem .8rem;
+    }
+}
 
 
 /*

@@ -8,7 +8,7 @@ import { VscDebugDisconnect } from 'react-icons/vsc';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { BiLockAlt } from 'react-icons/bi';
 import { ProgressBar } from 'primereact/progressbar';
-import UpdateSettings from './Settings/UpdateSettings';
+import SystemSettings from './Settings/SystemSettings';
 import SocialsSettings from './Settings/SocialsSettings';
 import TimeSettings from './Settings/TimeSettings';
 import DisplaySettings from './Settings/DisplaySettings';
@@ -47,7 +47,7 @@ export default class Settings extends React.Component<ISettingsComponentProps, I
                             <Route path="/time" element={<TimeSettings dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="/wifi" element={<WifiSettings dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="/socials" element={<SocialsSettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/updates" element={<UpdateSettings dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/system" element={<SystemSettings dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="*" element={<NotFound/>} />
                         </Routes>
                     }

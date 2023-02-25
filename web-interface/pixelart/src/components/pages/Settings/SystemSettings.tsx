@@ -2,18 +2,18 @@ import DataService from '../../../services/DataService';
 import React from 'react';
 import { Toast } from 'primereact/toast';
 
-export interface IUpdateSettingsComponentProps {
+export interface ISystemSettingsComponentProps {
 	dataService: DataService;
 	toast: Toast | null;
 }
 
-interface IUpdateSettingsComponentState {
+interface ISystemSettingsComponentState {
 
 }
 
-export default class UpdateSettings extends React.Component<IUpdateSettingsComponentProps, IUpdateSettingsComponentState> {
+export default class SystemSettings extends React.Component<ISystemSettingsComponentProps, ISystemSettingsComponentState> {
 
-	constructor(props: IUpdateSettingsComponentProps) {
+	constructor(props: ISystemSettingsComponentProps) {
 		super(props);
 
 		this.state = {
@@ -26,7 +26,7 @@ export default class UpdateSettings extends React.Component<IUpdateSettingsCompo
 
 				<div className="content">
 					
-                    TBD Update settings
+                    TBD System settings
 
 				</div>
 				
