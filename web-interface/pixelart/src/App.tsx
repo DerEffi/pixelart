@@ -8,7 +8,6 @@ import { ISidebarItem } from './models/SidebarItem';
 import DataService from './services/DataService';
 import 'primeicons/primeicons.css';
 import PrimeReact from 'primereact/api';
-import { InputText } from 'primereact/inputtext';
 import 'primereact/resources/primereact.min.css';
 import { Tooltip } from 'primereact/tooltip';
 import React from 'react';
@@ -17,6 +16,7 @@ import { BsGearFill, BsHouseFill } from 'react-icons/bs';
 import { CgMenu } from 'react-icons/cg';
 import { IoShareSocialSharp } from 'react-icons/io5';
 import { TfiLayoutGrid4Alt } from 'react-icons/tfi';
+import { GoSettings } from 'react-icons/go';
 import { Route, Routes } from 'react-router-dom';
 import Settings from './components/pages/Settings';
 import { Toast } from 'primereact/toast';
@@ -27,6 +27,7 @@ interface IAppState {
 	loaded: boolean;
 	sidebar: boolean;
 	dark: boolean;
+	advanced: boolean;
 }
 
 export default class App extends React.Component<{}, IAppState> {
@@ -40,7 +41,8 @@ export default class App extends React.Component<{}, IAppState> {
 		this.state = {
 			loaded: true,
 			sidebar: true,
-			dark: true
+			dark: true,
+			advanced: false,
 		}
 	}
 
@@ -65,25 +67,24 @@ export default class App extends React.Component<{}, IAppState> {
 							<div onClick={() => this.changeTheme()} className="sidebar-topbar-item" data-pr-tooltip="Theme">
 								<BiSun/>
 							</div>
-							{process.env.REACT_APP_ENVIRONMENT !== "device" &&
-								<InputText className="sidebar-topbar-item sidebar-topbar-input" data-pr-tooltip="Hostname/IP-Address" placeholder='device address' value={this.dataService.getDeviceAddress()} onChange={(e) => { this.dataService.setDeviceAddress(e.target.value)}} />
-							}
-							<div onClick={() => this.dataService.refresh()} className="sidebar-topbar-item" data-pr-tooltip="Refresh">
+							<div onClick={() => this.dataService.refresh()} className="sidebar-topbar-item" data-pr-tooltip="Refresh Data">
 								<BiRefresh/>
+							</div>
+							<div className="sidebar-topbar-item" data-pr-tooltip="Advanced Mode" onClick={() => this.setState({advanced: !this.state.advanced})}>
+								<GoSettings className={this.state.advanced ? "warn" : ""} />
 							</div>
 						</div>
 					</div>
 				</div>
 				<div id='fullpage-content'>
 					<div id="sidebar" className={this.state.sidebar ? "sidebar-visible" : "sidebar-hidden"}>
-						<Sidebar model={SidebarMenu} onLink={() => {if(window.screen.width < 769) {this.changeSidebar(false);}}} />
+						<Sidebar model={SidebarMenu} dataService={this.dataService} onLink={() => {if(window.screen.width < 769) {this.changeSidebar(false);}}} />
 					</div>
 					<div id="sidebar-layout" className={this.state.sidebar ? "sidebar-layout-sidebar" : "sidebar-layout-full"}>
-						
 						<div id="sidebar-block" onClick={() => this.changeSidebar() } />
 						<Routes>
-							<Route path="/settings/*" element={<Settings dataService={this.dataService} toast={this.toast} />} />
-							<Route path="/pictures" element={<Generator dataService={this.dataService} toast={this.toast} />} />
+							<Route path="/settings/*" element={<Settings advanced={this.state.advanced} dataService={this.dataService} toast={this.toast} />} />
+							<Route path="/pictures" element={<Generator advanced={this.state.advanced} dataService={this.dataService} toast={this.toast} />} />
 							<Route path="/" element={<Home dataService={this.dataService} toast={this.toast} />} />
 							<Route path="*" element={<NotFound/>} />
 						</Routes>
@@ -116,7 +117,6 @@ export default class App extends React.Component<{}, IAppState> {
         }
 		console.error("Could not set theme properly - Missing html attributes");
 	}
-
 }
 
 const SidebarMenu: ISidebarItem[] = [

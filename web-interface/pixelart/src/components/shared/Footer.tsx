@@ -2,11 +2,15 @@ import React from "react";
 import { MdEmail } from "react-icons/md";
 import { Link } from "react-router-dom";
 
-export default class Footer extends React.Component<{}, {}> {
+export interface IFooterProps {
+    className?: string;
+}
+
+export default class Footer extends React.Component<IFooterProps, {}> {
 
     public render() {
         return(
-            <div id="footer" className="content">
+            <div id="footer" className={"content " + this.props.className}>
                 <div>
                     <span className="footer-item"><Link target={"_blank"} to="https://dereffi.de">&copy; DerEffi</Link></span>
                     <span className="footer-item"><Link target={"_blank"} to="https://dereffi.de/imprint">Imprint</Link></span>

@@ -1,10 +1,14 @@
+import { InputText } from "primereact/inputtext";
+import { Tooltip } from "primereact/tooltip";
 import React from "react";
 import { Link } from "react-router-dom";
 import { ISidebarItem } from "../../models/SidebarItem";
+import DataService from "../../services/DataService";
 
 export interface ISidebarProps {
     model: ISidebarItem[];
-    onLink?: () => void
+    onLink?: () => void;
+    dataService: DataService;
 }
 
 export default class Sidebar extends React.Component<ISidebarProps, {}> {
@@ -12,6 +16,12 @@ export default class Sidebar extends React.Component<ISidebarProps, {}> {
     render() {
         return(
             <ul className="sidebar">
+                {process.env.REACT_APP_ENVIRONMENT !== "device" &&
+                    <>
+                        <Tooltip target=".sidebar-hostname" position='bottom' showDelay={250} />
+                        <InputText className="sidebar-hostname" style={{width: "100%", marginBottom: "7px"}} data-pr-tooltip="Hostname/IP-Address" placeholder='device address' value={this.props.dataService.getDeviceAddress()} onChange={(e) => { this.props.dataService.setDeviceAddress(e.target.value)}} />
+                    </>
+                }
                 {this.props.model.map(cat => {
                     return(
                         <li className="sidebar-category" role="none" key={cat.label}>

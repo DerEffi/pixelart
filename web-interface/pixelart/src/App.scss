@@ -46,6 +46,10 @@
     .navbar {
         justify-content: center !important;
     }
+
+    #sidebar { 
+        width: calc(100vw - 4rem) !important;
+    }
 }
 
 //Tablets
@@ -179,6 +183,10 @@
 
 .primary {
     color: var(--primary-color);
+}
+
+.warn {
+    color: #fbc02d;
 }
 
 a {
@@ -368,12 +376,12 @@ img {
         width: 10rem;
         padding: 1.4rem;
         border-radius: var(--border-radius);
-        background-color: var(--surface-200);
-        border: 2px solid var(--surface-200);
+        background-color: var(--surface-ground);
+        border: 2px solid var(--surface-c);
         cursor: pointer;
 
         &.selected {
-            background-color: var(--surface-300);
+            background-color: var(--surface-d);
             border: var(--border-radius) solid var(--primary-600);
         }
     }
@@ -391,8 +399,8 @@ img {
     flex-wrap: wrap;
 
     &-field {
-        width: 20rem;
-        max-width: 70vw;
+        width: 20rem !important;
+        max-width: 70vw !important;
     }
 }
 
@@ -459,6 +467,7 @@ img {
 #sidebar {
     position: fixed;
     width: 300px;
+    max-width: calc(100vw - 4rem);
     height: calc(100vh - 8rem);
     z-index: 900;
     overflow-y: auto;
@@ -506,7 +515,7 @@ img {
             & > div {
                 display: flex;
                 justify-content: space-between;
-                gap: 1rem;
+                gap: .5rem;
                 flex-wrap: wrap;
                 flex: 0 0 auto;
                 align-items: center;
@@ -584,6 +593,55 @@ img {
                 transition: box-shadow .2s;
                 background-color: var(--surface-100);
             }
+        }
+    }
+}
+
+#image-generator {
+    &-image {
+        display: none;
+        object-fit: contain;
+        image-rendering: pixelated;
+    }
+
+    &-canvas {
+        &-wrapper {
+            text-align: center;
+        }
+
+        max-width: 100%;
+        width: 512px;
+        image-rendering: pixelated;
+        border: 1px solid var(--surface-d);
+        border-radius: var(--border-radius);
+    }
+}
+
+.image-generator {
+    &-upload {
+        & .p-fileupload-row {
+            display: inline-block;
+            margin: .8rem;
+        }
+    }
+    &-item {
+        width: calc(100px + 2rem) !important;
+        height: calc(140px + 2rem) !important;
+        background-color: var(--surface-c);
+        border-radius: var(--border-radius);
+
+        &-buttons {
+            display: flex;
+            margin: 8px;
+            justify-content: space-between;
+        }
+
+        & img {
+            width: 100px;
+            height: 100px;
+            border-radius: var(--border-radius);
+            object-fit: contain;
+            display: block;
         }
     }
 }

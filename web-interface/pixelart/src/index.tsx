@@ -9,6 +9,6 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <HashRouter>
-    <App />
+    <App/>
   </HashRouter>
 );
