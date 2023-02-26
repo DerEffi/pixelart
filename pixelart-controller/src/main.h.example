@@ -1,0 +1,93 @@
+/**************
+*  GPIO Pins  *
+***************/
+
+//LED Panel
+#define GPIO_LEDPANEL_R1        35
+#define GPIO_LEDPANEL_G1        36
+#define GPIO_LEDPANEL_B1        37
+#define GPIO_LEDPANEL_R2        38
+#define GPIO_LEDPANEL_G2        39
+#define GPIO_LEDPANEL_B2        40
+#define GPIO_LEDPANEL_A         41
+#define GPIO_LEDPANEL_B         42
+#define GPIO_LEDPANEL_C         2
+#define GPIO_LEDPANEL_D         1
+#define GPIO_LEDPANEL_E         44
+#define GPIO_LEDPANEL_CLK       47
+#define GPIO_LEDPANEL_LAT       21
+#define GPIO_LEDPANEL_OE        45
+
+//Buttons
+#define GPIO_BTN1               14
+#define GPIO_BTN2               16
+#define GPIO_BTN3               13
+#define GPIO_ROT1_BTN           12
+#define GPIO_ROT1_B             11
+#define GPIO_ROT1_A             10
+#define GPIO_ROT2_BTN           9
+#define GPIO_ROT2_B             46
+#define GPIO_ROT2_A             3
+#define GPIO_ROT3_BTN           8
+#define GPIO_ROT3_B             18
+#define GPIO_ROT3_A             17
+
+//RTC
+#define GPIO_RTC_SCL            7
+#define GPIO_RTC_SDA            15
+
+//SD Card
+#define GPIO_SD_CS              43
+#define GPIO_SD_SCLK            4
+#define GPIO_SD_MOSI            5
+#define GPIO_SD_MISO            6
+
+
+
+/**************
+*  LED Panel  *
+***************/
+
+#define PANEL_DRIVER HUB75_I2S_CFG::SHIFTREG
+#define PANEL_DOUBLE_BUFFER true
+#define PANEL_I2C_SPEED HUB75_I2S_CFG::HZ_20M
+#define PANEL_LATCH_BLINK 1
+#define PANEL_CLOCK_PHASE true
+
+
+
+/*********
+*  Wifi  *
+**********/
+
+#define WIFI_CONNECT_DEFAULT true // Connect to existing network
+#define WIFI_HOST_DEFAULT false // Host own wifi network
+
+// Wifi information for hosting own network
+#define WIFI_AP_SSID_DEFAULT "DerEffi's Pixelart"
+#define WIFI_AP_PASSWORD_DEFAULT ""
+
+// Wifi information for connection to existing network 
+#define WIFI_SSID_DEFAULT ""
+#define WIFI_PASSWORD_DEFAULT ""
+#define WIFI_HOSTNAME "dereffis-pixelart"
+
+
+
+
+/*********
+*  Misc  *
+**********/
+
+#define VERSION "0.0.1"
+#define PREFERENCES_NAMESPACE "pixelart"
+#define SOCIAL_REFRESH_INTERVAL 25000
+
+#define TIME_UPDATE_AUTO true
+#define TIME_FORMAT24 true
+#define TIME_ZONE "CET-1CEST,M3.5.0,M10.5.0/3"
+#define TIME_SERVER "pool.ntp.org"
+
+#define SOCIALS_API_KEY ""
+#define SOCIALS_API_SERVER ""
+#define SOCIALS_REQUEST "[{\"t\":\"t\",\"c\":\"dereffi\",\"d\":\"@DerEffi\"},{\"t\":\"y\",\"c\":\"dereffi\",\"d\":\"@DerEffi\"}]"
