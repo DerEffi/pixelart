@@ -29,7 +29,6 @@
 
 //TODO remove Tests
 unsigned long ms_test = 0;
-uint32_t lastHeap = 0;
 
 //colors
 const uint16_t color_twitch = 25108;
@@ -92,11 +91,11 @@ struct socials_channel {
 };
 
 struct image_meta {
-	char* image;
-	char* animation;
+	char* folder;
+	uint16_t prefix;
 	bool animated;
-	image_meta(char* image, bool animated = false, char* animation = nullptr):
-	image(image), animation(animation), animated(animated) {}
+	image_meta(char* folder, uint16_t prefix = 0, bool animated = false):
+	folder(folder), prefix(prefix), animated(animated) {}
 };
 
 //settings
@@ -110,7 +109,6 @@ char* overlay_text = strdup("");
 unsigned long ms_overlay = 0;
 uint8_t brightness = 128;
 
-
 //Wifi
 bool wifi_connect = WIFI_CONNECT_DEFAULT;
 bool wifi_host = WIFI_HOST_DEFAULT;
@@ -123,13 +121,11 @@ unsigned long ms_wifi_routine = 0;
 unsigned long ms_wifi_reconnect = 0;
 AsyncDNSServer dnsServer;
 
-
 //Server
 AsyncWebServer server(80);
 char* api_key = strdup("");
 unsigned long ms_api_key_request = 0;
 unsigned long ms_api_key_approve = 0;
-
 
 //LED Panel
 MatrixPanel_I2S_DMA *panel = nullptr;
@@ -137,6 +133,7 @@ display_mode current_mode = MODE_IMAGES;
 bool display_change = false;
 
 std::vector<image_meta> image_index;
+uint16_t image_prefix_max = 0;
 uint16_t selected_image = 0;
 uint16_t current_image[64][64] = {};
 bool image_loaded = false;
@@ -176,7 +173,6 @@ bool rot3_pressed = false;
 int rot1_clicks = 0;
 int rot2_clicks = 0;
 int rot3_clicks = 0;
-
 
 //RTC
 RTC_DS3231 rtc_ext;
@@ -315,7 +311,7 @@ bool verify_api_key(AsyncWebServerRequest * request) {
 *************/
 
 bool compare_image_name(image_meta i1, image_meta i2) {
-	return strcmp(i1.image, i2.image) < 0;
+	return strcmp(i1.folder, i2.folder) < 0;
 }
 
 //reindex images folder of sd card for loading and diplaying byte data
@@ -323,8 +319,7 @@ void sd_index() {
 
 	//remove old data from index
 	for(int i = 0; i < image_index.size(); i++) {
-		free(image_index[i].image);
-		free(image_index[i].animation);
+		free(image_index[i].folder);
 	}
 	image_index.clear();
 
@@ -335,21 +330,54 @@ void sd_index() {
 			char file_path[255]; 
 			File image = folder.openNextFile();
 			while(image) {
+				//check for image file
 				if(image.isDirectory()) {
-					const char* path = image.path();
-					strcpy(file_path, path);
+					image_meta meta = {
+						strdup(image.path())
+					};
+					strcpy(file_path, meta.folder);
 					strcat(file_path, "/image.pxart");
 
 					if(SD.exists(file_path) && !SD.open(file_path).isDirectory()) {
-						image_meta meta = {
-							strdup(file_path)
-						};
-						
-						strcpy(file_path, path);
+						//rename folder if no prefix number is given
+						const char* name = image.name();
+						bool rename = false;
+						for(int i = 0; i < 3; i++) {
+							if(name[i] < 48 || name[i] > 57) {
+								rename = true;
+								break;
+							}
+						}
+						if(name[3] != 32 || name[4] != 45 || name[5] != 32)
+							rename = true;
+
+						char prefix[4];
+						if(rename) {
+							do {
+								meta.prefix++;
+								sprintf(prefix, "%03d", meta.prefix);
+								strcpy(file_path, "/images/");
+								strcat(file_path, prefix);
+								strcat(file_path, " - ");
+								strcat(file_path, name);
+							} while(SD.exists(file_path));
+							if(SD.rename(meta.folder, file_path)) {
+								free(meta.folder);
+								meta.folder = strdup(file_path);
+							}
+						} else {
+							strncpy(prefix, name, 3);
+							sscanf(prefix, "%d", &meta.prefix);
+						}
+
+						if(meta.prefix > image_prefix_max)
+							image_prefix_max = meta.prefix;
+
+						//check for animation file				
+						strcpy(file_path, meta.folder);
 						strcat(file_path, "/animation.pxart");
 						if(SD.exists(file_path) && !SD.open(file_path).isDirectory()) {
 							meta.animated = true;
-							meta.animation = strdup(file_path);
 						}
 						
 						image_index.emplace_back(meta);
@@ -380,8 +408,12 @@ bool sd_connected() {
 }
 
 bool sd_load_image(image_meta image) {
-	if(SD.exists(image.image)) {
-		File file = SD.open(image.image);
+	char file_path[255];
+	strcpy(file_path, image.folder);
+	strcat(file_path, "/image.pxart");
+
+	if(SD.exists(file_path)) {
+		File file = SD.open(file_path);
 
 		int x = 0;
 		int y = 0;
@@ -979,7 +1011,7 @@ void server_setup() {
 				root["displayMode"] = current_mode;
 				root["brightness"] = brightness;
 				root["version"] = VERSION;
-				root["freeRam"] = ESP.getFreeHeap();
+				root["freeMemory"] = ESP.getFreeHeap();
 				root["refreshRate"] = panel->calculated_refresh_rate;
 
 				response->setLength();
@@ -1488,7 +1520,7 @@ void loop() {
 			ms_btn3_pressed = 0;
 
 			preferences.begin(PREFERENCES_NAMESPACE, false);
-			//TODO preferences.clear();
+			preferences.clear();
 			preferences.end();
 			requested_restart = true;
 		} else if(btn3_released) {
@@ -1581,19 +1613,5 @@ void loop() {
 	//TODO remove tests
 	if(ms_test <= ms_current) {
 		ms_test = ms_current + 1000;
-		
-		// Serial.println(WiFi.localIP().toString());
-		// Serial.println(rtc_int.getTime());
-		// Serial.println(rtc_ext.now().timestamp());
-		// Serial.println(api_key);
-		// Serial.println(http_socials.readyState());
-		// Serial.println(socials_response.size());
-		// Serial.println(brightness);
-
-		// uint32_t heap = ESP.getFreeHeap();
-		// if(heap != lastHeap) {
-		// 	Serial.println(heap);
-		// 	lastHeap = heap;
-		// }
 	}
 }

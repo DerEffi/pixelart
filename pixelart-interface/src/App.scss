@@ -597,24 +597,22 @@ img {
     }
 }
 
-#image-generator {
-    &-image {
-        display: none;
-        object-fit: contain;
-        image-rendering: pixelated;
+.image-generator-image {
+    display: none;
+    object-fit: fill;
+    image-rendering: pixelated;
+}
+
+#image-generator-canvas {
+    &-wrapper {
+        text-align: center;
     }
 
-    &-canvas {
-        &-wrapper {
-            text-align: center;
-        }
-
-        max-width: 100%;
-        width: 512px;
-        image-rendering: pixelated;
-        border: 1px solid var(--surface-d);
-        border-radius: var(--border-radius);
-    }
+    max-width: 100%;
+    width: 512px;
+    image-rendering: pixelated;
+    border: 1px solid var(--surface-d);
+    border-radius: var(--border-radius);
 }
 
 .image-generator {
@@ -640,8 +638,9 @@ img {
             width: 100px;
             height: 100px;
             border-radius: var(--border-radius);
-            object-fit: contain;
+            object-fit: fill;
             display: block;
+            image-rendering: pixelated;
         }
     }
 }
