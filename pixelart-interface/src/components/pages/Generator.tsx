@@ -6,12 +6,16 @@ import {Buffer} from 'buffer';
 import { Tooltip } from 'primereact/tooltip';
 import { Button } from 'primereact/button';
 import {Md5} from 'ts-md5';
-import { c2dArray, rgb565, rgb888 } from '../../services/Helper';
+import { asyncTimeout, c2dArray, rgb565, rgb888 } from '../../services/Helper';
 import { InputText } from 'primereact/inputtext';
 import { Status } from '../../models/Status';
 import JSZip from 'jszip';
 import { GifReader } from 'omggif';
 import { Knob } from 'primereact/knob';
+import { ProgressSpinner } from 'primereact/progressspinner';
+import { ICachedImage } from '../../models/Cache';
+import { Dialog } from 'primereact/dialog';
+import moment from 'moment';
 
 export interface IGeneratorComponentProps {
 	dataService: DataService;
@@ -24,6 +28,9 @@ interface IGeneratorComponentState {
 	name: string;
 	frameTime: number;
 	frameInterval: NodeJS.Timer | null;
+	rendering: boolean;
+	cachedItems: ICachedImage[];
+	viewHistory: boolean;
 }
 
 export default class Generator extends React.Component<IGeneratorComponentProps, IGeneratorComponentState> {
@@ -37,8 +44,15 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 			canvasImages: [],
 			name: "",
 			frameTime: 100,
-			frameInterval: null
+			frameInterval: null,
+			rendering: false,
+			cachedItems: [],
+			viewHistory: false
 		}
+	}
+
+	componentDidMount(): void {
+		this.loadCache();
 	}
 
 	componentWillUnmount(): void {
@@ -51,8 +65,48 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
             <div className='fullwidth'>
 
 				<div className="content">
+
+					<Dialog header="Image History" closable closeOnEscape dismissableMask draggable={false} resizable={false} maximizable={false} visible={this.state.viewHistory} className="image-generator-history content" headerClassName="image-generator-history-header" onHide={() => this.setState({viewHistory: false})}>
+						<div className='image-generator-history-images'>
+							<Tooltip target={".custom-upload-history-item"} content="Draw Image" position="bottom" />
+							
+							
+							{this.state.cachedItems.map(image => {
+								return(
+									<div key={image.id} className='image-generator-history-image'>
+										<Tooltip target={".custom-upload-history-item-" + image.id} position="bottom">
+											<div className='image-generator-history-tooltip'>
+												<div>{image.name}</div>
+												<div>{moment.unix(image.created).format("DD.MM.YYYY HH:mm")}</div>
+												<div>animated {image.animation.length > 0 ? <i className="pi pi-check"></i> : <i className="pi pi-times"></i>}</div>
+											</div>
+										</Tooltip>
+										<div className="image-generator-item image-generator-history-item">
+											<img className="image-generator-item-image" alt={image.name} role="presentation" src={image.preview} width={100} height={100} />
+											<div className="image-generator-item-buttons">
+
+												<Button type="button" icon="pi pi-pencil" className={"custom-upload-history-item p-button-outlined p-button-rounded p-button-success ml-auto"} onClick={() => this.loadFromCache(image.name, image.image, image.animation)}/>
+												<Button type="button" icon="pi pi-info" className={"custom-upload-history-item-" + image.id + " p-button-outlined p-button-rounded p-button-info ml-auto"} />
+											</div>
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					</Dialog>
 				
 					<div id="image-generator-canvas-wrapper">
+						{this.state.rendering &&
+							<>
+								<div className='image-generator-rendering'>
+									<div style={{zIndex: 1}}>
+										<ProgressSpinner animationDuration="2s" strokeWidth='3' />
+										<div>Processing</div>
+									</div>
+									<div className='image-generator-rendering-blocker'/>
+								</div>
+							</>
+						}
 						<canvas id="image-generator-canvas" width={64} height={64} />
 					</div>
 
@@ -63,8 +117,8 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
     						<span className="p-inputgroup-addon">xxx - </span>
 							<InputText placeholder='image name' value={this.state.name} onChange={(e) => this.setState({name: e.target.value})} />
 						</div>
-						<Button type="button" icon="pi pi-download" data-pr-tooltip="Download Pixelart" className="image-generator-menu-button p-button-outlined p-button-rounded p-button-success ml-auto" onClick={() => this.downloadImage()}/>
-						<Button type="button" icon="pi pi-upload" data-pr-tooltip="Upload to Device" className="image-generator-menu-button p-button-outlined p-button-rounded p-button-success ml-auto" onClick={() => this.uploadToDevice()} disabled={this.props.dataService.getStatus() !== Status.connected}/>
+						<Button type="button" disabled={this.state.rendering} icon="pi pi-download" data-pr-tooltip="Download Pixelart" className="image-generator-menu-button p-button-outlined p-button-rounded p-button-success ml-auto" onClick={() => this.downloadImage()}/>
+						<Button type="button" icon="pi pi-upload" data-pr-tooltip="Upload to Device" className="image-generator-menu-button p-button-outlined p-button-rounded p-button-success ml-auto" onClick={() => this.uploadToDevice()} disabled={this.props.dataService.getStatus() !== Status.connected || this.state.rendering}/>
 					</div>
 
 					{this.props.advanced &&
@@ -92,13 +146,19 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 								const { className, chooseButton, uploadButton, cancelButton } = options;
 							
 								return (
-									<div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
-										{chooseButton}
-										{uploadButton}
-										{cancelButton}
+									<div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+										<div style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
+											{chooseButton}
+											{uploadButton}
+											{cancelButton}
+										</div>
+										<div>
+											<Button type="button" disabled={this.state.cachedItems.length <= 0 || this.state.rendering} icon="pi pi-history" data-pr-tooltip="Last Images" className="image-generator-menu-button p-button-outlined p-button-rounded p-button-help ml-auto" onClick={() => this.setState({viewHistory: true})}/>
+										</div>
 									</div>
 								);
 							}}
+							disabled={this.state.rendering}
 							itemTemplate={(file: any, props) => {
 								let md5name = Md5.hashStr(file.name);
 								return(
@@ -108,8 +168,8 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 											<Tooltip target={".custom-upload-item-" + md5name} content="Draw Image" position="bottom" />
 											<Tooltip target={".custom-cancel-item-" + md5name} content="Remove" position="bottom" />
 
-											<Button type="button" icon="pi pi-pencil" className={"custom-upload-item-" + md5name + " p-button-outlined p-button-rounded p-button-success ml-auto"} onClick={() => this.uploadImages([file])}/>
-											<Button type="button" icon="pi pi-times" className={"custom-cancel-item-" + md5name + " p-button-outlined p-button-rounded p-button-danger ml-auto"} onClick={props.onRemove}/>
+											<Button type="button" disabled={this.state.rendering} icon="pi pi-pencil" className={"custom-upload-item-" + md5name + " p-button-outlined p-button-rounded p-button-success ml-auto"} onClick={() => this.uploadImages([file])}/>
+											<Button type="button" disabled={this.state.rendering} icon="pi pi-times" className={"custom-cancel-item-" + md5name + " p-button-outlined p-button-rounded p-button-danger ml-auto"} onClick={props.onRemove}/>
 										</div>
 									</div>
 								)
@@ -141,6 +201,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
         );
     }
 
+	//Prepare image data for preview canvas from selected files
 	private async uploadImages(files: File[]) {
 		this.state.canvasImages.forEach(img => {
 			if(img instanceof HTMLImageElement)
@@ -199,14 +260,16 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		});
 	}
 
+	//start draw of first frame of prepared images and start animation if prepared image has one
 	private drawFromImages() {
-			this.currentFrame = 0;
-			this.drawFrame();
-			if(this.state.frameInterval)
-				clearInterval(this.state.frameInterval);
-			this.setState({frameInterval: setInterval(() => this.drawFrame(), this.state.frameTime)});
+		this.currentFrame = 0;
+		this.drawFrame();
+		if(this.state.frameInterval)
+			clearInterval(this.state.frameInterval);
+		this.setState({frameInterval: this.state.canvasImages.length > 1 ? setInterval(() => this.drawFrame(), this.state.frameTime) : null});
 	}
 
+	//draw selected frame on selected canvas - stop animation if no animation data is present
 	private drawFrame(frame: number = ++this.currentFrame, canvas: CanvasRenderingContext2D = this.getCanvas()) {
 		if(this.state.canvasImages.length > 0) {
 			frame = frame % this.state.canvasImages.length;
@@ -216,7 +279,18 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 			else if(frameData instanceof ImageData)
 				canvas.putImageData(frameData, 0, 0);
 			this.currentFrame = frame;
+
+			if(this.state.canvasImages.length === 1 && this.state.frameInterval) {
+				clearInterval(this.state.frameInterval);
+				this.setState({frameInterval: null});
+			}
 		} else {
+			if(this.state.frameInterval) {
+				clearInterval(this.state.frameInterval);
+				this.setState({
+					frameInterval: null
+				});
+			}
 			if(this.props.toast)
 				this.props.toast.show({
 					content: "No image to generate pixel art from",
@@ -226,6 +300,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		}
 	}
 
+	//start / stop animation
 	private playAnimation() {
 		if(this.state.frameInterval)
 			clearInterval(this.state.frameInterval);
@@ -234,6 +309,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		});
 	}
 
+	//set frametime for animation
 	private adjustSpeed(time: number) {
 		if(this.state.frameInterval)
 			clearInterval(this.state.frameInterval);
@@ -243,21 +319,39 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		});
 	}
 
-	private downloadImage() {
-		let ctx: CanvasRenderingContext2D | null = document.createElement("canvas").getContext("2d");
+	//calculate image and animation data for prepared images to download as zip
+	private async downloadImage() {
+		this.setState({rendering: true});
+		if(this.state.frameInterval)
+			this.playAnimation();
+
+		let ctx: CanvasRenderingContext2D | null = this.newCanvas();
 		if(ctx && this.state.canvasImages.length > 0) {
 			this.drawFrame(0, ctx);
+
+			let preview: string = ctx.canvas.toDataURL();
+			
 			let animation: number[][][] = [];
 
-			for(let i = 1; i < this.state.canvasImages.length; i++) {
-				animation.push(this.getPixelChanges(i - 1, i));
+			if(this.state.canvasImages.length > 1) {
+				for(let i = 1; i < this.state.canvasImages.length; i++) {
+					animation.push(await this.getPixelChanges(i - 1, i));
+					await asyncTimeout(1);
+				}
+
+				//add loopback frame
+				animation.push(await this.getPixelChanges(this.state.canvasImages.length - 1, 0));
+				await asyncTimeout(1);
 			}
 
+			let image = this.getPixelArray(ctx);
+			let frames = animation.length > 0 ? this.getAnimationArray(animation) : [];
+
 			let zip = new JSZip();
-			zip.file("000 - " + this.state.name + "/image.pxart", this.getPixelArray(ctx));
+			zip.file("000 - " + this.state.name + "/image.pxart", image);
 			zip.file("place inside images folder on your sd card", "");
-			if(animation.length > 0)
-				zip.file("000 - " + this.state.name + "/animation.pxart", this.getAnimationArray(animation));
+			if(animation.length)
+				zip.file("000 - " + this.state.name + "/animation.pxart", frames);
 			zip.generateAsync({type: "blob"}).then((blob: Blob) => {
 				let file = document.createElement("a");
 				file.href = window.URL.createObjectURL(blob);
@@ -267,6 +361,8 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 			});
 
 			ctx.canvas.remove();
+
+			this.cacheImage(this.state.name, image, animation, preview);
 		} else {
 			if(this.props.toast)
 				this.props.toast.show({
@@ -275,6 +371,11 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 					closable: false
 				});
 		}
+
+		if(this.state.canvasImages.length > 1)
+			this.playAnimation();
+
+			this.setState({rendering: false});
 	}
 
 	private uploadToDevice() {
@@ -297,6 +398,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		}
 	}
 
+	//get preview canvas from dom
 	private getCanvas(): CanvasRenderingContext2D {
 		let canvas = document.getElementById("image-generator-canvas") as HTMLCanvasElement;
 		if(canvas) {
@@ -309,8 +411,21 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		throw Error("Could not find canvas to draw on");
 	}
 
-	private getPixelChanges(base: number, frame: number): number[][] {
-		let ctx: CanvasRenderingContext2D | null = document.createElement("canvas").getContext("2d");
+	//create new canvas with custom settings
+	private newCanvas(): CanvasRenderingContext2D {
+		let ctx = document.createElement("canvas").getContext("2d");
+		if(ctx) {
+			ctx.canvas.setAttribute("width", "64");
+			ctx.canvas.setAttribute("height", "64");
+			ctx.imageSmoothingEnabled = false;
+			return ctx;
+		}
+		throw Error("Could not find canvas to draw on");
+	}
+
+	//calculate pixel changes between 2 frames of prepared images
+	private async getPixelChanges(base: number, frame: number): Promise<number[][]> {
+		let ctx: CanvasRenderingContext2D | null = this.newCanvas();
 		if(ctx && this.state.canvasImages.length > 0) {
 			this.drawFrame(base, ctx);
 			let baseData = this.get2dPixelArray(ctx);
@@ -342,12 +457,14 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		}
 	}
 
+	//calculate flat bytearray for multidimensional animation array
 	private getAnimationArray(changes: number[][][]): number[] {
 		let byteArray: number[] = [];
 
 		changes.forEach(frame => {
 			//frame separator and for future metadata usage -> address [255,255] does not exist
 			byteArray.push(0xFF, 0xFF, 0, 0);
+
 			//pixelchanges
 			frame.forEach(pixel => {
 				byteArray.push(pixel[0], pixel[1], pixel[2] & 255, (pixel[2] >> 8) & 255);
@@ -357,12 +474,14 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		return byteArray;
 	}
 
+	//set canvas pixels by flat bytearray
 	private setPixels(pixels: number[], canvas: CanvasRenderingContext2D = this.getCanvas()) {		
 		var id = canvas.createImageData(1,1);
 
 		for(var y = 0; y < 64; y++) {
 			for(var x = 0; x < 64; x++) {
-				var pixel = rgb888(pixels[y * 64 + x]);
+				var location = (y * 64 + x) * 2;
+				var pixel = rgb888((pixels[location + 1] << 8) + pixels[location]);
 				id.data[0]   = pixel.r;
 				id.data[1]   = pixel.g;
 				id.data[2]   = pixel.b;
@@ -372,7 +491,9 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		}
 	}
 
-	private clearCanvas(canvas: CanvasRenderingContext2D = this.getCanvas()) {		
+	//remove current preview
+	private clearCanvas() {		
+		let canvas = this.getCanvas();
 		var id = canvas.createImageData(1,1);
 		id.data.fill(0);
 
@@ -381,8 +502,19 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 				canvas.putImageData(id, x, y);
 			}
 		}
+
+		if(this.state.frameInterval)
+			clearInterval(this.state.frameInterval);
+		this.setState({
+			canvasImages: [],
+			frameInterval: null,
+			name: "",
+			rendering: false,
+			viewHistory: false
+		});
 	}
 
+	//get flat bytearray from canvas
 	private getPixelArray(canvas: CanvasRenderingContext2D = this.getCanvas()): number[] {
 		let pixels = [];
 		for(var y = 0; y < 64; y++) {
@@ -395,6 +527,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		return pixels;
 	}
 
+	//get 2d pixel array from canvas (pixel[y][x])
 	private get2dPixelArray(canvas: CanvasRenderingContext2D = this.getCanvas()): number[][] {
 		let pixels: number[][] = [];
 		for(var y = 0; y < 64; y++) {
@@ -405,5 +538,81 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 			}
 		}
 		return pixels;
+	}
+
+	//save preview image/animation to cache
+	private cacheImage(name: string, image: number[], animation: number[][][] = [], preview: string = "") {
+		let index: number = 0;
+		let cacheItem: string | null = null;
+		do {
+			index++;
+			cacheItem = localStorage.getItem("image-" + index);
+			if(index > 40) {
+				index = 1;
+				break;
+			}
+		} while(cacheItem != null);
+
+		let cachedImage: ICachedImage = {
+			id: index,
+			name: name,
+			preview: preview,
+			created: moment().unix(),
+			animation: animation,
+			image: image,
+		};
+		localStorage.setItem("image-" + index, JSON.stringify(cachedImage));
+		this.setState({
+			cachedItems: [...this.state.cachedItems, cachedImage]
+		});
+	}
+
+	//load images from cache into state
+	private loadCache() {
+		let images: ICachedImage[] = [];
+		for(let index: number = 1; index <= 40; index++) {
+			let cacheItem = localStorage.getItem("image-" + index);
+			if(cacheItem) {
+				let cachedImage = JSON.parse(cacheItem) as ICachedImage;
+				if(cachedImage.id && cachedImage.name && cachedImage.image) {
+					images.push(cachedImage);
+				}
+			}
+		}
+
+		this.setState({
+			cachedItems: images.sort((i1, i2) => i1.created - i2.created)
+		});
+	}
+
+	//load image from cache into preview
+	private loadFromCache(name: string, image: number[], animation: number[][][]) {
+		let ctx = this.newCanvas();
+		let frames: ImageData[] = [];
+
+		//load image on canvas
+		this.setPixels(image, ctx);
+		frames.push(ctx.getImageData(0, 0, 64, 64));
+		
+		//load frames
+		var id = ctx.createImageData(1,1);
+		animation.forEach(frame => {
+			frame.forEach(change => {
+				var pixel = rgb888(change[2]);
+				id.data[0]   = pixel.r;
+				id.data[1]   = pixel.g;
+				id.data[2]   = pixel.b;
+				id.data[3]   = 255;
+				ctx.putImageData(id, change[0], change[1]);
+			});
+			frames.push(ctx.getImageData(0, 0, 64, 64));
+		});
+
+		this.currentFrame = 0;
+		this.setState({
+			name: name,
+			canvasImages: frames,
+			viewHistory: false,
+		}, () => setTimeout(() => this.drawFromImages(), 50));
 	}
 }

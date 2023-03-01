@@ -1,3 +1,5 @@
+//device api interfaces
+
 export interface Wifi {
 	wifiAP: boolean;
 	wifiAPSSID: string;
