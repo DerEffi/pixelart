@@ -17,6 +17,11 @@ export function c2dArray(pixels: number[][], hex: boolean = true): string {
     return JSON.stringify(hex ? pixels.map(row => row.map(pixel => "0x" + pixel.toString(16))) : pixels).replaceAll("[", "{").replaceAll("]", "}").replaceAll("\"", "");
 }
 
+//convert 3d animation array to 3d array in c/c++ source code
+export function cAnimationArray(animation: number[][][], hex: boolean = true): string {
+    return JSON.stringify(hex ? animation.map(frame => frame.map(change => [change[0], change[1], "0x" + change[2].toString(16)])) : animation).replaceAll("[", "{").replaceAll("]", "}").replaceAll("\"", "");
+}
+
 //wrapper for awaiting timeout in async function
 export async function asyncTimeout(ms: number): Promise<void> {
     return new Promise<void>(resolve => {

@@ -6,7 +6,7 @@ import {Buffer} from 'buffer';
 import { Tooltip } from 'primereact/tooltip';
 import { Button } from 'primereact/button';
 import {Md5} from 'ts-md5';
-import { asyncTimeout, c2dArray, rgb565, rgb888 } from '../../services/Helper';
+import { asyncTimeout, c2dArray, cAnimationArray, rgb565, rgb888 } from '../../services/Helper';
 import { InputText } from 'primereact/inputtext';
 import { Status } from '../../models/Status';
 import JSZip from 'jszip';
@@ -16,6 +16,7 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import { ICachedImage } from '../../models/Cache';
 import { Dialog } from 'primereact/dialog';
 import moment from 'moment';
+import { ConfirmPopup, confirmPopup } from 'primereact/confirmpopup';
 
 export interface IGeneratorComponentProps {
 	dataService: DataService;
@@ -31,6 +32,7 @@ interface IGeneratorComponentState {
 	rendering: boolean;
 	cachedItems: ICachedImage[];
 	viewHistory: boolean;
+	showTmpCopy: boolean;
 }
 
 export default class Generator extends React.Component<IGeneratorComponentProps, IGeneratorComponentState> {
@@ -47,7 +49,8 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 			frameInterval: null,
 			rendering: false,
 			cachedItems: [],
-			viewHistory: false
+			viewHistory: false,
+			showTmpCopy: false
 		}
 	}
 
@@ -124,12 +127,13 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 					{this.props.advanced &&
 						<div className="input-group" style={{marginTop: "1rem"}}>
 							<Tooltip target=".image-generator-menu-button-advanced" position="bottom" />
+							<ConfirmPopup />
 
 							<Button type="button" icon={"pi pi-" + (this.state.frameInterval ? "pause" : "play")} data-pr-tooltip="Play/Pause" className="image-generator-menu-button-advanced p-button-outlined p-button-rounded p-button-success ml-auto" onClick={() => this.playAnimation()}/>
 							<Button type="button" icon="pi pi-step-forward" className="image-generator-menu-button-advanced p-button-outlined p-button-rounded p-button-success ml-auto" data-pr-tooltip="Next Frame" disabled={this.state.frameInterval != null} onClick={() => this.drawFrame()} />
 							<Knob className="image-generator-menu-button-advanced" data-pr-tooltip="Frametime (ms)" size={65} value={this.state.frameTime} step={25} min={25} max={500} onChange={(e) => this.adjustSpeed(e.value)} />
-							<Button type="button" icon="pi pi-copy" data-pr-tooltip="Copy hex" className="image-generator-menu-button-advanced p-button-outlined p-button-rounded p-button-help ml-auto" onClick={() => this.copyByteArray()}/>
-							<Button type="button" icon="pi pi-code" data-pr-tooltip="Copy source code" className="image-generator-menu-button-advanced p-button-outlined p-button-rounded p-button-help ml-auto" onClick={() => this.copyCArray()}/>
+							<Button type="button" icon="pi pi-copy" data-pr-tooltip="Copy hex" className="image-generator-menu-button-advanced p-button-outlined p-button-rounded p-button-help ml-auto" onClick={(e) => this.copyByteArray(e)}/>
+							<Button type="button" icon="pi pi-code" data-pr-tooltip="Copy source code" className="image-generator-menu-button-advanced p-button-outlined p-button-rounded p-button-help ml-auto" onClick={(e) => this.copyCArray(e)}/>
 							<Button type="button" icon="pi pi-trash" data-pr-tooltip="Clear Image" className="image-generator-menu-button-advanced p-button-outlined p-button-rounded p-button-error ml-auto" onClick={() => this.clearCanvas()}/>
 						</div>
 					}
@@ -378,21 +382,116 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 			this.setState({rendering: false});
 	}
 
+	//calculate image and animation data for prepared images to directly upload to connected device
 	private uploadToDevice() {
 		//TODO
 	}
 
-	private copyCArray() {
+	//copy image and animation data from current preview for use in c/c++
+	private async copyCArray(event: React.MouseEvent<HTMLButtonElement | MouseEvent>) {
 		if(this.state.frameInterval) {
-			//TODO
+			this.setState({rendering: true});
+			this.playAnimation();
+
+			let ctx: CanvasRenderingContext2D | null = this.newCanvas();
+			if(ctx && this.state.canvasImages.length > 0) {
+				this.drawFrame(0, ctx);
+				
+				let animation: number[][][] = [];
+
+				for(let i = 1; i < this.state.canvasImages.length; i++) {
+					animation.push(await this.getPixelChanges(i - 1, i));
+					await asyncTimeout(1);
+				}
+
+				//add loopback frame
+				animation.push(await this.getPixelChanges(this.state.canvasImages.length - 1, 0));
+				await asyncTimeout(1);
+				ctx.canvas.remove();
+
+				let maxPixelChanges = 0;
+				animation.forEach(frame => maxPixelChanges = frame.length > maxPixelChanges ? frame.length : maxPixelChanges);
+				(window as any).tmpPixelData = "uint16_t image[64][64] = " + c2dArray(this.get2dPixelArray()) + ";\nuint16 animation[" + animation.length + "][" + maxPixelChanges + "][3] = " + cAnimationArray(animation) + ";";
+				confirmPopup({
+					target: event.target as HTMLElement,
+					message: "Your data is now ready",
+					acceptLabel: "Copy",
+					acceptIcon: "pi pi-copy",
+					accept: () => navigator.clipboard.writeText((window as any).tmpPixelData),
+					rejectLabel: ""
+				});
+			} else {
+				if(this.props.toast)
+					this.props.toast.show({
+						content: "No image to generate pixel art from",
+						severity: 'error',
+						closable: false
+					});
+			}
+
+			if(this.state.canvasImages.length > 1)
+				this.playAnimation();
+
+				this.setState({rendering: false});
 		} else {
 			navigator.clipboard.writeText(c2dArray(this.get2dPixelArray()));
 		}
 	}
 
-	private copyByteArray() {
+	//copy base64 binary data from current preview for hex editor
+	private async copyByteArray(event: React.MouseEvent<HTMLButtonElement | MouseEvent>) {
 		if(this.state.frameInterval) {
-			//TODO
+			this.setState({rendering: true});
+			if(this.state.frameInterval)
+				this.playAnimation();
+
+			let ctx: CanvasRenderingContext2D | null = this.newCanvas();
+			if(ctx && this.state.canvasImages.length > 0) {
+				this.drawFrame(0, ctx);
+				
+				let animation: number[][][] = [];
+
+				if(this.state.canvasImages.length > 1) {
+					for(let i = 1; i < this.state.canvasImages.length; i++) {
+						animation.push(await this.getPixelChanges(i - 1, i));
+						await asyncTimeout(1);
+					}
+
+					//add loopback frame
+					animation.push(await this.getPixelChanges(this.state.canvasImages.length - 1, 0));
+					await asyncTimeout(1);
+				}
+
+				let frames = animation.length > 0 ? this.getAnimationArray(animation) : [];
+
+				ctx.canvas.remove();
+
+				(window as any).tmpImageData = Buffer.from(this.getPixelArray()).toString("base64");
+				(window as any).tmpAnimationData = Buffer.from(frames).toString("base64");
+				
+				confirmPopup({
+					target: event.target as HTMLElement,
+					message: "Your data is now ready",
+					rejectLabel: "Copy Image",
+					rejectIcon: "pi pi-copy",
+					reject: () => navigator.clipboard.writeText((window as any).tmpImageData),
+					acceptLabel: frames.length > 0 ? "Copy Animation" : " ",
+					acceptIcon: frames.length > 0 ? "pi pi-copy" : "",
+					accept: () => navigator.clipboard.writeText((window as any).tmpAnimationData),
+				});
+			} else {
+				if(this.props.toast)
+					this.props.toast.show({
+						content: "No image to generate pixel art from",
+						severity: 'error',
+						closable: false
+					});
+			}
+
+			if(this.state.canvasImages.length > 1)
+				this.playAnimation();
+
+				this.setState({rendering: false});
 		} else {
 			navigator.clipboard.writeText(Buffer.from(this.getPixelArray()).toString("base64"));
 		}
