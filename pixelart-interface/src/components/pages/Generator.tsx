@@ -691,11 +691,12 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 
 		//load image on canvas
 		this.setPixels(image, ctx);
-		frames.push(ctx.getImageData(0, 0, 64, 64));
 		
 		//load frames
 		var id = ctx.createImageData(1,1);
 		animation.forEach(frame => {
+			//push before foreach to first save base image without animation and dont push loopback frame (last frame)
+			frames.push(ctx.getImageData(0, 0, 64, 64));
 			frame.forEach(change => {
 				var pixel = rgb888(change[2]);
 				id.data[0]   = pixel.r;
@@ -704,7 +705,6 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 				id.data[3]   = 255;
 				ctx.putImageData(id, change[0], change[1]);
 			});
-			frames.push(ctx.getImageData(0, 0, 64, 64));
 		});
 
 		this.currentFrame = 0;

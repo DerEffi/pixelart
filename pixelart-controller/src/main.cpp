@@ -27,9 +27,6 @@
 **	Globals  **
 ***************/
 
-//TODO remove Tests
-unsigned long ms_test = 0;
-
 //colors
 const uint16_t color_twitch = 25108;
 const uint16_t color_youtube = 0xF800;
@@ -39,6 +36,8 @@ const uint16_t color_dark_read = 0xBA00;
 //bitmaps
 const uint8_t icon_person[7] = {0x78, 0x48, 0x48, 0x78, 0x00, 0xfc, 0x84}; //6x7
 const uint8_t icon_sun[7] = {0x10, 0x44, 0x38, 0xba, 0x38, 0x44, 0x10}; //7x7
+const uint8_t icon_diashow[7] = {0x3e, 0x22, 0xfa, 0x8a, 0x8e, 0x88, 0xf8}; //7x7
+const uint8_t icon_animation[7] = {0x00, 0x72, 0x06, 0xee, 0x06, 0x72, 0x00}; //7x7
 const uint8_t icon_star[7] = {0x10, 0x38, 0xfe, 0x7c, 0x38, 0x6c, 0x44}; //7x7
 const uint8_t icon_heart[7] = {0x66, 0xff, 0xff, 0xff, 0x7e, 0x3c, 0x18}; //8x7
 const uint8_t icon_bell[7] = {0x00, 0x30, 0x78, 0xfc, 0xfc, 0x00, 0x10}; //6x7
@@ -53,9 +52,10 @@ const uint8_t marks_clock[44][2] = {{0,31},{1,31},{2,31},{3,31},{0,32},{1,32},{2
 
 //slopes for mapping ranges to pixel width
 //? (output_end - output_start) / (input_end - input_start)
+//? 44 / input_range
 const double slope_brightness = .189;
-const double slope_diashow = 0;
-const double slope_animation = 0;
+const double slope_animation = .09166;
+const double slope_diashow = .0007457;
 
 //structs
 enum overlay_type {
@@ -98,6 +98,14 @@ struct image_meta {
 	folder(folder), prefix(prefix), animated(animated) {}
 };
 
+struct pixel_data {
+	uint8_t x;
+	uint8_t y;
+	uint16_t color;
+	pixel_data(uint8_t x, uint8_t y, uint16_t color):
+	x(x), y(y), color(color) {}
+};
+
 //settings
 Preferences preferences;
 bool booted = false;
@@ -108,6 +116,12 @@ overlay_type overlay = OVERLAY_NONE;
 char* overlay_text = strdup("");
 unsigned long ms_overlay = 0;
 uint8_t brightness = 128;
+bool animation_enabled = false;
+bool diashow_enabled = false;
+uint16_t animation_time = 100;
+unsigned long ms_animation = 0;
+uint32_t diashow_time = 5000;
+unsigned long ms_diashow = 0;
 
 //Wifi
 bool wifi_connect = WIFI_CONNECT_DEFAULT;
@@ -136,7 +150,9 @@ std::vector<image_meta> image_index;
 uint16_t image_prefix_max = 0;
 uint16_t selected_image = 0;
 uint16_t current_image[64][64] = {};
+std::vector<std::vector<pixel_data>> animation;
 bool image_loaded = false;
+uint16_t animation_frame = 0;
 
 //Socials
 AsyncHTTPSRequest http_socials;
@@ -408,6 +424,7 @@ bool sd_connected() {
 }
 
 bool sd_load_image(image_meta image) {
+	animation.clear();
 	char file_path[255];
 	strcpy(file_path, image.folder);
 	strcat(file_path, "/image.pxart");
@@ -415,33 +432,76 @@ bool sd_load_image(image_meta image) {
 	if(SD.exists(file_path)) {
 		File file = SD.open(file_path);
 
-		int x = 0;
-		int y = 0;
-		int position = 0;
+		uint8_t x = 0;
+		uint8_t y = 0;
+		uint position = 0;
 		int length = file.available();
-		const static int buffersize = 512;
-		char color_data[buffersize] = {};
+		const static uint16_t buffersize = 512;
+		char buffer_data[buffersize] = {};
 
 		//read in 4 pixelmatrix lines because of array size limit
 		while(length > position) {
 			file.seek(position);
-			file.readBytes(color_data, buffersize);
+			file.readBytes(buffer_data, buffersize);
 
 			for(int i = 0; i < buffersize; i += 2) {
-				current_image[y][x] = (color_data[i+1] << 8) + color_data[i];
+				current_image[y][x] = (buffer_data[i+1] << 8) + buffer_data[i];
 				x++;
 				if(x >= 64) {
 					x = 0;
 					y++;
 				}
 				if(y >= 64)
-					return true;
+					break;
 			}
 
+			if(y >= 64)
+				break;
 			position += buffersize;
 		}
 
-		//TODO animation
+		if(image.animated) {
+			strcpy(file_path, image.folder);
+			strcat(file_path, "/animation.pxart");
+
+			if(SD.exists(file_path)) {
+				File file = SD.open(file_path);
+				
+				file.seek(0);
+				file.readBytes(buffer_data, 4);
+				std::vector<pixel_data> frame;
+
+				position = 4;
+				while(length > position) {
+					uint fragment_size = length - position - 1;
+					if(fragment_size > buffersize)
+						fragment_size = buffersize;
+					file.seek(position);
+					file.readBytes(buffer_data, fragment_size);
+
+					for(int i = 0; i < fragment_size - 3; i += 4) {
+						x = buffer_data[i];
+						y = buffer_data[i+1];
+						if(x >= 64 || y >= 64) {
+							animation.emplace_back(frame);
+							frame.clear();
+						} else {
+							pixel_data pixel = {
+								x,
+								y,
+								(uint16_t)((buffer_data[i+3] << 8) + buffer_data[i+2])
+							};
+							frame.emplace_back(pixel);
+						}
+					}
+
+					position += buffersize;
+				}
+
+				animation.emplace_back(frame);
+				frame.clear();
+			}
+		}
 
 		return true;
 	}
@@ -474,9 +534,25 @@ void display_overlay() {
 			//Sun icon
 			panel->drawBitmap(54, 2, icon_sun, 7, 7, 0xFFFF);
 		} else if(overlay == OVERLAY_ANIMATION_SPEED) {
+			//Progress Bar
+			panel->drawRect(2, 2, 49, 7, 0xFFFF);
 
+			//maps animation_time range to progress bar width (max: 45px)
+			//? floor(output_start + (slope * (input - input_start)) + 0.5)
+			panel->fillRect(4, 4, floor((45 - slope_animation * (animation_time - 20)) + .5), 3, 0xFFFF);
+		
+			//Sun icon
+			panel->drawBitmap(54, 2, icon_animation, 7, 7, 0xFFFF);
 		} else if(overlay == OVERLAY_DIASHOW_SPEED) {
+			//Progress Bar
+			panel->drawRect(2, 2, 49, 7, 0xFFFF);
 
+			//maps diashow_time range to progress bar width (max: 45px)
+			//? floor(output_start + (slope * (input - input_start)) + 0.5)
+			panel->fillRect(4, 4, floor((45 - slope_diashow * (diashow_time - 1000)) + .5), 3, 0xFFFF);
+		
+			//Sun icon
+			panel->drawBitmap(54, 2, icon_diashow, 7, 7, 0xFFFF);
 		} else if(overlay == OVERLAY_TEXT) {
 			int16_t x1, y1;
 			uint16_t width, height;
@@ -490,15 +566,13 @@ void display_overlay() {
 	}
 }
 
-void display_overlay(overlay_type type, char* text = strdup("")) {
+void display_overlay(overlay_type type, const char* text = "") {
 	overlay = type;
-	if(overlay != OVERLAY_TEXT)
-		free(text);
 
 	switch(overlay) {
 		case OVERLAY_TEXT:
 			free(overlay_text);
-			overlay_text = text;
+			overlay_text = strdup(text);
 			break;
 		case OVERLAY_BRIGHTNESS:
 			panel->setPanelBrightness(brightness);
@@ -521,6 +595,16 @@ void display_loaded_image() {
 
 	if(PANEL_DOUBLE_BUFFER)
 		panel->flipDMABuffer();
+}
+
+void display_next_frame() {
+	if(image_index[selected_image].animated && animation.size() > 0) {
+		animation_frame = ++animation_frame % animation.size();
+		std::vector<pixel_data> changes = animation[animation_frame];
+		for(int i = 0; i < changes.size(); i++) {
+			current_image[changes[i].y][changes[i].x] = changes[i].color;
+		}
+	}
 }
 
 void display_card_missing() {
@@ -1281,6 +1365,14 @@ void preferences_load() {
 		current_mode = static_cast<display_mode>(preferences.getInt("current_mode", current_mode));
 	if(preferences.isKey("selected_image"))
 		selected_image = preferences.getInt("selected_image", selected_image);
+	if(preferences.isKey("animation"))
+		animation_enabled = preferences.getBool("animation", animation_enabled);
+	if(preferences.isKey("diashow"))
+		diashow_enabled = preferences.getBool("diashow", diashow_enabled);
+	if(preferences.isKey("animation_time"))
+		animation_time = preferences.getUInt("animation_time", animation_time);
+	if(preferences.isKey("diashow_time"))
+		diashow_time = preferences.getUInt("diashow_time", diashow_time);
 	
 	//wifi
 	if(preferences.isKey("wifi_connect"))
@@ -1409,6 +1501,9 @@ void booted_setup() {
 
 	booted = true;
 	display_current();
+	ms_current = millis();
+	ms_animation = ms_current + animation_time;
+	ms_diashow = ms_current + diashow_time;
 }
 
 void setup() {
@@ -1438,15 +1533,53 @@ void loop() {
 	//display changes
 	if(booted) {
 
-		//diashow speed rot
+		//diashow and animation routine
+		if(current_mode == MODE_IMAGES) {
+			if(diashow_enabled && ms_diashow < ms_current) {
+				if(sd_connected() && image_index.size() > 0) {
+					if(++selected_image >= image_index.size())
+						selected_image = 0;
+					image_loaded = sd_load_image(image_index[selected_image]);
+				} else {
+					image_loaded = false;
+				}
+				ms_diashow = ms_current + diashow_time;
+				display_change = true;
+			}
+
+			if(animation_enabled && image_loaded && ms_animation < ms_current) {
+				display_next_frame();
+				ms_animation = ms_current + animation_time;
+				display_change = true;
+			}
+		}
+
+		//animation speed rot
 		if(rot1_clicks != 0) {
+			animation_enabled = true;
+			int16_t new_animation_time = animation_time - rot1_clicks * 20;
+			animation_time = new_animation_time > 500 ? 500 : new_animation_time < 20 ? 20 : new_animation_time;
+			display_overlay(OVERLAY_ANIMATION_SPEED);
+
+			preferences.begin(PREFERENCES_NAMESPACE);
+			preferences.putShort("animation_time", animation_time);
+			preferences.putBool("animation", animation_enabled);
+			preferences.end();
 
 			rot1_clicks = 0;
 		}
 
-		//animation speed rot
+		//diashow speed rot
 		if(rot2_clicks != 0) {
-			//TODO
+			diashow_enabled = true;
+			int32_t new_diashow_time = diashow_time - rot2_clicks * 1000;
+			diashow_time = new_diashow_time > 60000 ? 60000 : new_diashow_time < 1000 ? 1000 : new_diashow_time;
+			display_overlay(OVERLAY_DIASHOW_SPEED);
+
+			preferences.begin(PREFERENCES_NAMESPACE);
+			preferences.putShort("diashow_time", diashow_time);
+			preferences.putBool("diashow", diashow_enabled);
+			preferences.end();
 
 			rot2_clicks = 0;
 		}
@@ -1504,9 +1637,11 @@ void loop() {
 				} else {
 					image_loaded = false;
 				}
+			} else {
+				animation.clear();
 			}
 			
-			display_overlay(OVERLAY_TEXT, current_mode == MODE_IMAGES ? strdup("Pictures") : current_mode == MODE_CLOCK ? strdup("Clock") : strdup("Socials"));
+			display_overlay(OVERLAY_TEXT, current_mode == MODE_IMAGES ? "Pictures" : current_mode == MODE_CLOCK ? "Clock" : "Socials");
 
 			preferences.begin(PREFERENCES_NAMESPACE);
 			preferences.putInt("current_mode", static_cast<int32_t>(current_mode));
@@ -1536,22 +1671,30 @@ void loop() {
 
 		//rot1 button
 		if(rot1_pressed) {
-			//TODO
+			animation_enabled = !animation_enabled;
+			ms_animation = ms_current + animation_time;
+			preferences.begin(PREFERENCES_NAMESPACE, false);
+			preferences.putBool("animation", animation_enabled);
+			preferences.end();
 			
+			display_overlay(OVERLAY_TEXT, animation_enabled ? "Animation ON" : "Animation OFF");			
 			rot1_pressed = false;
 		}
 
 		//rot2 button
 		if(rot2_pressed) {
-			//TODO
+			diashow_enabled = !diashow_enabled;
+			ms_diashow = ms_current + diashow_time;
+			preferences.begin(PREFERENCES_NAMESPACE, false);
+			preferences.putBool("diashow", diashow_enabled);
+			preferences.end();
 			
+			display_overlay(OVERLAY_TEXT, diashow_enabled ? "Diashow ON" : "Diashow OFF");
 			rot2_pressed = false;
 		}
 
 		//rot3 button
 		if(rot3_pressed) {
-			//TODO
-			
 			rot3_pressed = false;
 		}
 
@@ -1565,7 +1708,7 @@ void loop() {
 
 		//Clock refresh cycle
 		if(current_mode == MODE_CLOCK && ms_clock < ms_current) {
-			ms_clock = ms_current + 250;
+			ms_clock = ms_current + 100;
 			display_change = true;
 		}
 	}
@@ -1608,10 +1751,5 @@ void loop() {
 	if(display_change) {
 		display_change = false;
 		display_current();
-	}
-
-	//TODO remove tests
-	if(ms_test <= ms_current) {
-		ms_test = ms_current + 1000;
 	}
 }
