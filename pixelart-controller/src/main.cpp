@@ -10,7 +10,6 @@
 
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
-#include <ESPAsyncDNSServer.h>
 #include <AsyncHTTPSRequest_Generic.h>
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
@@ -43,6 +42,8 @@ const uint8_t icon_heart[7] = {0x66, 0xff, 0xff, 0xff, 0x7e, 0x3c, 0x18}; //8x7
 const uint8_t icon_bell[7] = {0x00, 0x30, 0x78, 0xfc, 0xfc, 0x00, 0x10}; //6x7
 const uint8_t icon_eye[14] = {0x1c, 0x00, 0x22, 0x00, 0x49, 0x00, 0x9c, 0x80, 0x49, 0x00, 0x22, 0x00, 0x1c, 0x00}; //9x7
 const uint8_t icon_card[128] = {0x00, 0xff, 0xff, 0xe0, 0x01, 0xff, 0xff, 0xf0, 0x01, 0xff, 0xff, 0xf0, 0x01, 0x92, 0x49, 0x30, 0x01, 0x92, 0x49, 0x30, 0x01, 0x92, 0x49, 0x30, 0x01, 0x92, 0x49, 0x30, 0x01, 0x92, 0x49, 0x30, 0x01, 0xff, 0xff, 0xf0, 0x01, 0xff, 0xff, 0xf0, 0x01, 0xff, 0xff, 0xf0, 0x03, 0xff, 0xff, 0xf0, 0x07, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x03, 0xff, 0xff, 0xf0, 0x03, 0xff, 0xff, 0xf0, 0x03, 0xff, 0xff, 0xf0, 0x07, 0xff, 0xff, 0xf0, 0x07, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x0f, 0xff, 0xff, 0xf0, 0x07, 0xff, 0xff, 0xe0}; //32x32
+const uint8_t icon_arrow_down[3] = {0xfc, 0x78, 0x30}; //6x3
+const uint8_t icon_arrow_up[3] = {0x30, 0x78, 0xfc}; //6x3
 
 const uint8_t icon_twitch[120] = {0x0f, 0xff, 0xff, 0xf0, 0x1f, 0xff, 0xff, 0xf0, 0x30, 0x00, 0x00, 0x30, 0x70, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x18, 0x0c, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x30, 0xf0, 0x00, 0x00, 0x70, 0xf0, 0x00, 0x00, 0xf0, 0xf0, 0x00, 0x01, 0xe0, 0xff, 0xf1, 0xff, 0xc0, 0xff, 0xf3, 0xff, 0x80, 0xff, 0xf7, 0xff, 0x00, 0xff, 0xff, 0xfe, 0x00, 0x01, 0xc0, 0x00, 0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00}; //28x30
 const uint8_t icon_youtube_base[96] = {0x0f, 0xff, 0xff, 0xf0, 0x3f, 0xff, 0xff, 0xfc, 0x7f, 0xff, 0xff, 0xfe, 0x7f, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xfe, 0x7f, 0xff, 0xff, 0xfe, 0x3f, 0xff, 0xff, 0xfc, 0x0f, 0xff, 0xff, 0xf0}; //32x24
@@ -81,6 +82,16 @@ enum clock_type {
 	CLOCK_DIGITAL_BIG
 };
 
+enum menu_mode {
+	MENU_NONE,
+	MENU_OVERVIEW,
+	MENU_CLOCK,
+	MENU_DATETIME,
+	MENU_WIFI,
+	MENU_WIFI_CONNECT,
+	MENU_WIFI_HOST
+};
+
 struct socials_channel {
 	char* type;
 	char* name;
@@ -115,6 +126,18 @@ bool requested_restart = false;
 overlay_type overlay = OVERLAY_NONE;
 char* overlay_text = strdup("");
 unsigned long ms_overlay = 0;
+
+menu_mode menu = MENU_NONE;
+uint8_t menu_selection = 0;
+
+boolean menu_time_changed = false;
+uint8_t menu_day = 0;
+uint8_t menu_month = 0;
+uint8_t menu_year = 0;
+uint8_t menu_hour = 0;
+uint8_t menu_minute = 0;
+uint8_t menu_second = 0;
+
 uint8_t brightness = 128;
 bool animation_enabled = false;
 bool diashow_enabled = false;
@@ -133,7 +156,6 @@ char* wifi_password = strdup(WIFI_PASSWORD_DEFAULT);
 char* wifi_ap_password = strdup(WIFI_AP_PASSWORD_DEFAULT);
 unsigned long ms_wifi_routine = 0;
 unsigned long ms_wifi_reconnect = 0;
-AsyncDNSServer dnsServer;
 
 //Server
 AsyncWebServer server(80);
@@ -300,6 +322,7 @@ void wifi_on_connected() {
 		}
 	}
 
+	display_change = true;
 	socials_refresh();
 }
 
@@ -317,6 +340,51 @@ char* generate_uid(){
 
 bool verify_api_key(AsyncWebServerRequest * request) {
 	return request->hasHeader("apiKey") && request->getHeader("apiKey")->value().equals(api_key);
+}
+
+void menu_copy_time() {
+	menu_year = rtc_int.getYear() % 100;
+	menu_month = rtc_int.getMonth() + 1;
+	menu_day = rtc_int.getDay();
+	menu_hour = rtc_int.getHour(true);
+	menu_minute = rtc_int.getMinute();
+	menu_second = rtc_int.getSecond();
+}
+
+void menu_correct_date() {
+	if(menu_day > 30 && (menu_month == 4 || menu_month == 6 || menu_month == 9 || menu_month == 11))
+		menu_day = rot3_clicks > 0 ? 1 : 30;
+
+	if(menu_day > 29 && menu_month == 2 && menu_year % 4 == 0)
+		menu_day = rot3_clicks > 0 ? 1 : 29;
+	
+	if(menu_day > 28 && menu_month == 2 && menu_year % 4 != 0)
+		menu_day = rot3_clicks > 0 ? 1 : 28;
+}
+
+void menu_update_time() {
+	struct tm t = {0};
+	t.tm_year = menu_year + 100;
+	t.tm_mon = menu_month - 1;
+	t.tm_mday = menu_day;
+	t.tm_hour = menu_hour;
+	t.tm_min = menu_minute;
+	t.tm_sec = menu_second;
+	rtc_int.setTime(mktime(&t));
+	
+	if(rtc_ext_enabled) {
+		ms_rtc_ext_adjust = millis() + 1000;
+		rtc_ext_adjust = true;
+	}
+
+	if(wifi_connect) {
+		preferences.begin(PREFERENCES_NAMESPACE);
+		update_time = false;
+		preferences.putBool("update_time", update_time);
+		preferences.end();
+	}
+
+	menu_time_changed = false;
 }
 
 
@@ -583,6 +651,199 @@ void display_overlay(overlay_type type, const char* text = "") {
 	display_change = true;
 }
 
+void display_menu() {
+	//transparent background
+	panel->clearScreen();
+
+	panel->setTextSize(1);
+	char * headline;
+	
+	char clockText[10];
+	int year = rtc_int.getYear() % 100;
+	int month = rtc_int.getMonth() + 1;
+	int day = rtc_int.getDay();
+	int hour = rtc_int.getHour(true);
+	int minute = rtc_int.getMinute();
+	int second = rtc_int.getSecond();
+	int arrowOffset = menu_selection == 0 ? 13 : 36;
+
+	int selY = 0;
+	switch(menu_selection) {
+		case 0:
+			selY = 12;
+			break;
+		case 1:
+			selY = 23;
+			break;
+		case 2:
+			selY = 34;
+			break;
+		case 3:
+			selY = 45;
+			break;
+	}
+	
+	switch(menu) {
+		case MENU_OVERVIEW:
+			headline = strdup("Settings");
+
+			//Draw menu points
+			panel->setCursor(3, 21);
+			panel->write("Clock Settings");
+			panel->setCursor(3, 32);
+			panel->write("Set Date/Time");
+			panel->setCursor(3, 43);
+			panel->write("Wifi Settings");
+
+			//Draw selection box			
+			panel->drawRect(1, selY, 62, 11, 0xFFFF);
+			break;
+		case MENU_CLOCK:
+			headline = strdup("Clock Settings");
+
+			//Draw menu points
+			panel->setCursor(3, 21);
+			panel->write("Show Seconds");
+			panel->setCursor(3, 32);
+			panel->write("Show Year");
+			panel->setCursor(3, 43);
+			panel->write("Show Blink");
+			panel->setCursor(3, 54);
+			panel->write("24h Format");
+
+			//draw checkboxes
+			if(clock_seconds)
+				panel->fillRect(55, 15, 5, 5, 0xFFFF);
+			else
+				panel->drawRect(55, 15, 5, 5, 0xFFFF);
+
+			if(clock_year)
+				panel->fillRect(55, 26, 5, 5, 0xFFFF);
+			else
+				panel->drawRect(55, 26, 5, 5, 0xFFFF);
+
+			if(clock_blink)
+				panel->fillRect(55, 37, 5, 5, 0xFFFF);
+			else
+				panel->drawRect(55, 37, 5, 5, 0xFFFF);
+
+			if(time_format24)
+				panel->fillRect(55, 48, 5, 5, 0xFFFF);
+			else
+				panel->drawRect(55, 48, 5, 5, 0xFFFF);
+
+			//Draw selection box			
+			panel->drawRect(1, selY, 62, 11, 0xFFFF);
+			break;
+		case MENU_DATETIME:
+			headline = strdup("Set Date/Time");
+
+			panel->setTextSize(2);
+			
+			//time
+			if(menu_time_changed) {
+				year = menu_year;
+				month = menu_month;
+				day = menu_day;
+				hour = menu_hour;
+				minute = menu_minute;
+				second = menu_second;
+			}
+			sprintf(clockText, "%02d.%02d.%02d", day, month, year);
+			panel->setCursor(5, 32);
+			panel->write(clockText);
+			
+			sprintf(clockText, "%02d:%02d:%02d", hour, minute, second);
+			panel->setCursor(5, 55);
+			panel->write(clockText);
+
+			//arrows
+			panel->drawBitmap(9, arrowOffset, icon_arrow_up, 6, 3, 0xFFFF);
+			panel->drawBitmap(29, arrowOffset, icon_arrow_up, 6, 3, 0xFFFF);
+			panel->drawBitmap(49, arrowOffset, icon_arrow_up, 6, 3, 0xFFFF);
+			
+			panel->drawBitmap(9, arrowOffset + 21, icon_arrow_down, 6, 3, 0xFFFF);
+			panel->drawBitmap(29, arrowOffset + 21, icon_arrow_down, 6, 3, 0xFFFF);
+			panel->drawBitmap(49, arrowOffset + 21, icon_arrow_down, 6, 3, 0xFFFF);
+
+			panel->setTextSize(1);
+
+			break;
+		case MENU_WIFI:
+			headline = strdup("Wifi Settings");
+
+			//Draw menu points
+			panel->setCursor(3, 21);
+			panel->write("Connect");
+			panel->setCursor(3, 32);
+			panel->write("Connection Stats");
+			panel->setCursor(3, 43);
+			panel->write("Host");
+			panel->setCursor(3, 54);
+			panel->write("Host Stats");
+
+			//draw checkboxes
+			if(wifi_connect)
+				panel->fillRect(55, 15, 5, 5, 0xFFFF);
+			else
+				panel->drawRect(55, 15, 5, 5, 0xFFFF);
+
+			if(wifi_host)
+				panel->fillRect(55, 37, 5, 5, 0xFFFF);
+			else
+				panel->drawRect(55, 37, 5, 5, 0xFFFF);
+
+			//Draw selection box			
+			panel->drawRect(1, selY, 62, 11, 0xFFFF);
+			break;
+		case MENU_WIFI_CONNECT:
+			headline = strdup("Wifi Connection");
+
+			//Draw menu points
+			panel->setCursor(3, 21);
+			panel->write(WiFi.localIP().toString().c_str());
+			panel->setCursor(3, 32);
+			panel->write(wifi_ssid);
+			panel->setCursor(3, 43);
+			panel->write("Connected");
+			if(wifi_connect && wifi_setup_complete)
+				panel->fillRect(55, 37, 5, 5, 0xFFFF);
+			else
+				panel->drawRect(55, 37, 5, 5, 0xFFFF);
+
+			break;
+		case MENU_WIFI_HOST:
+			headline = strdup("Wifi Hosting");
+
+			//Draw menu points
+			panel->setCursor(3, 21);
+			panel->write(WiFi.softAPIP().toString().c_str());
+			panel->setCursor(3, 32);
+			panel->write(wifi_ap_ssid);
+			panel->setCursor(3, 43);
+			panel->setTextWrap(true);
+			panel->write(wifi_ap_password);
+			panel->setTextWrap(false);
+
+			break;
+	}
+
+	//display headline
+	int16_t x1, y1;
+	uint16_t width, height;
+	panel->setTextColor(0xFFFF);
+
+	panel->getTextBounds(headline, 0, 2, &x1, &y1, &width, &height);
+	panel->setCursor(64 > width ? .5 * (64 - width) : 0, 9);
+	panel->write(headline);
+	free(headline);
+
+	display_overlay();
+
+	if(PANEL_DOUBLE_BUFFER)
+		panel->flipDMABuffer();
+}
+
 // Display static images on led matrix by pixelarray
 void display_loaded_image() {
 	for(int y = 0; y < 64; y++) {
@@ -781,6 +1042,7 @@ void display_clock_digital(bool withDate) {
 
 	panel->setCursor( x_start, y_start);
 	panel->write(clockText);
+	panel->setTextSize(1);
 
 	display_overlay();
 
@@ -811,6 +1073,7 @@ void display_clock_big() {
 	panel->setCursor(14, 54);
 	panel->write(clockText);
 
+	panel->setTextSize(1);
 	panel->setFont(&Font4x7Fixed);
 	display_overlay();
 
@@ -819,6 +1082,11 @@ void display_clock_big() {
 }
 
 void display_current() {
+	if(menu != MENU_NONE) {
+		display_menu();
+		return;
+	}
+
 	switch(current_mode) {
 		case MODE_SOCIALS:
 			//go to next mode if wifi wont be connected
@@ -1335,6 +1603,8 @@ void wifi_setup() {
 
 	WiFi.setHostname(WIFI_HOSTNAME);
 	WiFi.setAutoReconnect(true);
+	WiFi.disconnect(true);
+	WiFi.softAPdisconnect(true);
 	ms_wifi_reconnect = millis() + 60000;
 	wifi_setup_complete = true;
 
@@ -1346,10 +1616,6 @@ void wifi_setup() {
 	
 	if(wifi_host) {
 		WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
-		//TODO DNS not yet working
-		dnsServer.setTTL(300);
-		dnsServer.setErrorReplyCode(AsyncDNSReplyCode::ServerFailure);
-		dnsServer.start(53, "*", WiFi.softAPIP());
 	}
 }
 
@@ -1534,119 +1800,293 @@ void loop() {
 	if(booted) {
 
 		//diashow and animation routine
-		if(current_mode == MODE_IMAGES) {
-			if(diashow_enabled && ms_diashow < ms_current) {
-				if(sd_connected() && image_index.size() > 0) {
-					if(++selected_image >= image_index.size())
-						selected_image = 0;
-					image_loaded = sd_load_image(image_index[selected_image]);
-				} else {
-					image_loaded = false;
+		if(menu == MENU_NONE) {
+			if(current_mode == MODE_IMAGES) {
+				if(diashow_enabled && ms_diashow < ms_current) {
+					if(sd_connected() && image_index.size() > 0) {
+						if(++selected_image >= image_index.size())
+							selected_image = 0;
+						image_loaded = sd_load_image(image_index[selected_image]);
+					} else {
+						image_loaded = false;
+					}
+					ms_diashow = ms_current + diashow_time;
+					display_change = true;
+				}
+
+				if(animation_enabled && image_loaded && ms_animation < ms_current) {
+					display_next_frame();
+					ms_animation = ms_current + animation_time;
+					display_change = true;
+				}
+			} else if(current_mode == MODE_SOCIALS && diashow_enabled && ms_diashow < ms_current) {
+				if(socials_channels.size() > 0 && ++socials_channel_current >= socials_channels.size()) {
+					socials_channel_current = 0;
 				}
 				ms_diashow = ms_current + diashow_time;
-				display_change = true;
-			}
-
-			if(animation_enabled && image_loaded && ms_animation < ms_current) {
-				display_next_frame();
-				ms_animation = ms_current + animation_time;
 				display_change = true;
 			}
 		}
 
 		//animation speed rot
 		if(rot1_clicks != 0) {
-			animation_enabled = true;
-			int16_t new_animation_time = animation_time - rot1_clicks * 20;
-			animation_time = new_animation_time > 500 ? 500 : new_animation_time < 20 ? 20 : new_animation_time;
-			display_overlay(OVERLAY_ANIMATION_SPEED);
+			if(menu == MENU_NONE) {
+				animation_enabled = true;
+				int16_t new_animation_time = animation_time - rot1_clicks * 20;
+				animation_time = new_animation_time > 500 ? 500 : new_animation_time < 20 ? 20 : new_animation_time;
+				ms_animation = ms_current + animation_time;
+				display_overlay(OVERLAY_ANIMATION_SPEED);
 
-			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putShort("animation_time", animation_time);
-			preferences.putBool("animation", animation_enabled);
-			preferences.end();
+				preferences.begin(PREFERENCES_NAMESPACE);
+				preferences.putShort("animation_time", animation_time);
+				preferences.putBool("animation", animation_enabled);
+				preferences.end();
+			} else if(menu == MENU_DATETIME) {
+				if(!menu_time_changed)
+					menu_copy_time();
 
+				int8_t new_time;
+				
+				switch(menu_selection) {
+					case 0:
+						new_time = menu_year + rot1_clicks;
+						if(new_time > 99)
+							menu_year = 0;
+						else if(new_time < 0)
+							menu_year = 99;
+						else
+							menu_year = new_time;
+						menu_correct_date();
+						break;
+					case 1:
+						new_time = menu_second + rot1_clicks;
+						if(new_time > 59)
+							menu_second = 0;
+						else if(new_time < 0)
+							menu_second = 59;
+						else
+							menu_second = new_time;
+						break;
+				}
+
+				menu_time_changed = true;
+			}
+
+			display_change = true;
 			rot1_clicks = 0;
 		}
 
 		//diashow speed rot
 		if(rot2_clicks != 0) {
-			diashow_enabled = true;
-			int32_t new_diashow_time = diashow_time - rot2_clicks * 1000;
-			diashow_time = new_diashow_time > 60000 ? 60000 : new_diashow_time < 1000 ? 1000 : new_diashow_time;
-			display_overlay(OVERLAY_DIASHOW_SPEED);
+			if(menu == MENU_NONE) {
+				diashow_enabled = true;
+				int32_t new_diashow_time = diashow_time - rot2_clicks * 1000;
+				diashow_time = new_diashow_time > 60000 ? 60000 : new_diashow_time < 1000 ? 1000 : new_diashow_time;
+				ms_diashow = ms_current + diashow_time;
+				display_overlay(OVERLAY_DIASHOW_SPEED);
 
-			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putShort("diashow_time", diashow_time);
-			preferences.putBool("diashow", diashow_enabled);
-			preferences.end();
+				preferences.begin(PREFERENCES_NAMESPACE);
+				preferences.putShort("diashow_time", diashow_time);
+				preferences.putBool("diashow", diashow_enabled);
+				preferences.end();
+			} else if(menu == MENU_DATETIME) {
+				if(!menu_time_changed)
+					menu_copy_time();
 
+				int8_t new_time;
+				
+				switch(menu_selection) {
+					case 0:
+						new_time = menu_month + rot2_clicks;
+						if(new_time > 12)
+							menu_month = 1;
+						else if(new_time < 1)
+							menu_month = 12;
+						else
+							menu_month = new_time;
+						menu_correct_date();
+						break;
+					case 1:
+						new_time = menu_minute + rot2_clicks;
+						if(new_time > 59)
+							menu_minute = 0;
+						else if(new_time < 0)
+							menu_minute = 59;
+						else
+							menu_minute = new_time;
+						break;
+				}
+
+				menu_time_changed = true;
+			}
+
+			display_change = true;
 			rot2_clicks = 0;
 		}
 
 		//brightness rot
 		if(rot3_clicks != 0) {
-			int16_t new_brightness = brightness + rot3_clicks * 8;
-			brightness = new_brightness > 248 ? 248 : new_brightness < 16 ? 16 : new_brightness;
-			display_overlay(OVERLAY_BRIGHTNESS);
+			if(menu != MENU_DATETIME) {
+				int16_t new_brightness = brightness + rot3_clicks * 8;
+				brightness = new_brightness > 248 ? 248 : new_brightness < 16 ? 16 : new_brightness;
+				display_overlay(OVERLAY_BRIGHTNESS);
 
-			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putShort("brightness", brightness);
-			preferences.end();
+				preferences.begin(PREFERENCES_NAMESPACE);
+				preferences.putShort("brightness", brightness);
+				preferences.end();
+			} else {
+				if(!menu_time_changed)
+					menu_copy_time();
 
+				int8_t new_time;
+				
+				switch(menu_selection) {
+					case 0:
+						new_time = menu_day + rot3_clicks;
+						if(new_time > 31)
+							menu_day = 1;
+						else if(new_time < 1)
+							menu_day = 31;
+						else
+							menu_day = new_time;
+						menu_correct_date();
+						break;
+					case 1:
+						new_time = menu_hour + rot3_clicks;
+						if(new_time > 23)
+							menu_hour = 0;
+						else if(new_time < 0)
+							menu_hour = 23;
+						else
+							menu_hour = new_time;
+						break;
+				}
+
+				menu_time_changed = true;
+			}
+
+			display_change = true;
 			rot3_clicks = 0;
 		}
 
 		//next button
 		if(btn1_pressed) {
-			
-			preferences.begin(PREFERENCES_NAMESPACE);
-			if(current_mode == MODE_SOCIALS) {
-				socials_channel_current = socials_channel_current + 1 >= socials_channels.size() ? 0 : socials_channel_current + 1;
-				preferences.putInt("current_social", socials_channel_current);
-			} else if(current_mode == MODE_CLOCK) {
-				current_clock_mode = static_cast<clock_type>((current_clock_mode + 1) % CLOCK_TYPE_NUMBER);
-				preferences.putInt("clock_mode", current_clock_mode);
-			} else if(current_mode == MODE_IMAGES) {
-				if(sd_connected() && image_index.size() > 0) {
-					if(++selected_image >= image_index.size())
-						selected_image = 0;
-					image_loaded = sd_load_image(image_index[selected_image]);
-				} else {
-					image_loaded = false;
+			if(menu == MENU_NONE) {			
+				preferences.begin(PREFERENCES_NAMESPACE);
+				if(current_mode == MODE_SOCIALS) {
+					socials_channel_current = socials_channel_current + 1 >= socials_channels.size() ? 0 : socials_channel_current + 1;
+					preferences.putInt("current_social", socials_channel_current);
+				} else if(current_mode == MODE_CLOCK) {
+					current_clock_mode = static_cast<clock_type>((current_clock_mode + 1) % CLOCK_TYPE_NUMBER);
+					preferences.putInt("clock_mode", current_clock_mode);
+				} else if(current_mode == MODE_IMAGES) {
+					if(sd_connected() && image_index.size() > 0) {
+						if(++selected_image >= image_index.size())
+							selected_image = 0;
+						image_loaded = sd_load_image(image_index[selected_image]);
+					} else {
+						image_loaded = false;
+					}
+					preferences.putInt("selected_image", selected_image);
 				}
-				preferences.putInt("selected_image", selected_image);
+				preferences.end();
+			} else {
+				menu_selection++;
+				if((menu == MENU_OVERVIEW && menu_selection > 2)
+				|| (menu == MENU_CLOCK && menu_selection > 3)
+				|| (menu == MENU_DATETIME && menu_selection > 1)
+				|| (menu == MENU_WIFI && menu_selection > 3))
+					menu_selection = 0;
 			}
-			preferences.end();
-			display_change = true;
 
+			display_change = true;
 			btn1_pressed = false;
 		}
 
 		//mode button
 		if(btn2_pressed) {
-			current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
-			if(current_mode == MODE_SOCIALS && !wifi_connect)
+			if(menu == MENU_NONE) {
 				current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
+				if(current_mode == MODE_SOCIALS && !wifi_connect)
+					current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
 
-			if(current_mode == MODE_IMAGES) {
-				if(sd_connected() && image_index.size() > 0) {
-					if(selected_image >= image_index.size())
-						selected_image = 0;
-					image_loaded = sd_load_image(image_index[selected_image]);
+				if(current_mode == MODE_IMAGES) {
+					if(sd_connected() && image_index.size() > 0) {
+						if(selected_image >= image_index.size())
+							selected_image = 0;
+						image_loaded = sd_load_image(image_index[selected_image]);
+					} else {
+						image_loaded = false;
+					}
 				} else {
-					image_loaded = false;
+					animation.clear();
 				}
-			} else {
-				animation.clear();
+				
+				display_overlay(OVERLAY_TEXT, current_mode == MODE_IMAGES ? "Pictures" : current_mode == MODE_CLOCK ? "Clock" : "Socials");
+
+				preferences.begin(PREFERENCES_NAMESPACE);
+				preferences.putInt("current_mode", static_cast<int32_t>(current_mode));
+				preferences.end();
+			} else if(menu == MENU_OVERVIEW) {
+				switch(menu_selection) {
+					case 0:
+						menu = MENU_CLOCK;
+						break;
+					case 1:
+						menu = MENU_DATETIME;
+						break;
+					case 2:
+						menu = MENU_WIFI;
+						break;
+				}
+				menu_selection = 0;
+			} else if(menu == MENU_CLOCK) {
+				preferences.begin(PREFERENCES_NAMESPACE);
+				switch(menu_selection) {
+					case 0:
+						clock_seconds = !clock_seconds;
+						preferences.putBool("clock_seconds", clock_seconds);
+						break;
+					case 1:
+						clock_year = !clock_year;
+						preferences.putBool("clock_year", clock_year);
+						break;
+					case 2:
+						clock_blink = !clock_blink;
+						preferences.putBool("clock_blink", clock_blink);
+						break;
+					case 3:
+						time_format24 = !time_format24;
+						preferences.putBool("time_format24", time_format24);
+						break;
+				}
+				preferences.end();
+			} else if(menu == MENU_DATETIME) {
+				menu_update_time();
+			} else if(menu == MENU_WIFI) {
+				preferences.begin(PREFERENCES_NAMESPACE);
+				switch(menu_selection) {
+					case 0:
+						wifi_connect = !wifi_connect;
+						preferences.putBool("wifi_connect", wifi_connect);
+						wifi_setup();
+						break;
+					case 1:
+						menu = MENU_WIFI_CONNECT;
+						break;
+					case 2:
+						wifi_host = !wifi_host;
+						preferences.putBool("wifi_host", wifi_host);
+						wifi_setup();
+						break;
+					case 3:
+						menu = MENU_WIFI_HOST;
+						break;
+				}
+				preferences.end();
 			}
 			
-			display_overlay(OVERLAY_TEXT, current_mode == MODE_IMAGES ? "Pictures" : current_mode == MODE_CLOCK ? "Clock" : "Socials");
-
-			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putInt("current_mode", static_cast<int32_t>(current_mode));
-			preferences.end();
-			
+			display_change = true;
 			btn2_pressed = false;
 		}
 
@@ -1659,37 +2099,60 @@ void loop() {
 			preferences.end();
 			requested_restart = true;
 		} else if(btn3_released) {
-			//approve api key for server if requested
-			if(ms_api_key_request > ms_current) {
-				ms_api_key_approve = ms_current + 5000;
-				ms_api_key_request = 0;
+			if(menu == MENU_NONE) {
+				//approve api key for server if requested else open meu
+				if(ms_api_key_request > ms_current) {
+					ms_api_key_approve = ms_current + 5000;
+					ms_api_key_request = 0;
+				} else {
+					menu = MENU_OVERVIEW;
+				}
+			} else if(menu == MENU_WIFI || menu == MENU_CLOCK) {
+				menu = MENU_OVERVIEW;
+			} else if(menu == MENU_DATETIME) {
+				menu_update_time();
+				menu = MENU_OVERVIEW;
+			} else if(menu == MENU_WIFI_CONNECT || menu == MENU_WIFI_HOST) {
+				menu = MENU_WIFI;
+			} else {
+				menu = MENU_NONE;
 			}
 			
+			ms_animation = ms_current + animation_time;
+			ms_diashow = ms_current + diashow_time;
+			menu_selection = 0;
+			display_change = true;
 			btn3_released = false;
 		}
 
 
 		//rot1 button
 		if(rot1_pressed) {
-			animation_enabled = !animation_enabled;
-			ms_animation = ms_current + animation_time;
-			preferences.begin(PREFERENCES_NAMESPACE, false);
-			preferences.putBool("animation", animation_enabled);
-			preferences.end();
-			
-			display_overlay(OVERLAY_TEXT, animation_enabled ? "Animation ON" : "Animation OFF");			
+			if(menu == MENU_NONE) {
+				animation_enabled = !animation_enabled;
+				ms_animation = ms_current + animation_time;
+				preferences.begin(PREFERENCES_NAMESPACE, false);
+				preferences.putBool("animation", animation_enabled);
+				preferences.end();
+				
+				display_overlay(OVERLAY_TEXT, animation_enabled ? "Animation ON" : "Animation OFF");
+			}
+
 			rot1_pressed = false;
 		}
 
 		//rot2 button
 		if(rot2_pressed) {
-			diashow_enabled = !diashow_enabled;
-			ms_diashow = ms_current + diashow_time;
-			preferences.begin(PREFERENCES_NAMESPACE, false);
-			preferences.putBool("diashow", diashow_enabled);
-			preferences.end();
-			
-			display_overlay(OVERLAY_TEXT, diashow_enabled ? "Diashow ON" : "Diashow OFF");
+			if(menu == MENU_NONE) {
+				diashow_enabled = !diashow_enabled;
+				ms_diashow = ms_current + diashow_time;
+				preferences.begin(PREFERENCES_NAMESPACE, false);
+				preferences.putBool("diashow", diashow_enabled);
+				preferences.end();
+				
+				display_overlay(OVERLAY_TEXT, diashow_enabled ? "Diashow ON" : "Diashow OFF");
+			}
+
 			rot2_pressed = false;
 		}
 
@@ -1707,7 +2170,7 @@ void loop() {
 		}
 
 		//Clock refresh cycle
-		if(current_mode == MODE_CLOCK && ms_clock < ms_current) {
+		if((current_mode == MODE_CLOCK || menu == MENU_DATETIME) && ms_clock < ms_current) {
 			ms_clock = ms_current + 100;
 			display_change = true;
 		}
@@ -1735,16 +2198,18 @@ void loop() {
 	}
 
 	//Routine for async http
-	if(socials_response_check != 0 && socials_response_check <= ms_current) {
-		if(http_socials.readyState() == readyStateDone) {
-			socials_response_check = 0;
-			on_socials_response();
-		} else {
-			socials_response_check += 250;
+	if(menu == MENU_NONE) {
+		if(socials_response_check != 0 && socials_response_check <= ms_current) {
+			if(http_socials.readyState() == readyStateDone) {
+				socials_response_check = 0;
+				on_socials_response();
+			} else {
+				socials_response_check += 250;
+			}
+		} else if(current_mode == MODE_SOCIALS && ms_socials_request != 0 && ms_socials_request <= ms_current) {
+			ms_socials_request = ms_current + SOCIAL_REFRESH_INTERVAL;
+			socials_refresh();
 		}
-	} else if(current_mode == MODE_SOCIALS && ms_socials_request != 0 && ms_socials_request <= ms_current) {
-		ms_socials_request = ms_current + SOCIAL_REFRESH_INTERVAL;
-		socials_refresh();
 	}
 
 	//refresh display if needed
