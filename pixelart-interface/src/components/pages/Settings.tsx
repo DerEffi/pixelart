@@ -45,7 +45,7 @@ export default class Settings extends React.Component<ISettingsComponentProps, I
                         <Routes>
                             <Route path="/display" element={<DisplaySettings dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="/pictures" element={<PictureSettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/time" element={<TimeSettings dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/time" element={<TimeSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="/wifi" element={<WifiSettings dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="/socials" element={<SocialsSettings dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="/system" element={<SystemSettings dataService={this.props.dataService} toast={this.props.toast} />} />
