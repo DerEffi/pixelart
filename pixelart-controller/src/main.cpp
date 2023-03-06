@@ -6,6 +6,7 @@
 #include <Font4x7Fixed.h>
 #include <SPI.h>
 #include <SD.h>
+#include <Update.h>
 #include <Preferences.h>
 
 #include <WiFi.h>
@@ -577,6 +578,53 @@ bool sd_load_image(image_meta image) {
 	return false;
 }
 
+void restart() {
+	panel->clearScreen();
+	if(PANEL_DOUBLE_BUFFER)
+		panel->flipDMABuffer();
+
+	panel->stopDMAoutput();
+	if(sd_connected())
+		SD.end();
+
+	ESP.restart();
+}
+
+void firmware_update() {
+	if(sd_connected() && SD.exists("/firmware.bin")) {
+		//Display update process
+		panel->setTextSize(1);
+		panel->setTextWrap(false);
+		panel->setBrightness(192);
+		panel->setCursor(5, 12);
+		panel->write("Updating Device");
+		panel->setCursor(7, 28);
+		panel->write("Do NOT remove");
+		panel->setCursor(12, 37);
+		panel->write("the SD Card");
+		panel->setCursor(10, 46);
+		panel->write("or power off");
+		panel->setCursor(13, 55);
+		panel->write("this device");
+		
+		if(PANEL_DOUBLE_BUFFER)
+			panel->flipDMABuffer();
+
+		//Update
+		File firmware = SD.open("/firmware.bin");
+		if(!firmware.isDirectory()) {
+			size_t update_size = firmware.size();
+			if(update_size > 1024 && Update.begin(update_size)) {
+				size_t written_size = Update.writeStream(firmware);
+				if((written_size != update_size || !Update.end() || !Update.isFinished()) && Update.canRollBack())
+					Update.rollBack();
+			}
+		}
+		firmware.close();
+		SD.remove("/firmware.bin");
+		restart();
+	}
+}
 
 
 
@@ -1594,6 +1642,14 @@ void server_setup() {
 			}
 		});
 
+		server.on("/interface.version.json", HTTP_GET, [](AsyncWebServerRequest *request) {
+			if(sd_connected && SD.exists("/webserver/interface.version.json")) {
+				request->send(SD, "/webserver/interface.version.json", String());
+			} else {
+				request->send(200, "text/plain", "SD Card or Files missing");
+			}
+		});
+
 		server.serveStatic("/", SD, "/webserver").setDefaultFile("index.html").setCacheControl("max-age=600");
 	}
 }
@@ -1775,12 +1831,13 @@ void booted_setup() {
 void setup() {
 	Serial.begin(9600); //TODO remove after testing
 
-	preferences_load();
 	gpio_setup();
+	preferences_load();
 	time_setup();
 	wifi_setup();
 	server_setup();
 	panel_setup();
+	firmware_update();
 	
 	booted_setup(); //TODO move after boot sequence if implemented
 }
@@ -2194,7 +2251,7 @@ void loop() {
 
 	//Execute reset from api request
 	if(requested_restart) {
-		ESP.restart();
+		restart();
 	}
 
 	//Routine for async http
