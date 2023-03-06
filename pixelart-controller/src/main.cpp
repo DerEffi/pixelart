@@ -118,9 +118,16 @@ struct pixel_data {
 	x(x), y(y), color(color) {}
 };
 
+struct boot_row {
+	uint8_t row;
+	std::vector<uint8_t> pixels;
+	boot_row(uint8_t row, std::vector<uint8_t> pixels):
+	row(row), pixels(pixels) {}
+};
+std::vector<boot_row> boot_sequence = {{59,{31,32}},{58,{30,31,32,33}},{57,{29,30,33,34}},{56,{28,29,34,35}},{55,{28,35}},{54,{27,28,35,36}},{53,{26,27,36,37}},{52,{25,26,37,38}},{51,{24,25,38,39}},{50,{24,39}},{49,{23,24,39,40}},{48,{22,23,40,41}},{47,{21,22,41,42}},{46,{20,21,42,43}},{45,{20,43}},{44,{19,20,43,44}},{43,{18,19,44,45}},{42,{17,18,45,46}},{41,{16,17,46,47}},{40,{16,47}},{39,{15,16,47,48}},{38,{14,15,48,49}},{37,{13,14,49,50}},{36,{12,13,50,51}},{35,{12,51}},{34,{11,12,51,52}},{33,{11,52}},{32,{10,11,52,53}},{31,{10,53}},{30,{10,53}},{29,{10,53}},{28,{10,53}},{27,{10,53}},{26,{10,53}},{25,{10,53}},{24,{10,53}},{23,{9,10,53,54}},{22,{9,10,53,54}},{21,{9,10,53,54}},{20,{9,10,53,54}},{19,{9,10,53,54}},{18,{9,54}},{17,{9,54}},{16,{9,54}},{15,{9,54}},{14,{9,54}},{13,{9,54}},{12,{9,54}},{11,{9,54}},{10,{9,54}},{9,{8,9,54,55}},{8,{8,9,54,55}},{7,{8,9,54,55}},{6,{8,9,54,55}},{5,{8,9,54,55}},{4,{8,9,54,55}},{3,{8,9,54,55}},{4,{10,53}},{5,{10,11,52,53}},{6,{10,11,12,51,52,53}},{7,{10,12,13,50,51,53}},{8,{10,13,14,49,50,53}},{9,{10,11,14,15,48,49,52,53}},{10,{11,15,16,47,48,52}},{11,{11,16,17,46,47,52}},{12,{11,12,17,18,45,46,51,52}},{13,{12,18,19,44,45,51}},{14,{12,13,19,20,43,44,50,51}},{15,{13,20,21,42,43,50}},{16,{13,21,22,41,42,50}},{17,{13,14,22,23,40,41,49,50}},{18,{14,23,24,29,30,31,32,33,34,39,40,49}},{19,{14,15,24,25,26,27,28,35,36,37,38,39,48,49}},{20,{15,23,24,39,40,48}},{21,{15,22,23,40,41,48}},{22,{15,16,21,22,41,42,47,48}},{23,{16,20,21,42,43,47}},{24,{16,17,19,20,43,44,46,47}},{25,{17,18,19,44,45,46}},{26,{17,18,45,46}},{27,{16,17,18,45,46,47}},{28,{15,16,18,19,44,45,47,48}},{29,{14,15,19,44,48,49}},{30,{13,14,19,20,43,44,49,50}},{31,{12,13,20,43,50,51}},{32,{12,13,20,43,50,51}},{33,{12,13,14,15,16,20,21,42,43,47,48,49,50,51}},{34,{16,17,21,42,46,47}},{35,{17,18,19,21,22,41,42,44,45,46}},{36,{19,20,22,41,43,44}},{37,{20,21,22,41,42,43}},{38,{21,22,23,40,41,42}},{39,{22,23,40,41}},{40,{23,24,39,40}},{41,{24,39}},{42,{24,25,38,39}},{43,{25,38}},{44,{25,26,37,38}},{45,{26,37}},{46,{26,37}},{47,{26,27,36,37}},{48,{27,36}},{49,{27,28,35,36}},{50,{28,35}},{51,{28,35}},{52,{28,29,34,35}},{53,{28,29,34,35}},{54,{29,34}},{55,{29,30,33,34}},{56,{30,33}},{57,{31,32}}};
+
 //settings
 Preferences preferences;
-bool booted = false;
 unsigned long ms_current = 0;
 bool requested_restart = false;
 
@@ -1300,7 +1307,27 @@ void IRAM_ATTR trigger_rot3_btn() {
 **	Setup  **
 *************/
 
-//Initialize GPIO Pins
+// Show boot sequence
+void setup_boot_sequence() {
+	for(int row = 0; row < boot_sequence.size(); row++) {
+
+		for(int pixel = 0; pixel < boot_sequence[row].pixels.size(); pixel++) {
+			panel->drawPixel(boot_sequence[row].pixels[pixel], boot_sequence[row].row, 0xFFFF);
+		}
+
+		if(PANEL_DOUBLE_BUFFER) {
+			panel->flipDMABuffer();
+
+			for(int pixel = 0; pixel < boot_sequence[row].pixels.size(); pixel++) {
+				panel->drawPixel(boot_sequence[row].pixels[pixel], boot_sequence[row].row, 0xFFFF);
+			}
+		}
+
+		delay(7);
+	}
+}
+
+// Initialize GPIO Pins
 void gpio_setup() {
 
 	//Turning off onboard led
@@ -1378,14 +1405,17 @@ void panel_setup() {
 	panel->clearScreen();
 	panel->setPanelBrightness(brightness);
 	panel->setFont(&Font4x7Fixed);
+	panel->setTextSize(1);
 	panel->setTextWrap(false);
 
-	if(PANEL_DOUBLE_BUFFER)
+	if(PANEL_DOUBLE_BUFFER) {
 		panel->flipDMABuffer();
+		panel->clearScreen();
+	}
 
 }
 
-//Server setup
+// Server setup
 void server_setup() {
 	if(WiFi.getMode() != WIFI_MODE_NULL) {
 		
@@ -1675,7 +1705,7 @@ void wifi_setup() {
 	}
 }
 
-//Load preferences from flash
+// Load preferences from flash
 void preferences_load() {
 
 	preferences.begin(PREFERENCES_NAMESPACE, false);
@@ -1786,7 +1816,7 @@ void preferences_load() {
 	preferences.end();
 }
 
-//Init rtc
+// Init rtc
 void time_setup() {
 
 	setenv("TZ", timezone, 1);
@@ -1802,6 +1832,7 @@ void time_setup() {
 	}
 }
 
+// Reset input values before going into loop
 void booted_setup() {
 	btn1_pressed = false;
 	btn2_pressed = false;
@@ -1821,7 +1852,6 @@ void booted_setup() {
 		image_loaded = sd_load_image(image_index[selected_image]);
 	}
 
-	booted = true;
 	display_current();
 	ms_current = millis();
 	ms_animation = ms_current + animation_time;
@@ -1831,15 +1861,16 @@ void booted_setup() {
 void setup() {
 	Serial.begin(9600); //TODO remove after testing
 
+	panel_setup();
+	setup_boot_sequence();
 	gpio_setup();
 	preferences_load();
-	time_setup();
-	wifi_setup();
-	server_setup();
-	panel_setup();
-	firmware_update();
+	time_setup(); //depends on gpio and preferences
+	wifi_setup(); //depends on preferences
+	server_setup(); //depends on preferences and gpio
+	firmware_update(); //depends on gpio
 	
-	booted_setup(); //TODO move after boot sequence if implemented
+	booted_setup();
 }
 
 
@@ -1854,383 +1885,381 @@ void loop() {
 	ms_current = millis();
 
 	//display changes
-	if(booted) {
 
-		//diashow and animation routine
-		if(menu == MENU_NONE) {
-			if(current_mode == MODE_IMAGES) {
-				if(diashow_enabled && ms_diashow < ms_current) {
-					if(sd_connected() && image_index.size() > 0) {
-						if(++selected_image >= image_index.size())
-							selected_image = 0;
-						image_loaded = sd_load_image(image_index[selected_image]);
-					} else {
-						image_loaded = false;
-					}
-					ms_diashow = ms_current + diashow_time;
-					display_change = true;
-				}
-
-				if(animation_enabled && image_loaded && ms_animation < ms_current) {
-					display_next_frame();
-					ms_animation = ms_current + animation_time;
-					display_change = true;
-				}
-			} else if(current_mode == MODE_SOCIALS && diashow_enabled && ms_diashow < ms_current) {
-				if(socials_channels.size() > 0 && ++socials_channel_current >= socials_channels.size()) {
-					socials_channel_current = 0;
+	//diashow and animation routine
+	if(menu == MENU_NONE) {
+		if(current_mode == MODE_IMAGES) {
+			if(diashow_enabled && ms_diashow < ms_current) {
+				if(sd_connected() && image_index.size() > 0) {
+					if(++selected_image >= image_index.size())
+						selected_image = 0;
+					image_loaded = sd_load_image(image_index[selected_image]);
+				} else {
+					image_loaded = false;
 				}
 				ms_diashow = ms_current + diashow_time;
 				display_change = true;
 			}
-		}
 
-		//animation speed rot
-		if(rot1_clicks != 0) {
-			if(menu == MENU_NONE) {
-				animation_enabled = true;
-				int16_t new_animation_time = animation_time - rot1_clicks * 20;
-				animation_time = new_animation_time > 500 ? 500 : new_animation_time < 20 ? 20 : new_animation_time;
+			if(animation_enabled && image_loaded && ms_animation < ms_current) {
+				display_next_frame();
 				ms_animation = ms_current + animation_time;
-				display_overlay(OVERLAY_ANIMATION_SPEED);
-
-				preferences.begin(PREFERENCES_NAMESPACE);
-				preferences.putShort("animation_time", animation_time);
-				preferences.putBool("animation", animation_enabled);
-				preferences.end();
-			} else if(menu == MENU_DATETIME) {
-				if(!menu_time_changed)
-					menu_copy_time();
-
-				int8_t new_time;
-				
-				switch(menu_selection) {
-					case 0:
-						new_time = menu_year + rot1_clicks;
-						if(new_time > 99)
-							menu_year = 0;
-						else if(new_time < 0)
-							menu_year = 99;
-						else
-							menu_year = new_time;
-						menu_correct_date();
-						break;
-					case 1:
-						new_time = menu_second + rot1_clicks;
-						if(new_time > 59)
-							menu_second = 0;
-						else if(new_time < 0)
-							menu_second = 59;
-						else
-							menu_second = new_time;
-						break;
-				}
-
-				menu_time_changed = true;
+				display_change = true;
 			}
-
-			display_change = true;
-			rot1_clicks = 0;
-		}
-
-		//diashow speed rot
-		if(rot2_clicks != 0) {
-			if(menu == MENU_NONE) {
-				diashow_enabled = true;
-				int32_t new_diashow_time = diashow_time - rot2_clicks * 1000;
-				diashow_time = new_diashow_time > 60000 ? 60000 : new_diashow_time < 1000 ? 1000 : new_diashow_time;
-				ms_diashow = ms_current + diashow_time;
-				display_overlay(OVERLAY_DIASHOW_SPEED);
-
-				preferences.begin(PREFERENCES_NAMESPACE);
-				preferences.putShort("diashow_time", diashow_time);
-				preferences.putBool("diashow", diashow_enabled);
-				preferences.end();
-			} else if(menu == MENU_DATETIME) {
-				if(!menu_time_changed)
-					menu_copy_time();
-
-				int8_t new_time;
-				
-				switch(menu_selection) {
-					case 0:
-						new_time = menu_month + rot2_clicks;
-						if(new_time > 12)
-							menu_month = 1;
-						else if(new_time < 1)
-							menu_month = 12;
-						else
-							menu_month = new_time;
-						menu_correct_date();
-						break;
-					case 1:
-						new_time = menu_minute + rot2_clicks;
-						if(new_time > 59)
-							menu_minute = 0;
-						else if(new_time < 0)
-							menu_minute = 59;
-						else
-							menu_minute = new_time;
-						break;
-				}
-
-				menu_time_changed = true;
+		} else if(current_mode == MODE_SOCIALS && diashow_enabled && ms_diashow < ms_current) {
+			if(socials_channels.size() > 0 && ++socials_channel_current >= socials_channels.size()) {
+				socials_channel_current = 0;
 			}
-
-			display_change = true;
-			rot2_clicks = 0;
-		}
-
-		//brightness rot
-		if(rot3_clicks != 0) {
-			if(menu != MENU_DATETIME) {
-				int16_t new_brightness = brightness + rot3_clicks * 8;
-				brightness = new_brightness > 248 ? 248 : new_brightness < 16 ? 16 : new_brightness;
-				display_overlay(OVERLAY_BRIGHTNESS);
-
-				preferences.begin(PREFERENCES_NAMESPACE);
-				preferences.putShort("brightness", brightness);
-				preferences.end();
-			} else {
-				if(!menu_time_changed)
-					menu_copy_time();
-
-				int8_t new_time;
-				
-				switch(menu_selection) {
-					case 0:
-						new_time = menu_day + rot3_clicks;
-						if(new_time > 31)
-							menu_day = 1;
-						else if(new_time < 1)
-							menu_day = 31;
-						else
-							menu_day = new_time;
-						menu_correct_date();
-						break;
-					case 1:
-						new_time = menu_hour + rot3_clicks;
-						if(new_time > 23)
-							menu_hour = 0;
-						else if(new_time < 0)
-							menu_hour = 23;
-						else
-							menu_hour = new_time;
-						break;
-				}
-
-				menu_time_changed = true;
-			}
-
-			display_change = true;
-			rot3_clicks = 0;
-		}
-
-		//next button
-		if(btn1_pressed) {
-			if(menu == MENU_NONE) {			
-				preferences.begin(PREFERENCES_NAMESPACE);
-				if(current_mode == MODE_SOCIALS) {
-					socials_channel_current = socials_channel_current + 1 >= socials_channels.size() ? 0 : socials_channel_current + 1;
-					preferences.putInt("current_social", socials_channel_current);
-				} else if(current_mode == MODE_CLOCK) {
-					current_clock_mode = static_cast<clock_type>((current_clock_mode + 1) % CLOCK_TYPE_NUMBER);
-					preferences.putInt("clock_mode", current_clock_mode);
-				} else if(current_mode == MODE_IMAGES) {
-					if(sd_connected() && image_index.size() > 0) {
-						if(++selected_image >= image_index.size())
-							selected_image = 0;
-						image_loaded = sd_load_image(image_index[selected_image]);
-					} else {
-						image_loaded = false;
-					}
-					preferences.putInt("selected_image", selected_image);
-				}
-				preferences.end();
-			} else {
-				menu_selection++;
-				if((menu == MENU_OVERVIEW && menu_selection > 2)
-				|| (menu == MENU_CLOCK && menu_selection > 3)
-				|| (menu == MENU_DATETIME && menu_selection > 1)
-				|| (menu == MENU_WIFI && menu_selection > 3))
-					menu_selection = 0;
-			}
-
-			display_change = true;
-			btn1_pressed = false;
-		}
-
-		//mode button
-		if(btn2_pressed) {
-			if(menu == MENU_NONE) {
-				current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
-				if(current_mode == MODE_SOCIALS && !wifi_connect)
-					current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
-
-				if(current_mode == MODE_IMAGES) {
-					if(sd_connected() && image_index.size() > 0) {
-						if(selected_image >= image_index.size())
-							selected_image = 0;
-						image_loaded = sd_load_image(image_index[selected_image]);
-					} else {
-						image_loaded = false;
-					}
-				} else {
-					animation.clear();
-				}
-				
-				display_overlay(OVERLAY_TEXT, current_mode == MODE_IMAGES ? "Pictures" : current_mode == MODE_CLOCK ? "Clock" : "Socials");
-
-				preferences.begin(PREFERENCES_NAMESPACE);
-				preferences.putInt("current_mode", static_cast<int32_t>(current_mode));
-				preferences.end();
-			} else if(menu == MENU_OVERVIEW) {
-				switch(menu_selection) {
-					case 0:
-						menu = MENU_CLOCK;
-						break;
-					case 1:
-						menu = MENU_DATETIME;
-						break;
-					case 2:
-						menu = MENU_WIFI;
-						break;
-				}
-				menu_selection = 0;
-			} else if(menu == MENU_CLOCK) {
-				preferences.begin(PREFERENCES_NAMESPACE);
-				switch(menu_selection) {
-					case 0:
-						clock_seconds = !clock_seconds;
-						preferences.putBool("clock_seconds", clock_seconds);
-						break;
-					case 1:
-						clock_year = !clock_year;
-						preferences.putBool("clock_year", clock_year);
-						break;
-					case 2:
-						clock_blink = !clock_blink;
-						preferences.putBool("clock_blink", clock_blink);
-						break;
-					case 3:
-						time_format24 = !time_format24;
-						preferences.putBool("time_format24", time_format24);
-						break;
-				}
-				preferences.end();
-			} else if(menu == MENU_DATETIME) {
-				menu_update_time();
-			} else if(menu == MENU_WIFI) {
-				preferences.begin(PREFERENCES_NAMESPACE);
-				switch(menu_selection) {
-					case 0:
-						wifi_connect = !wifi_connect;
-						preferences.putBool("wifi_connect", wifi_connect);
-						wifi_setup();
-						break;
-					case 1:
-						menu = MENU_WIFI_CONNECT;
-						break;
-					case 2:
-						wifi_host = !wifi_host;
-						preferences.putBool("wifi_host", wifi_host);
-						wifi_setup();
-						break;
-					case 3:
-						menu = MENU_WIFI_HOST;
-						break;
-				}
-				preferences.end();
-			}
-			
-			display_change = true;
-			btn2_pressed = false;
-		}
-
-		//menu button
-		if(ms_btn3_pressed != 0 && ms_btn3_pressed < ms_current) {
-			ms_btn3_pressed = 0;
-
-			preferences.begin(PREFERENCES_NAMESPACE, false);
-			preferences.clear();
-			preferences.end();
-			requested_restart = true;
-		} else if(btn3_released) {
-			if(menu == MENU_NONE) {
-				//approve api key for server if requested else open meu
-				if(ms_api_key_request > ms_current) {
-					ms_api_key_approve = ms_current + 5000;
-					ms_api_key_request = 0;
-				} else {
-					menu = MENU_OVERVIEW;
-				}
-			} else if(menu == MENU_WIFI || menu == MENU_CLOCK) {
-				menu = MENU_OVERVIEW;
-			} else if(menu == MENU_DATETIME) {
-				menu_update_time();
-				menu = MENU_OVERVIEW;
-			} else if(menu == MENU_WIFI_CONNECT || menu == MENU_WIFI_HOST) {
-				menu = MENU_WIFI;
-			} else {
-				menu = MENU_NONE;
-			}
-			
-			ms_animation = ms_current + animation_time;
 			ms_diashow = ms_current + diashow_time;
+			display_change = true;
+		}
+	}
+
+	//animation speed rot
+	if(rot1_clicks != 0) {
+		if(menu == MENU_NONE) {
+			animation_enabled = true;
+			int16_t new_animation_time = animation_time - rot1_clicks * 20;
+			animation_time = new_animation_time > 500 ? 500 : new_animation_time < 20 ? 20 : new_animation_time;
+			ms_animation = ms_current + animation_time;
+			display_overlay(OVERLAY_ANIMATION_SPEED);
+
+			preferences.begin(PREFERENCES_NAMESPACE);
+			preferences.putShort("animation_time", animation_time);
+			preferences.putBool("animation", animation_enabled);
+			preferences.end();
+		} else if(menu == MENU_DATETIME) {
+			if(!menu_time_changed)
+				menu_copy_time();
+
+			int8_t new_time;
+			
+			switch(menu_selection) {
+				case 0:
+					new_time = menu_year + rot1_clicks;
+					if(new_time > 99)
+						menu_year = 0;
+					else if(new_time < 0)
+						menu_year = 99;
+					else
+						menu_year = new_time;
+					menu_correct_date();
+					break;
+				case 1:
+					new_time = menu_second + rot1_clicks;
+					if(new_time > 59)
+						menu_second = 0;
+					else if(new_time < 0)
+						menu_second = 59;
+					else
+						menu_second = new_time;
+					break;
+			}
+
+			menu_time_changed = true;
+		}
+
+		display_change = true;
+		rot1_clicks = 0;
+	}
+
+	//diashow speed rot
+	if(rot2_clicks != 0) {
+		if(menu == MENU_NONE) {
+			diashow_enabled = true;
+			int32_t new_diashow_time = diashow_time - rot2_clicks * 1000;
+			diashow_time = new_diashow_time > 60000 ? 60000 : new_diashow_time < 1000 ? 1000 : new_diashow_time;
+			ms_diashow = ms_current + diashow_time;
+			display_overlay(OVERLAY_DIASHOW_SPEED);
+
+			preferences.begin(PREFERENCES_NAMESPACE);
+			preferences.putShort("diashow_time", diashow_time);
+			preferences.putBool("diashow", diashow_enabled);
+			preferences.end();
+		} else if(menu == MENU_DATETIME) {
+			if(!menu_time_changed)
+				menu_copy_time();
+
+			int8_t new_time;
+			
+			switch(menu_selection) {
+				case 0:
+					new_time = menu_month + rot2_clicks;
+					if(new_time > 12)
+						menu_month = 1;
+					else if(new_time < 1)
+						menu_month = 12;
+					else
+						menu_month = new_time;
+					menu_correct_date();
+					break;
+				case 1:
+					new_time = menu_minute + rot2_clicks;
+					if(new_time > 59)
+						menu_minute = 0;
+					else if(new_time < 0)
+						menu_minute = 59;
+					else
+						menu_minute = new_time;
+					break;
+			}
+
+			menu_time_changed = true;
+		}
+
+		display_change = true;
+		rot2_clicks = 0;
+	}
+
+	//brightness rot
+	if(rot3_clicks != 0) {
+		if(menu != MENU_DATETIME) {
+			int16_t new_brightness = brightness + rot3_clicks * 8;
+			brightness = new_brightness > 248 ? 248 : new_brightness < 16 ? 16 : new_brightness;
+			display_overlay(OVERLAY_BRIGHTNESS);
+
+			preferences.begin(PREFERENCES_NAMESPACE);
+			preferences.putShort("brightness", brightness);
+			preferences.end();
+		} else {
+			if(!menu_time_changed)
+				menu_copy_time();
+
+			int8_t new_time;
+			
+			switch(menu_selection) {
+				case 0:
+					new_time = menu_day + rot3_clicks;
+					if(new_time > 31)
+						menu_day = 1;
+					else if(new_time < 1)
+						menu_day = 31;
+					else
+						menu_day = new_time;
+					menu_correct_date();
+					break;
+				case 1:
+					new_time = menu_hour + rot3_clicks;
+					if(new_time > 23)
+						menu_hour = 0;
+					else if(new_time < 0)
+						menu_hour = 23;
+					else
+						menu_hour = new_time;
+					break;
+			}
+
+			menu_time_changed = true;
+		}
+
+		display_change = true;
+		rot3_clicks = 0;
+	}
+
+	//next button
+	if(btn1_pressed) {
+		if(menu == MENU_NONE) {			
+			preferences.begin(PREFERENCES_NAMESPACE);
+			if(current_mode == MODE_SOCIALS) {
+				socials_channel_current = socials_channel_current + 1 >= socials_channels.size() ? 0 : socials_channel_current + 1;
+				preferences.putInt("current_social", socials_channel_current);
+			} else if(current_mode == MODE_CLOCK) {
+				current_clock_mode = static_cast<clock_type>((current_clock_mode + 1) % CLOCK_TYPE_NUMBER);
+				preferences.putInt("clock_mode", current_clock_mode);
+			} else if(current_mode == MODE_IMAGES) {
+				if(sd_connected() && image_index.size() > 0) {
+					if(++selected_image >= image_index.size())
+						selected_image = 0;
+					image_loaded = sd_load_image(image_index[selected_image]);
+				} else {
+					image_loaded = false;
+				}
+				preferences.putInt("selected_image", selected_image);
+			}
+			preferences.end();
+		} else {
+			menu_selection++;
+			if((menu == MENU_OVERVIEW && menu_selection > 2)
+			|| (menu == MENU_CLOCK && menu_selection > 3)
+			|| (menu == MENU_DATETIME && menu_selection > 1)
+			|| (menu == MENU_WIFI && menu_selection > 3))
+				menu_selection = 0;
+		}
+
+		display_change = true;
+		btn1_pressed = false;
+	}
+
+	//mode button
+	if(btn2_pressed) {
+		if(menu == MENU_NONE) {
+			current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
+			if(current_mode == MODE_SOCIALS && !wifi_connect)
+				current_mode = static_cast<display_mode>((current_mode + 1) % DISPLAY_MODE_NUMBER);
+
+			if(current_mode == MODE_IMAGES) {
+				if(sd_connected() && image_index.size() > 0) {
+					if(selected_image >= image_index.size())
+						selected_image = 0;
+					image_loaded = sd_load_image(image_index[selected_image]);
+				} else {
+					image_loaded = false;
+				}
+			} else {
+				animation.clear();
+			}
+			
+			display_overlay(OVERLAY_TEXT, current_mode == MODE_IMAGES ? "Pictures" : current_mode == MODE_CLOCK ? "Clock" : "Socials");
+
+			preferences.begin(PREFERENCES_NAMESPACE);
+			preferences.putInt("current_mode", static_cast<int32_t>(current_mode));
+			preferences.end();
+		} else if(menu == MENU_OVERVIEW) {
+			switch(menu_selection) {
+				case 0:
+					menu = MENU_CLOCK;
+					break;
+				case 1:
+					menu = MENU_DATETIME;
+					break;
+				case 2:
+					menu = MENU_WIFI;
+					break;
+			}
 			menu_selection = 0;
-			display_change = true;
-			btn3_released = false;
-		}
-
-
-		//rot1 button
-		if(rot1_pressed) {
-			if(menu == MENU_NONE) {
-				animation_enabled = !animation_enabled;
-				ms_animation = ms_current + animation_time;
-				preferences.begin(PREFERENCES_NAMESPACE, false);
-				preferences.putBool("animation", animation_enabled);
-				preferences.end();
-				
-				display_overlay(OVERLAY_TEXT, animation_enabled ? "Animation ON" : "Animation OFF");
+		} else if(menu == MENU_CLOCK) {
+			preferences.begin(PREFERENCES_NAMESPACE);
+			switch(menu_selection) {
+				case 0:
+					clock_seconds = !clock_seconds;
+					preferences.putBool("clock_seconds", clock_seconds);
+					break;
+				case 1:
+					clock_year = !clock_year;
+					preferences.putBool("clock_year", clock_year);
+					break;
+				case 2:
+					clock_blink = !clock_blink;
+					preferences.putBool("clock_blink", clock_blink);
+					break;
+				case 3:
+					time_format24 = !time_format24;
+					preferences.putBool("time_format24", time_format24);
+					break;
 			}
-
-			rot1_pressed = false;
-		}
-
-		//rot2 button
-		if(rot2_pressed) {
-			if(menu == MENU_NONE) {
-				diashow_enabled = !diashow_enabled;
-				ms_diashow = ms_current + diashow_time;
-				preferences.begin(PREFERENCES_NAMESPACE, false);
-				preferences.putBool("diashow", diashow_enabled);
-				preferences.end();
-				
-				display_overlay(OVERLAY_TEXT, diashow_enabled ? "Diashow ON" : "Diashow OFF");
+			preferences.end();
+		} else if(menu == MENU_DATETIME) {
+			menu_update_time();
+		} else if(menu == MENU_WIFI) {
+			preferences.begin(PREFERENCES_NAMESPACE);
+			switch(menu_selection) {
+				case 0:
+					wifi_connect = !wifi_connect;
+					preferences.putBool("wifi_connect", wifi_connect);
+					wifi_setup();
+					break;
+				case 1:
+					menu = MENU_WIFI_CONNECT;
+					break;
+				case 2:
+					wifi_host = !wifi_host;
+					preferences.putBool("wifi_host", wifi_host);
+					wifi_setup();
+					break;
+				case 3:
+					menu = MENU_WIFI_HOST;
+					break;
 			}
+			preferences.end();
+		}
+		
+		display_change = true;
+		btn2_pressed = false;
+	}
 
-			rot2_pressed = false;
+	//menu button
+	if(ms_btn3_pressed != 0 && ms_btn3_pressed < ms_current) {
+		ms_btn3_pressed = 0;
+
+		preferences.begin(PREFERENCES_NAMESPACE, false);
+		preferences.clear();
+		preferences.end();
+		requested_restart = true;
+	} else if(btn3_released) {
+		if(menu == MENU_NONE) {
+			//approve api key for server if requested else open meu
+			if(ms_api_key_request > ms_current) {
+				ms_api_key_approve = ms_current + 5000;
+				ms_api_key_request = 0;
+			} else {
+				menu = MENU_OVERVIEW;
+			}
+		} else if(menu == MENU_WIFI || menu == MENU_CLOCK) {
+			menu = MENU_OVERVIEW;
+		} else if(menu == MENU_DATETIME) {
+			menu_update_time();
+			menu = MENU_OVERVIEW;
+		} else if(menu == MENU_WIFI_CONNECT || menu == MENU_WIFI_HOST) {
+			menu = MENU_WIFI;
+		} else {
+			menu = MENU_NONE;
+		}
+		
+		ms_animation = ms_current + animation_time;
+		ms_diashow = ms_current + diashow_time;
+		menu_selection = 0;
+		display_change = true;
+		btn3_released = false;
+	}
+
+
+	//rot1 button
+	if(rot1_pressed) {
+		if(menu == MENU_NONE) {
+			animation_enabled = !animation_enabled;
+			ms_animation = ms_current + animation_time;
+			preferences.begin(PREFERENCES_NAMESPACE, false);
+			preferences.putBool("animation", animation_enabled);
+			preferences.end();
+			
+			display_overlay(OVERLAY_TEXT, animation_enabled ? "Animation ON" : "Animation OFF");
 		}
 
-		//rot3 button
-		if(rot3_pressed) {
-			rot3_pressed = false;
+		rot1_pressed = false;
+	}
+
+	//rot2 button
+	if(rot2_pressed) {
+		if(menu == MENU_NONE) {
+			diashow_enabled = !diashow_enabled;
+			ms_diashow = ms_current + diashow_time;
+			preferences.begin(PREFERENCES_NAMESPACE, false);
+			preferences.putBool("diashow", diashow_enabled);
+			preferences.end();
+			
+			display_overlay(OVERLAY_TEXT, diashow_enabled ? "Diashow ON" : "Diashow OFF");
 		}
 
+		rot2_pressed = false;
+	}
 
-		//check overlay time
-		if(ms_overlay != 0 && ms_overlay < ms_current) {
-			overlay = OVERLAY_NONE;
-			ms_overlay = 0;
-			display_change = true;
-		}
+	//rot3 button
+	if(rot3_pressed) {
+		rot3_pressed = false;
+	}
 
-		//Clock refresh cycle
-		if((current_mode == MODE_CLOCK || menu == MENU_DATETIME) && ms_clock < ms_current) {
-			ms_clock = ms_current + 100;
-			display_change = true;
-		}
+
+	//check overlay time
+	if(ms_overlay != 0 && ms_overlay < ms_current) {
+		overlay = OVERLAY_NONE;
+		ms_overlay = 0;
+		display_change = true;
+	}
+
+	//Clock refresh cycle
+	if((current_mode == MODE_CLOCK || menu == MENU_DATETIME) && ms_clock < ms_current) {
+		ms_clock = ms_current + 100;
+		display_change = true;
 	}
 
 	//Wifi routine
