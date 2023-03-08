@@ -124,12 +124,16 @@ struct boot_row {
 	boot_row(uint8_t row, std::vector<uint8_t> pixels):
 	row(row), pixels(pixels) {}
 };
-std::vector<boot_row> boot_sequence = {{59,{31,32}},{58,{30,31,32,33}},{57,{29,30,33,34}},{56,{28,29,34,35}},{55,{28,35}},{54,{27,28,35,36}},{53,{26,27,36,37}},{52,{25,26,37,38}},{51,{24,25,38,39}},{50,{24,39}},{49,{23,24,39,40}},{48,{22,23,40,41}},{47,{21,22,41,42}},{46,{20,21,42,43}},{45,{20,43}},{44,{19,20,43,44}},{43,{18,19,44,45}},{42,{17,18,45,46}},{41,{16,17,46,47}},{40,{16,47}},{39,{15,16,47,48}},{38,{14,15,48,49}},{37,{13,14,49,50}},{36,{12,13,50,51}},{35,{12,51}},{34,{11,12,51,52}},{33,{11,52}},{32,{10,11,52,53}},{31,{10,53}},{30,{10,53}},{29,{10,53}},{28,{10,53}},{27,{10,53}},{26,{10,53}},{25,{10,53}},{24,{10,53}},{23,{9,10,53,54}},{22,{9,10,53,54}},{21,{9,10,53,54}},{20,{9,10,53,54}},{19,{9,10,53,54}},{18,{9,54}},{17,{9,54}},{16,{9,54}},{15,{9,54}},{14,{9,54}},{13,{9,54}},{12,{9,54}},{11,{9,54}},{10,{9,54}},{9,{8,9,54,55}},{8,{8,9,54,55}},{7,{8,9,54,55}},{6,{8,9,54,55}},{5,{8,9,54,55}},{4,{8,9,54,55}},{3,{8,9,54,55}},{4,{10,53}},{5,{10,11,52,53}},{6,{10,11,12,51,52,53}},{7,{10,12,13,50,51,53}},{8,{10,13,14,49,50,53}},{9,{10,11,14,15,48,49,52,53}},{10,{11,15,16,47,48,52}},{11,{11,16,17,46,47,52}},{12,{11,12,17,18,45,46,51,52}},{13,{12,18,19,44,45,51}},{14,{12,13,19,20,43,44,50,51}},{15,{13,20,21,42,43,50}},{16,{13,21,22,41,42,50}},{17,{13,14,22,23,40,41,49,50}},{18,{14,23,24,29,30,31,32,33,34,39,40,49}},{19,{14,15,24,25,26,27,28,35,36,37,38,39,48,49}},{20,{15,23,24,39,40,48}},{21,{15,22,23,40,41,48}},{22,{15,16,21,22,41,42,47,48}},{23,{16,20,21,42,43,47}},{24,{16,17,19,20,43,44,46,47}},{25,{17,18,19,44,45,46}},{26,{17,18,45,46}},{27,{16,17,18,45,46,47}},{28,{15,16,18,19,44,45,47,48}},{29,{14,15,19,44,48,49}},{30,{13,14,19,20,43,44,49,50}},{31,{12,13,20,43,50,51}},{32,{12,13,20,43,50,51}},{33,{12,13,14,15,16,20,21,42,43,47,48,49,50,51}},{34,{16,17,21,42,46,47}},{35,{17,18,19,21,22,41,42,44,45,46}},{36,{19,20,22,41,43,44}},{37,{20,21,22,41,42,43}},{38,{21,22,23,40,41,42}},{39,{22,23,40,41}},{40,{23,24,39,40}},{41,{24,39}},{42,{24,25,38,39}},{43,{25,38}},{44,{25,26,37,38}},{45,{26,37}},{46,{26,37}},{47,{26,27,36,37}},{48,{27,36}},{49,{27,28,35,36}},{50,{28,35}},{51,{28,35}},{52,{28,29,34,35}},{53,{28,29,34,35}},{54,{29,34}},{55,{29,30,33,34}},{56,{30,33}},{57,{31,32}}};
+
+const std::vector<boot_row> boot_sequence = {{59,{31,32}},{58,{30,31,32,33}},{57,{29,30,33,34}},{56,{28,29,34,35}},{55,{28,35}},{54,{27,28,35,36}},{53,{26,27,36,37}},{52,{25,26,37,38}},{51,{24,25,38,39}},{50,{24,39}},{49,{23,24,39,40}},{48,{22,23,40,41}},{47,{21,22,41,42}},{46,{20,21,42,43}},{45,{20,43}},{44,{19,20,43,44}},{43,{18,19,44,45}},{42,{17,18,45,46}},{41,{16,17,46,47}},{40,{16,47}},{39,{15,16,47,48}},{38,{14,15,48,49}},{37,{13,14,49,50}},{36,{12,13,50,51}},{35,{12,51}},{34,{11,12,51,52}},{33,{11,52}},{32,{10,11,52,53}},{31,{10,53}},{30,{10,53}},{29,{10,53}},{28,{10,53}},{27,{10,53}},{26,{10,53}},{25,{10,53}},{24,{10,53}},{23,{9,10,53,54}},{22,{9,10,53,54}},{21,{9,10,53,54}},{20,{9,10,53,54}},{19,{9,10,53,54}},{18,{9,54}},{17,{9,54}},{16,{9,54}},{15,{9,54}},{14,{9,54}},{13,{9,54}},{12,{9,54}},{11,{9,54}},{10,{9,54}},{9,{8,9,54,55}},{8,{8,9,54,55}},{7,{8,9,54,55}},{6,{8,9,54,55}},{5,{8,9,54,55}},{4,{8,9,54,55}},{3,{8,9,54,55}},{4,{10,53}},{5,{10,11,52,53}},{6,{10,11,12,51,52,53}},{7,{10,12,13,50,51,53}},{8,{10,13,14,49,50,53}},{9,{10,11,14,15,48,49,52,53}},{10,{11,15,16,47,48,52}},{11,{11,16,17,46,47,52}},{12,{11,12,17,18,45,46,51,52}},{13,{12,18,19,44,45,51}},{14,{12,13,19,20,43,44,50,51}},{15,{13,20,21,42,43,50}},{16,{13,21,22,41,42,50}},{17,{13,14,22,23,40,41,49,50}},{18,{14,23,24,39,40,49}},{19,{14,15,24,25,38,39,48,49}},{19, {26,27,28,35,36,37}}, {18, {29,30,31,32,33,34}},{20,{15,23,24,39,40,48}},{21,{15,22,23,40,41,48}},{22,{15,16,21,22,41,42,47,48}},{23,{16,20,21,42,43,47}},{24,{16,17,19,20,43,44,46,47}},{25,{17,18,19,44,45,46}},{26,{17,18,45,46}},{27,{16,17,18,45,46,47}},{28,{15,16,18,19,44,45,47,48}},{29,{14,15,19,44,48,49}},{30,{13,14,19,20,43,44,49,50}},{31,{12,13,20,43,50,51}},{32,{12,13,20,43,50,51}},{33,{12,13,14,15,16,20,21,42,43,47,48,49,50,51}},{34,{16,17,21,42,46,47}},{35,{17,18,19,21,22,41,42,44,45,46}},{36,{19,20,22,41,43,44}},{37,{20,21,22,41,42,43}},{38,{21,22,23,40,41,42}},{39,{22,23,40,41}},{40,{23,24,39,40}},{41,{24,39}},{42,{24,25,38,39}},{43,{25,38}},{44,{25,26,37,38}},{45,{26,37}},{46,{26,37}},{47,{26,27,36,37}},{48,{27,36}},{49,{27,28,35,36}},{50,{28,35}},{51,{28,35}},{52,{28,29,34,35}},{53,{28,29,34,35}},{54,{29,34}},{55,{29,30,33,34}},{56,{30,33}},{57,{31,32}}};
+uint8_t loading_step = 0;
+unsigned long ms_loading = 0;
 
 //settings
 Preferences preferences;
 unsigned long ms_current = 0;
 bool requested_restart = false;
+bool loading_cycle = true;
 
 overlay_type overlay = OVERLAY_NONE;
 char* overlay_text = strdup("");
@@ -639,6 +643,38 @@ void firmware_update() {
 **	Display  **
 **************/
 
+//Display loading animation
+void display_loading() {
+	if(ms_loading == 0)
+		ms_loading = millis() + 20;
+
+	if(loading_step == 0 && loading_cycle) {
+		panel->clearScreen();
+		if(PANEL_DOUBLE_BUFFER) {
+			panel->flipDMABuffer();
+			panel->clearScreen();
+		}
+	}
+
+	for(int pixel = 0; pixel < boot_sequence[loading_step].pixels.size(); pixel++) {
+		panel->drawPixel(boot_sequence[loading_step].pixels[pixel], boot_sequence[loading_step].row, loading_cycle ? 0xFFFF : 0);
+	}
+
+	if(PANEL_DOUBLE_BUFFER) {
+		panel->flipDMABuffer();
+
+		for(int pixel = 0; pixel < boot_sequence[loading_step].pixels.size(); pixel++) {
+			panel->drawPixel(boot_sequence[loading_step].pixels[pixel], boot_sequence[loading_step].row, loading_cycle ? 0xFFFF : 0);
+		}
+	}
+}
+
+void reset_loading() {
+	ms_loading = 0;
+	loading_step = 0;
+	loading_cycle = true;
+}
+
 //Display overlay menu for io switches
 void display_overlay() {
 	
@@ -915,7 +951,9 @@ void display_loaded_image() {
 
 void display_next_frame() {
 	if(image_index[selected_image].animated && animation.size() > 0) {
-		animation_frame = ++animation_frame % animation.size();
+		animation_frame++;
+		if(animation_frame >= animation.size())
+			animation_frame = 0;
 		std::vector<pixel_data> changes = animation[animation_frame];
 		for(int i = 0; i < changes.size(); i++) {
 			current_image[changes[i].y][changes[i].x] = changes[i].color;
@@ -1142,6 +1180,10 @@ void display_current() {
 		return;
 	}
 
+	if(current_mode != MODE_SOCIALS) {
+		reset_loading();
+	}
+
 	switch(current_mode) {
 		case MODE_SOCIALS:
 			//go to next mode if wifi wont be connected
@@ -1152,6 +1194,7 @@ void display_current() {
 			}
 
 			if(socials_channels.size() > 0) {
+				reset_loading();
 				if(socials_channels.size() < socials_channel_current)
 					socials_channel_current = 0;
 
@@ -1162,17 +1205,8 @@ void display_current() {
 					socials_channels[socials_channel_current].views
 				);
 			} else {
-				char * channel_type = strdup("");
-				char * channel_name = strdup("Loading");
-				char * channel_follower = strdup("");
-				char * channel_views = strdup("");
-				
-				display_social_channel(channel_type, channel_name, channel_follower, channel_views);
-
-				free(channel_type);
-				free(channel_name);
-				free(channel_follower);
-				free(channel_views);
+				display_loading();
+				display_overlay();
 			}
 
 			break;
@@ -1651,7 +1685,7 @@ void server_setup() {
 				}
 				if(body.containsKey("brightness") && body["brightness"].is<int>()) {
 					brightness = body["brightness"] > 248 ? 248 : body["brightness"] < 16 ? 16 : body["brightness"];
-					preferences.putShort("brightness", brightness);
+					preferences.putUInt("brightness", brightness);
 					panel->setBrightness(brightness);
 				}
 				
@@ -1859,12 +1893,10 @@ void booted_setup() {
 }
 
 void setup() {
-	Serial.begin(9600); //TODO remove after testing
-
-	panel_setup();
-	setup_boot_sequence();
-	gpio_setup();
 	preferences_load();
+	panel_setup(); //depends on preferences
+	setup_boot_sequence(); //depends on panel
+	gpio_setup();
 	time_setup(); //depends on gpio and preferences
 	wifi_setup(); //depends on preferences
 	server_setup(); //depends on preferences and gpio
@@ -1925,7 +1957,7 @@ void loop() {
 			display_overlay(OVERLAY_ANIMATION_SPEED);
 
 			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putShort("animation_time", animation_time);
+			preferences.putUInt("animation_time", animation_time);
 			preferences.putBool("animation", animation_enabled);
 			preferences.end();
 		} else if(menu == MENU_DATETIME) {
@@ -1973,7 +2005,7 @@ void loop() {
 			display_overlay(OVERLAY_DIASHOW_SPEED);
 
 			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putShort("diashow_time", diashow_time);
+			preferences.putUInt("diashow_time", diashow_time);
 			preferences.putBool("diashow", diashow_enabled);
 			preferences.end();
 		} else if(menu == MENU_DATETIME) {
@@ -2019,7 +2051,7 @@ void loop() {
 			display_overlay(OVERLAY_BRIGHTNESS);
 
 			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putShort("brightness", brightness);
+			preferences.putUInt("brightness", brightness);
 			preferences.end();
 		} else {
 			if(!menu_time_changed)
@@ -2248,6 +2280,17 @@ void loop() {
 		rot3_pressed = false;
 	}
 
+
+	//Check loading animation
+	if(ms_loading != 0 && ms_loading < ms_current) {
+		loading_step++;
+		if(loading_step >= boot_sequence.size()) {
+			loading_step = 0;
+			loading_cycle = !loading_cycle;
+		}
+		ms_loading = ms_current + 20;
+		display_change = true;
+	}
 
 	//check overlay time
 	if(ms_overlay != 0 && ms_overlay < ms_current) {
