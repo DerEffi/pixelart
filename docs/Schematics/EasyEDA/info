@@ -1,0 +1,185 @@
+{
+  "uuid": "9578889b5881974c90f3715b4d624ac8",
+  "path": "Offline/Pixelart",
+  "name": "Pixelart",
+  "content": "",
+  "created_at": "2023-03-08 11:17:05",
+  "updated_at": "2023-03-08 12:51:54",
+  "stick": "",
+  "documents": [
+    {
+      "uuid": "5df64f5b754969950fb424e066d8566a",
+      "title": "Pixelart",
+      "description": "",
+      "docType": "1",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "5c1036b53a4146e4841df4ed0a9de8f0": 3,
+        "b0248eb51e084227889f2cb84eab79c4": 24,
+        "35e837df79ae33165d1e1c3e99d521e5": 2,
+        "d6746fc54e544cefb5bdbe2eaa875a48": 3,
+        "a7a0e276dadd4f8097422d2afc2e1b9c": 12,
+        "6792b813ef2444e5b98ac3ad60abf4ee": 1
+      },
+      "BOM": [
+        [
+          "Value",
+          "Quantity",
+          "Package",
+          "Components",
+          "CustomPara"
+        ],
+        [
+          "0.1u",
+          6,
+          "CASE-A_3216",
+          "C1,C2,C5,C6,C8,C9",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "ce25118ef0b041b8a773e71ca28ae65d",
+            "uuid": "a7a0e276dadd4f8097422d2afc2e1b9c"
+          }
+        ],
+        [
+          "1u",
+          6,
+          "CASE-A_3216",
+          "C3,C4,C7,C10,C11,C12",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "ce25118ef0b041b8a773e71ca28ae65d",
+            "uuid": "a7a0e276dadd4f8097422d2afc2e1b9c"
+          }
+        ],
+        [
+          "B1",
+          1,
+          "KEY-SMD_2P-L6.2-W3.6-LS8.0",
+          "KEY1",
+          {
+            "BOM_Supplier Part": "C118141",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "K2-1107ST-A4SW-06",
+            "puuid": "daacbe2eec304950b61eef2efe596556",
+            "uuid": "5c1036b53a4146e4841df4ed0a9de8f0"
+          }
+        ],
+        [
+          "B2",
+          1,
+          "KEY-SMD_2P-L6.2-W3.6-LS8.0",
+          "KEY2",
+          {
+            "BOM_Supplier Part": "C118141",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "K2-1107ST-A4SW-06",
+            "puuid": "daacbe2eec304950b61eef2efe596556",
+            "uuid": "5c1036b53a4146e4841df4ed0a9de8f0"
+          }
+        ],
+        [
+          "B3",
+          1,
+          "KEY-SMD_2P-L6.2-W3.6-LS8.0",
+          "KEY3",
+          {
+            "BOM_Supplier Part": "C118141",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer Part": "K2-1107ST-A4SW-06",
+            "puuid": "daacbe2eec304950b61eef2efe596556",
+            "uuid": "5c1036b53a4146e4841df4ed0a9de8f0"
+          }
+        ],
+        [
+          "10k",
+          12,
+          "R0603",
+          "R1,R5,R7,R8,R10,R13,R14,R17,R19,R20,R22,R24",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "398691f1f785460098bbe5ee6590333c",
+            "uuid": "b0248eb51e084227889f2cb84eab79c4"
+          }
+        ],
+        [
+          "1.5k",
+          12,
+          "R0603",
+          "R2,R3,R4,R6,R9,R11,R12,R15,R16,R18,R21,R23",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "398691f1f785460098bbe5ee6590333c",
+            "uuid": "b0248eb51e084227889f2cb84eab79c4"
+          }
+        ],
+        [
+          "EC11E15244B2",
+          3,
+          "SW-TH_EC11XXXXXXXX",
+          "ROTARY_ENCODER_1,ROTARY_ENCODER_2,ROTARY_ENCODER_3",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C470754",
+            "BOM_Manufacturer": "ALPSALPINE(阿尔卑斯阿尔派)",
+            "BOM_Manufacturer Part": "EC11E15244B2",
+            "BOM_JLCPCB Part Class": "Extended Part",
+            "puuid": "ca76b697af4943349a837efa80444cc7",
+            "uuid": "d6746fc54e544cefb5bdbe2eaa875a48"
+          }
+        ],
+        [
+          "DS3231",
+          1,
+          "SO-16_L10.3-W7.5-P1.27-LS10.3-BL",
+          "RTC",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C9900010264",
+            "BOM_Manufacturer": "null",
+            "BOM_Manufacturer Part": "DS3231N",
+            "BOM_JLCPCB Part Class": "Extended Part",
+            "puuid": "cf9375a9f7194081bba652b429620ee8",
+            "uuid": "6792b813ef2444e5b98ac3ad60abf4ee"
+          }
+        ],
+        [
+          "CD40106BE",
+          2,
+          "DIP-14_L19.2-W6.6-P2.54-LS10.9-BL",
+          "SCHMITT1,SCHMITT2",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "TI(德州仪器)",
+            "BOM_Manufacturer Part": "CD40106BE",
+            "BOM_Supplier Part": "C71251",
+            "BOM_JLCPCB Part Class": "Extended Part",
+            "puuid": "b33782c06f59456891d65206827fb3a9",
+            "uuid": "35e837df79ae33165d1e1c3e99d521e5"
+          }
+        ]
+      ],
+      "updateTime": 1678276314,
+      "createTime": 1678270626,
+      "histories": [],
+      "created_at": "2023-03-08 11:17:06",
+      "updated_at": "2023-03-08 12:51:54"
+    }
+  ],
+  "sort": [
+    "5df64f5b754969950fb424e066d8566a",
+    "66d88ca758d327146a96f3f4aa59acab"
+  ],
+  "title": "Pixelart",
+  "foldername": "Pixelart",
+  "schfilename": "Pixelart.json",
+  "schfilemtime": 1678276315002
+}
