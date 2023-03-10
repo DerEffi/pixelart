@@ -10,6 +10,7 @@
 #include <Preferences.h>
 
 #include <WiFi.h>
+#include <DNSServer.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncHTTPSRequest_Generic.h>
 #include <ArduinoJson.h>
@@ -153,6 +154,7 @@ uint8_t menu_second = 0;
 uint8_t brightness = 128;
 bool animation_enabled = false;
 bool diashow_enabled = false;
+bool diashow_modes = false;
 uint16_t animation_time = 100;
 unsigned long ms_animation = 0;
 uint32_t diashow_time = 5000;
@@ -168,6 +170,7 @@ char* wifi_password = strdup(WIFI_PASSWORD_DEFAULT);
 char* wifi_ap_password = strdup(WIFI_AP_PASSWORD_DEFAULT);
 unsigned long ms_wifi_routine = 0;
 unsigned long ms_wifi_reconnect = 0;
+DNSServer dns_server;
 
 //Server
 AsyncWebServer server(80);
@@ -747,7 +750,7 @@ void display_menu() {
 	panel->clearScreen();
 
 	panel->setTextSize(1);
-	char * headline;
+	char * headline = nullptr;
 	
 	char clockText[10];
 	int year = rtc_int.getYear() % 100;
@@ -920,14 +923,16 @@ void display_menu() {
 	}
 
 	//display headline
-	int16_t x1, y1;
-	uint16_t width, height;
-	panel->setTextColor(0xFFFF);
+	if(headline) {
+		int16_t x1, y1;
+		uint16_t width, height;
+		panel->setTextColor(0xFFFF);
 
-	panel->getTextBounds(headline, 0, 2, &x1, &y1, &width, &height);
-	panel->setCursor(64 > width ? .5 * (64 - width) : 0, 9);
-	panel->write(headline);
-	free(headline);
+		panel->getTextBounds(headline, 0, 2, &x1, &y1, &width, &height);
+		panel->setCursor(64 > width ? .5 * (64 - width) : 0, 9);
+		panel->write(headline);
+		free(headline);
+	}
 
 	display_overlay();
 
@@ -1460,7 +1465,13 @@ void server_setup() {
 		server.onNotFound([](AsyncWebServerRequest *request) {
 			if(request->method() == HTTP_OPTIONS)
 				request->send(200);
-			else
+			else if(wifi_host) {
+				if(sd_connected() && SD.exists("/webserver/index.html")) {
+					request->send(SD, "/webserver/index.html", String());
+				} else {
+					request->send(200, "text/plain", "SD Card or Files missing");
+				}
+			} else
 				request->send(404, "application/json", String());
 		});
 
@@ -1477,6 +1488,11 @@ void server_setup() {
 				root["version"] = VERSION;
 				root["freeMemory"] = ESP.getFreeHeap();
 				root["refreshRate"] = panel->calculated_refresh_rate;
+				root["animation"] = animation_enabled;
+				root["animationTime"] = animation_time;
+				root["diashow"] = diashow_enabled;
+				root["diashowTime"] = diashow_time;
+				root["diashowModes"] = diashow_modes;
 
 				response->setLength();
 				request->send(response);
@@ -1494,6 +1510,7 @@ void server_setup() {
 
 				root["request"] = socials_request;
 				root["server"] = socials_request_server;
+				root["apiKey"] = socials_api_key;
 				root["displayChannel"] = socials_channel_current;
 
 				response->setLength();
@@ -1699,7 +1716,7 @@ void server_setup() {
 
 		//webserver
 		server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-			if(sd_connected && SD.exists("/webserver/index.html")) {
+			if(sd_connected() && SD.exists("/webserver/index.html")) {
 				request->send(SD, "/webserver/index.html", String());
 			} else {
 				request->send(200, "text/plain", "SD Card or Files missing");
@@ -1707,7 +1724,7 @@ void server_setup() {
 		});
 
 		server.on("/interface.version.json", HTTP_GET, [](AsyncWebServerRequest *request) {
-			if(sd_connected && SD.exists("/webserver/interface.version.json")) {
+			if(sd_connected() && SD.exists("/webserver/interface.version.json")) {
 				request->send(SD, "/webserver/interface.version.json", String());
 			} else {
 				request->send(200, "text/plain", "SD Card or Files missing");
@@ -1724,18 +1741,24 @@ void wifi_setup() {
 	WiFi.setHostname(WIFI_HOSTNAME);
 	WiFi.setAutoReconnect(true);
 	WiFi.disconnect(true);
+
 	WiFi.softAPdisconnect(true);
+	
 	ms_wifi_reconnect = millis() + 60000;
 	wifi_setup_complete = true;
+	
+	dns_server.stop();
+	dns_server.setErrorReplyCode(DNSReplyCode::NoError);
 
 	if(wifi_connect) {
 		WiFi.begin(wifi_ssid, wifi_password);
-		WiFi.waitForConnectResult(250);
+		WiFi.waitForConnectResult(500);
 		wifi_setup_complete = false;
 	}
 	
 	if(wifi_host) {
 		WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
+		dns_server.start(53, "*", WiFi.softAPIP());
 	}
 }
 
@@ -1923,8 +1946,13 @@ void loop() {
 		if(current_mode == MODE_IMAGES) {
 			if(diashow_enabled && ms_diashow < ms_current) {
 				if(sd_connected() && image_index.size() > 0) {
-					if(++selected_image >= image_index.size())
+					if(++selected_image >= image_index.size()) {
 						selected_image = 0;
+						if(diashow_modes && socials_channels.size() > 0) {
+							current_mode = MODE_SOCIALS;
+							socials_channel_current = 0;
+						}
+					}
 					image_loaded = sd_load_image(image_index[selected_image]);
 				} else {
 					image_loaded = false;
@@ -1941,6 +1969,10 @@ void loop() {
 		} else if(current_mode == MODE_SOCIALS && diashow_enabled && ms_diashow < ms_current) {
 			if(socials_channels.size() > 0 && ++socials_channel_current >= socials_channels.size()) {
 				socials_channel_current = 0;
+				if(diashow_modes && image_index.size() > 0) {
+					current_mode = MODE_IMAGES;
+					selected_image = 0;
+				}
 			}
 			ms_diashow = ms_current + diashow_time;
 			display_change = true;
@@ -2308,12 +2340,17 @@ void loop() {
 	//Wifi routine
 	if(!wifi_setup_complete && ms_wifi_routine <= ms_current) {
 		ms_wifi_routine = ms_current + 5000;
-		if(WiFi.waitForConnectResult(100) == WL_CONNECTED) {
+		if(WiFi.waitForConnectResult(5) == WL_CONNECTED) {
 			wifi_setup_complete = true;
 			wifi_on_connected();
 		} else if(ms_wifi_reconnect <= ms_current) {
 			wifi_setup();
 		}
+	}
+
+	//DNS Routine
+	if(wifi_host) {
+		dns_server.processNextRequest();
 	}
 
 	//RTC adjustment after message received
