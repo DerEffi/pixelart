@@ -1455,6 +1455,38 @@ void panel_setup() {
 
 }
 
+// Initialize Wifi if enabled
+void wifi_setup(bool force = false) {
+
+	WiFi.persistent(false);
+	WiFi.setHostname(WIFI_HOSTNAME);
+	WiFi.setAutoReconnect(true);
+	WiFi.disconnect(true);
+
+	if(WiFi.softAPgetStationNum() == 0 || force)
+		WiFi.softAPdisconnect(true);
+	
+	ms_wifi_reconnect = millis() + 30000;
+	wifi_setup_complete = true;
+	
+	dns_server.stop();
+	dns_server.setErrorReplyCode(DNSReplyCode::NoError);
+
+	delay(100); //wait to properly disconnect
+
+	if(wifi_connect) {
+		WiFi.begin(wifi_ssid, wifi_password);
+		WiFi.waitForConnectResult(500);
+		wifi_setup_complete = false;
+	}
+	
+	if(wifi_host) {
+		if(WiFi.softAPgetStationNum() == 0 || force)
+			WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
+		dns_server.start(53, "*", WiFi.softAPIP());
+	}
+}
+
 // Server setup
 void server_setup() {
 	if(WiFi.getMode() != WIFI_MODE_NULL) {
@@ -1575,6 +1607,29 @@ void server_setup() {
 			}
 		});
 
+		server.on("/api/wifi/available", HTTP_GET, [](AsyncWebServerRequest * request) {
+			if(verify_api_key(request)) {
+				AsyncJsonResponse *response = new AsyncJsonResponse();
+				response->setContentType("application/json");
+				response->setCode(200);
+				JsonVariant& root = response->getRoot();
+
+				JsonArray networks = root.createNestedArray("networks");
+				for(int i = 0; i < WiFi.scanNetworks(); i++) {
+					JsonObject network = networks.createNestedObject();
+					network["ssid"] = WiFi.SSID(i);
+					network["rssi"] = WiFi.RSSI(i);
+					network["encryption"] = WiFi.encryptionType(i);
+				}
+				WiFi.scanDelete();
+				
+				response->setLength();
+				request->send(response);
+			} else {
+				request->send(403, "application/json", "{}");
+			}
+		});
+
 		server.on("/api/wifi", HTTP_GET, [](AsyncWebServerRequest * request) {
 			if(verify_api_key(request)) {
 				AsyncJsonResponse *response = new AsyncJsonResponse();
@@ -1637,7 +1692,7 @@ void server_setup() {
 				JsonObject body = json.as<JsonObject>();
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
-				if(body.containsKey("displayMode") && body["displayMode"].is<int>()) {
+				if(body.containsKey("displayMode") && body["displayMode"].is<int>() && body["displayMode"] >= 0) {
 					current_mode = body["displayMode"] > DISPLAY_MODE_NUMBER ? MODE_IMAGES : static_cast<display_mode>(body["displayMode"]);
 					preferences.putUInt("current_mode", current_mode);
 				}
@@ -1658,12 +1713,12 @@ void server_setup() {
 					diashow_modes = body["diashowModes"];
 					preferences.putBool("diashow_modes", diashow_modes);
 				}
-				if(body.containsKey("animation_time") && body["animation_time"].is<int>() && body["animation_time"] > 0) {
-					animation_time = body["animation_time"];
+				if(body.containsKey("animationTime") && body["animationTime"].is<int>() && body["animationTime"] > 0) {
+					animation_time = body["animationTime"];
 					preferences.putUInt("animation_time", animation_time);
 				}
-				if(body.containsKey("diashow_time") && body["diashow_time"].is<int>() && body["diashow_time"] > 0) {
-					diashow_time = body["diashow_time"];
+				if(body.containsKey("diashowTime") && body["diashowTime"].is<int>() && body["diashowTime"] > 0) {
+					diashow_time = body["diashowTime"];
 					preferences.putUInt("diashow_time", diashow_time);
 				}
 				
@@ -1680,12 +1735,19 @@ void server_setup() {
 				JsonObject body = json.as<JsonObject>();
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
-				if(body.containsKey("displayImage") && body["displayImage"].is<int>() && body["displayImage"] > 0) {
+				if(body.containsKey("displayImage") && body["displayImage"].is<int>() && body["displayImage"] >= 0) {
 					selected_image = body["displayImage"];
-					if(selected_image > image_index.size())
-						selected_image = 0;
+					if(sd_connected() && image_index.size() > 0) {
+						if(selected_image >= image_index.size())
+							selected_image = 0;
+						image_loaded = sd_load_image(image_index[selected_image]);
+					} else {
+						image_loaded = false;
+					}
 					preferences.putUInt("selected_image", selected_image);
 				}
+
+				display_change = true;
 				
 				preferences.end();
 				request->send(200, "application/json");
@@ -1699,7 +1761,7 @@ void server_setup() {
 				JsonObject body = json.as<JsonObject>();
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
-				if(body.containsKey("displayChannel") && body["displayChannel"].is<int>() && body["displayChannel"] > 0) {
+				if(body.containsKey("displayChannel") && body["displayChannel"].is<int>() && body["displayChannel"] >= 0) {
 					current_mode = MODE_SOCIALS;
 					preferences.putUInt("current_mode", current_mode);
 					socials_channel_current = body["displayChannel"];
@@ -1885,38 +1947,6 @@ void server_setup() {
 	}
 }
 
-// Initialize Wifi if enabled
-void wifi_setup(bool force = false) {
-
-	WiFi.persistent(false);
-	WiFi.setHostname(WIFI_HOSTNAME);
-	WiFi.setAutoReconnect(true);
-	WiFi.disconnect(true);
-
-	if(WiFi.softAPgetStationNum() == 0 || force)
-		WiFi.softAPdisconnect(true);
-	
-	ms_wifi_reconnect = millis() + 30000;
-	wifi_setup_complete = true;
-	
-	dns_server.stop();
-	dns_server.setErrorReplyCode(DNSReplyCode::NoError);
-
-	delay(100); //wait to properly disconnect
-
-	if(wifi_connect) {
-		WiFi.begin(wifi_ssid, wifi_password);
-		WiFi.waitForConnectResult(500);
-		wifi_setup_complete = false;
-	}
-	
-	if(wifi_host) {
-		if(WiFi.softAPgetStationNum() == 0 || force)
-			WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
-		dns_server.start(53, "*", WiFi.softAPIP());
-	}
-}
-
 // Load preferences from flash
 void preferences_load() {
 
@@ -1924,7 +1954,7 @@ void preferences_load() {
 	
 	//settings
 	if(preferences.isKey("brightness"))
-		brightness = preferences.getShort("brightness", brightness);
+		brightness = preferences.getUInt("brightness", brightness);
 	if(preferences.isKey("current_mode"))
 		current_mode = static_cast<display_mode>(preferences.getUInt("current_mode", current_mode));
 	if(preferences.isKey("selected_image"))
