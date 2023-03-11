@@ -1064,23 +1064,23 @@ void display_clock_analog() {
 
 	//hour hand
 	int hourX = (hour >= 6 ? 31 : 32);
-	int hourY = (hour >= 9 || hour <= 3 ? 31 : 32);
+	int hourY = (hour >= 9 || hour < 3 ? 31 : 32);
 	float radiant_hour = radians(180 - (30 * hour) - (minute / 2));
 	panel->drawLine(hourX + 15 * sin(radiant_hour), hourY + 15 * cos(radiant_hour), hourX, hourY, 0xFFFF);
 	
 	//minute hand
-	int minuteX = (minute >= 30 ? 31 : 32);
-	int minuteY = (minute >= 45 || minute <= 15 ? 31 : 32);
+	int minuteX = (minute > 30 || minute == 0 ? 31 : 32);
+	int minuteY = (minute > 45 || minute <= 15 ? 31 : 32);
 	float radiant_minute = radians(180 - (6 * minute));
-	panel->drawLine(minuteX + 23 * sin(radiant_minute), minuteY + 23 * cos(radiant_minute), minuteX, minuteY, 0xFFFF);
+	panel->drawLine(minute == 30 || minute == 0 ? minuteX : minuteX + 23 * sin(radiant_minute), minute == 15 || minute == 45 ? minuteY : minuteY + 23 * cos(radiant_minute), minuteX, minuteY, 0xFFFF);
 	
 	//second hand
 	if(clock_seconds) {
 		int second = rtc_int.getSecond();
-		int secondX = (second >= 30 ? 31 : 32);
-		int secondY = (second >= 45 || second <= 15 ? 31 : 32);
+		int secondX = (second > 30 || second == 0 ? 31 : 32);
+		int secondY = (second > 45 || second <= 15 ? 31 : 32);
 		float radiant_second = radians(180 - (6 * second));
-		panel->drawLine(secondX + 28 * sin(radiant_second), secondY + 28 * cos(radiant_second), secondX, secondY, 0xF800);
+		panel->drawLine(second == 30 || second == 0 ? secondX : secondX + 28 * sin(radiant_second), second == 15 || second == 45 ? secondY : secondY + 28 * cos(radiant_second), secondX, secondY, 0xF800);
 	}
 
 	//marks
@@ -2338,7 +2338,7 @@ void loop() {
 
 	//Clock refresh cycle
 	if((current_mode == MODE_CLOCK || menu == MENU_DATETIME) && ms_clock < ms_current) {
-		ms_clock = ms_current + 100;
+		ms_clock = ms_current + 1000; //TODO set back to 100ms after testing
 		display_change = true;
 	}
 
