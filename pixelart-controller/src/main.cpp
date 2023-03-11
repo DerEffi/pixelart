@@ -24,6 +24,9 @@
 
 
 
+//TODO remove tests
+unsigned long ms_test = 0;
+
 /**************
 **	Globals  **
 ***************/
@@ -1909,13 +1912,15 @@ void booted_setup() {
 		image_loaded = sd_load_image(image_index[selected_image]);
 	}
 
-	display_current();
+	display_change = true;
 	ms_current = millis();
 	ms_animation = ms_current + animation_time;
 	ms_diashow = ms_current + diashow_time;
 }
 
 void setup() {
+	Serial.begin(9600); //todo remove
+
 	preferences_load();
 	panel_setup(); //depends on preferences
 	setup_boot_sequence(); //depends on panel
@@ -1923,7 +1928,7 @@ void setup() {
 	time_setup(); //depends on gpio and preferences
 	wifi_setup(); //depends on preferences
 	server_setup(); //depends on preferences and gpio
-	firmware_update(); //depends on gpio
+	firmware_update(); //depends on gpio and panel
 	
 	booted_setup();
 }
@@ -2383,4 +2388,10 @@ void loop() {
 		display_change = false;
 		display_current();
 	}
+
+	//TODO remove tests
+	// if(ms_test < ms_current) {
+	// 	ms_test = ms_current + 1000;
+	// 	Serial.printf("PSRAM: %d, RAM: %d\n", ESP.getFreePsram(), ESP.getFreeHeap());
+	// }
 }
