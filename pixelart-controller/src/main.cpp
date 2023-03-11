@@ -1741,17 +1741,21 @@ void server_setup() {
 // Initialize Wifi if enabled
 void wifi_setup() {
 
+	WiFi.persistent(false);
 	WiFi.setHostname(WIFI_HOSTNAME);
 	WiFi.setAutoReconnect(true);
 	WiFi.disconnect(true);
 
-	WiFi.softAPdisconnect(true);
+	if(WiFi.softAPgetStationNum() == 0)
+		WiFi.softAPdisconnect(true);
 	
-	ms_wifi_reconnect = millis() + 60000;
+	ms_wifi_reconnect = millis() + 30000;
 	wifi_setup_complete = true;
 	
 	dns_server.stop();
 	dns_server.setErrorReplyCode(DNSReplyCode::NoError);
+
+	delay(100); //wait to properly disconnect
 
 	if(wifi_connect) {
 		WiFi.begin(wifi_ssid, wifi_password);
@@ -1760,7 +1764,8 @@ void wifi_setup() {
 	}
 	
 	if(wifi_host) {
-		WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
+		if(WiFi.softAPgetStationNum() == 0)
+			WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
 		dns_server.start(53, "*", WiFi.softAPIP());
 	}
 }
