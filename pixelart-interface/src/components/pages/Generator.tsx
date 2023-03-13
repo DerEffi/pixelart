@@ -100,15 +100,13 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 				
 					<div id="image-generator-canvas-wrapper">
 						{this.state.rendering &&
-							<>
-								<div className='image-generator-rendering'>
-									<div style={{zIndex: 1}}>
-										<ProgressSpinner animationDuration="2s" strokeWidth='3' />
-										<div>Processing</div>
-									</div>
-									<div className='image-generator-rendering-blocker'/>
+							<div className='image-generator-rendering'>
+								<div style={{zIndex: 1}}>
+									<ProgressSpinner animationDuration="2s" strokeWidth='3' />
+									<div>Processing</div>
 								</div>
-							</>
+								<div className='image-generator-rendering-blocker'/>
+							</div>
 						}
 						<canvas id="image-generator-canvas" width={64} height={64} />
 					</div>
