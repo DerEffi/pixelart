@@ -3,6 +3,9 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Support\ItemNotFoundException;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -34,6 +37,7 @@ class Handler extends ExceptionHandler
         'current_password',
         'password',
         'password_confirmation',
+        'token'
     ];
 
     /**
@@ -43,8 +47,20 @@ class Handler extends ExceptionHandler
      */
     public function register()
     {
-        $this->reportable(function (Throwable $e) {
-            //
-        });
+        //
+    }
+
+    public function render($request, Throwable $e) {
+
+        if($e instanceof NotFoundHttpException)
+            return response()->json(["message" => "this endpoint does not exist"], 404);
+
+        if($e instanceof ItemNotFoundException)
+            return response()->json(["message" => "could not find the item specified"], 404);
+
+        if($e instanceof BadRequestException)
+            return response()->json(["message" => "bad request"], 400);
+
+        return response()->json(["message" => "unexpected error"], 500);
     }
 }
