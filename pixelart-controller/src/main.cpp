@@ -1072,7 +1072,7 @@ void display_social_channel(char* type, char* channel, char* subs, char* views) 
 		else if(strcmp(type, "y") == 0)
 			panel->drawBitmap(textbox_start_position, 55, icon_eye, 9, 7, 0xFFFF);
 		else if(strcmp(type, "i") == 0)
-			panel->drawBitmap(textbox_start_position, 55, icon_heart, 8, 7, 0xFFFF);
+			panel->drawBitmap(textbox_start_position, 55, icon_heart, 8, 7, 0xF988);
 	}
 
 	display_overlay();
@@ -2189,18 +2189,18 @@ void loop() {
 		}
 	}
 
-	//animation speed rot
+	//diashow speed rot
 	if(rot1_clicks != 0) {
 		if(menu == MENU_NONE) {
-			animation_enabled = true;
-			int16_t new_animation_time = animation_time - rot1_clicks * 20;
-			animation_time = new_animation_time > 500 ? 500 : new_animation_time < 20 ? 20 : new_animation_time;
-			ms_animation = ms_current + animation_time;
-			display_overlay(OVERLAY_ANIMATION_SPEED);
+			diashow_enabled = true;
+			int32_t new_diashow_time = diashow_time - rot1_clicks * 1000;
+			diashow_time = new_diashow_time > 60000 ? 60000 : new_diashow_time < 1000 ? 1000 : new_diashow_time;
+			ms_diashow = ms_current + diashow_time;
+			display_overlay(OVERLAY_DIASHOW_SPEED);
 
 			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putUInt("animation_time", animation_time);
-			preferences.putBool("animation", animation_enabled);
+			preferences.putUInt("diashow_time", diashow_time);
+			preferences.putBool("diashow", diashow_enabled);
 			preferences.end();
 		} else if(menu == MENU_DATETIME) {
 			if(!menu_time_changed)
@@ -2237,18 +2237,18 @@ void loop() {
 		rot1_clicks = 0;
 	}
 
-	//diashow speed rot
+	//animation speed rot
 	if(rot2_clicks != 0) {
 		if(menu == MENU_NONE) {
-			diashow_enabled = true;
-			int32_t new_diashow_time = diashow_time - rot2_clicks * 1000;
-			diashow_time = new_diashow_time > 60000 ? 60000 : new_diashow_time < 1000 ? 1000 : new_diashow_time;
-			ms_diashow = ms_current + diashow_time;
-			display_overlay(OVERLAY_DIASHOW_SPEED);
+			animation_enabled = true;
+			int16_t new_animation_time = animation_time - rot2_clicks * 20;
+			animation_time = new_animation_time > 500 ? 500 : new_animation_time < 20 ? 20 : new_animation_time;
+			ms_animation = ms_current + animation_time;
+			display_overlay(OVERLAY_ANIMATION_SPEED);
 
 			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putUInt("diashow_time", diashow_time);
-			preferences.putBool("diashow", diashow_enabled);
+			preferences.putUInt("animation_time", animation_time);
+			preferences.putBool("animation", animation_enabled);
 			preferences.end();
 		} else if(menu == MENU_DATETIME) {
 			if(!menu_time_changed)
@@ -2490,21 +2490,6 @@ void loop() {
 	//rot1 button
 	if(rot1_pressed) {
 		if(menu == MENU_NONE) {
-			animation_enabled = !animation_enabled;
-			ms_animation = ms_current + animation_time;
-			preferences.begin(PREFERENCES_NAMESPACE, false);
-			preferences.putBool("animation", animation_enabled);
-			preferences.end();
-			
-			display_overlay(OVERLAY_TEXT, animation_enabled ? "Animation ON" : "Animation OFF");
-		}
-
-		rot1_pressed = false;
-	}
-
-	//rot2 button
-	if(rot2_pressed) {
-		if(menu == MENU_NONE) {
 			diashow_enabled = !diashow_enabled;
 			ms_diashow = ms_current + diashow_time;
 			preferences.begin(PREFERENCES_NAMESPACE, false);
@@ -2512,6 +2497,21 @@ void loop() {
 			preferences.end();
 			
 			display_overlay(OVERLAY_TEXT, diashow_enabled ? "Diashow ON" : "Diashow OFF");
+		}		
+
+		rot1_pressed = false;
+	}
+
+	//rot2 button
+	if(rot2_pressed) {
+		if(menu == MENU_NONE) {
+			animation_enabled = !animation_enabled;
+			ms_animation = ms_current + animation_time;
+			preferences.begin(PREFERENCES_NAMESPACE, false);
+			preferences.putBool("animation", animation_enabled);
+			preferences.end();
+			
+			display_overlay(OVERLAY_TEXT, animation_enabled ? "Animation ON" : "Animation OFF");
 		}
 
 		rot2_pressed = false;
