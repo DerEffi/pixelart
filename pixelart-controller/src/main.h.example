@@ -90,4 +90,4 @@
 
 #define SOCIALS_API_KEY ""
 #define SOCIALS_API_SERVER ""
-#define SOCIALS_REQUEST "[{\"t\":\"t\",\"c\":\"dereffi\",\"d\":\"@DerEffi\"},{\"t\":\"y\",\"c\":\"dereffi\",\"d\":\"@DerEffi\"}]"
+#define SOCIALS_REQUEST "[{\"t\":\"t\",\"c\":\"dereffi\",\"d\":\"@DerEffi\"},{\"t\":\"y\",\"c\":\"jadereffi\",\"d\":\"@JaDerEffi\"},{\"t\":\"i\",\"c\":\"jadereffi\",\"d\":\"@JaDerEffi\"}]"
