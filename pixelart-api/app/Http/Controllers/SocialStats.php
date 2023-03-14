@@ -97,7 +97,7 @@ class SocialStats extends Controller
         $socials = $socials->map(function($social) {
             if($social["t"] == "i") {
                 $social["f"] = Cache::get("instagram_user_follower_".$social["c"]);
-                $social["v"] = Cache::get("instagram_user_following_".$social["c"]);
+                $social["v"] = Cache::get("instagram_user_liked_".$social["c"]);
 
                 if(is_null($social["f"]) && is_null($social["v"])) {
                     try {
@@ -409,25 +409,30 @@ class SocialStats extends Controller
         ], "instagram.com")->get("https://i.instagram.com/api/v1/users/web_profile_info/?username=".$username);
 
         $response->throwUnlessStatus(200);
+        $responseData = $response->collect()->toArray();
 
-        $validator = Validator::make([
-            "data" => $response["data"]
-        ], [
+        $validator = Validator::make($responseData, [
             "data.user.id" => "required",
             "data.user.edge_followed_by.count" => "required|numeric",
-            "data.user.edge_follow.count" => "required|numeric"
+            "data.user.edge_follow.count" => "required|numeric",
+            "data.user.edge_owner_to_timeline_media.edges" => "sometimes|array",
+            "data.user.edge_owner_to_timeline_media.edges.*.node.edge_liked_by.count" => "sometimes|numeric",
         ]);
         if($validator->fails())
             return throw new AuthorizationException("Failed to retrive data from twitch");
 
-        Cache::forever("instagram_user_id_".$username, $response["data"]["user"]["id"]);
-        Cache::put("instagram_user_follower_".$username, $response["data"]["user"]["edge_followed_by"]["count"], 3600);
-        Cache::put("instagram_user_following_".$username, $response["data"]["user"]["edge_follow"]["count"], 3600);
+        Cache::forever("instagram_user_id_".$username, $responseData["data"]["user"]["id"]);
+        Cache::put("instagram_user_follower_".$username, $responseData["data"]["user"]["edge_followed_by"]["count"], 3600);
+
+        $likes = 0;
+        if(!empty($responseData["data"]["user"]["edge_owner_to_timeline_media"]["edges"]))
+            $likes = $responseData["data"]["user"]["edge_owner_to_timeline_media"]["edges"][0]["node"]["edge_liked_by"]["count"];
+        Cache::put("instagram_user_liked_".$username, $likes, 3600);
 
         return [
-            "id" => $response["data"]["user"]["id"],
-            "f" => $response["data"]["user"]["edge_followed_by"]["count"],
-            "v" => $response["data"]["user"]["edge_follow"]["count"],
+            "id" => $responseData["data"]["user"]["id"],
+            "f" => $responseData["data"]["user"]["edge_followed_by"]["count"],
+            "v" => $likes,
         ];
     }
 
