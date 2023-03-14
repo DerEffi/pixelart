@@ -7,5 +7,8 @@ return [
     ],
     "youtube" => [
         "api_key" => env("YOUTUBE_API_KEY")
+    ],
+    "instagram" => [
+        "session_id" => env("INSTAGRAM_SESSION_ID")
     ]
 ];

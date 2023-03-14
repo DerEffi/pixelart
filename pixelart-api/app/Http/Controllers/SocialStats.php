@@ -404,7 +404,9 @@ class SocialStats extends Controller
     private function requestInstagramStats($username) {
         $response = Http::withHeaders([
             "User-Agent" => "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 118.0.0.25.121 (iPhone11,8; iOS 13_1_3; en_US; en-US; scale=2.00; 828x1792; 180988914)"
-        ])->get("https://i.instagram.com/api/v1/users/web_profile_info/?username=".$username);
+        ])->withCookies([
+            "sessionid" => config("socials.instagram.session_id", "")
+        ], "instagram.com")->get("https://i.instagram.com/api/v1/users/web_profile_info/?username=".$username);
 
         $response->throwUnlessStatus(200);
 
