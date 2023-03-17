@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use DOMDocument;
+use DOMXPath;
+use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -136,7 +139,7 @@ class SocialStats extends Controller
                 "t" => $social["t"],
                 "c" => $social["c"],
                 "d" => $social["d"] ?? $social["c"],
-                "f" => !empty($social["f"]) ? $this->formatNumber($social["f"]) : "0",
+                "f" => !empty($social["f"]) && $social["f"] != -1 ? $this->formatNumber($social["f"]) : "0",
                 "v" => !empty($social["v"]) && $social["v"] != -1 ? $this->formatNumber($social["v"]) : "0",
             ];
         });
@@ -405,8 +408,31 @@ class SocialStats extends Controller
         $response = Http::withHeaders([
             "User-Agent" => "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 118.0.0.25.121 (iPhone11,8; iOS 13_1_3; en_US; en-US; scale=2.00; 828x1792; 180988914)"
         ])->withCookies([
-            "sessionid" => config("socials.instagram.session_id", "")
+            "sessionid" => Cache::get("instagram_sessionid")
         ], "instagram.com")->get("https://i.instagram.com/api/v1/users/web_profile_info/?username=".$username);
+
+        if(!$response->getHeaders()["Content-Type"] || str_starts_with($response->getHeaders()["Content-Type"][0], "text/html")) {
+            $document = new DOMDocument();
+            $document->loadHTML($response->getBody()->getContents());
+            $result = (new DOMXPath($document))->query('//title');
+
+            if($result->length < 1 || str_contains(strtolower($result->item(0)->nodeValue), "login")) {
+                Cache::delete("instagram_sessionid");
+                $response = Http::withHeaders([
+                    "User-Agent" => "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 118.0.0.25.121 (iPhone11,8; iOS 13_1_3; en_US; en-US; scale=2.00; 828x1792; 180988914)"
+                ])->withCookies([
+                    "sessionid" => Cache::rememberForever("instagram_sessionid", function() { return $this->authInstagram(); })
+                ], "instagram.com")->get("https://i.instagram.com/api/v1/users/web_profile_info/?username=".$username);
+            } else {
+                throw new Exception("Could not authorize against instagram");
+            }
+        }
+
+        if($response->status() == 404) {
+            Cache::put("instagram_user_id_".$username, -1, 3600);
+            Cache::put("instagram_user_follower_".$username, -1, 3600);
+            Cache::put("instagram_user_liked_".$username, -1, 3600);
+        }
 
         $response->throwUnlessStatus(200);
         $responseData = $response->collect()->toArray();
@@ -434,6 +460,53 @@ class SocialStats extends Controller
             "f" => $responseData["data"]["user"]["edge_followed_by"]["count"],
             "v" => $likes,
         ];
+    }
+
+    /**
+     * It gets the sessionid cookie token from the login page with username and password
+     *
+     * @return string The session cookie value.
+     */
+    private function authInstagram(): string {
+        $username = config("socials.instagram.username");
+        $password = config("socials.instagram.password");
+
+        if(empty($username) || empty($password))
+            throw new AuthorizationException();
+
+        $baseRequest = Http::withHeaders([
+            "User-Agent" => "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 118.0.0.25.121 (iPhone11,8; iOS 13_1_3; en_US; en-US; scale=2.00; 828x1792; 180988914)"
+        ])->get("https://www.instagram.com/");
+
+
+        $html = $baseRequest->getBody()->getContents();
+
+        preg_match('/\\\"csrf_token\\\":\\\"(.*?)\\\"/', $html, $matches);
+
+        if (!isset($matches[1])) {
+            throw new Exception('Unable to extract JSON data');
+        }
+
+        $csrfToken = $matches[1];
+
+        $query = Http::withHeaders([
+                'cookie' => 'ig_cb=1; csrftoken=' . $csrfToken,
+                'referer' => "https://www.instagram.com/",
+                'x-csrftoken' => $csrfToken,
+                "User-Agent" => "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 118.0.0.25.121 (iPhone11,8; iOS 13_1_3; en_US; en-US; scale=2.00; 828x1792; 180988914)",
+                'accept-language' => "en-EN",
+            ])->asForm()->post("https://www.instagram.com/accounts/login/ajax/", [
+                'username' => $username,
+                'enc_password' => '#PWD_INSTAGRAM_BROWSER:0:' . time() . ':' . $password,
+            ]);
+
+        $query->throwUnlessStatus(200);
+
+        $sessionCookie = $query->cookies->getCookieByName('sessionid');
+        if(empty($sessionCookie))
+            throw new Exception();
+
+        return $sessionCookie->getValue();
     }
 
     /**

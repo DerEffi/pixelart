@@ -52,14 +52,26 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $e) {
 
-        if($e instanceof NotFoundHttpException)
-            return response()->json(["message" => "this endpoint does not exist"], 404);
+        try {
+            if($e instanceof NotFoundHttpException)
+                return response()->json(["message" => "this endpoint does not exist"], 404);
 
-        if($e instanceof ItemNotFoundException)
-            return response()->json(["message" => "could not find the item specified"], 404);
+            if($e instanceof ItemNotFoundException)
+                return response()->json(["message" => "could not find the item specified"], 404);
 
-        if($e instanceof BadRequestException)
-            return response()->json(["message" => "bad request"], 400);
+            if($e instanceof BadRequestException)
+                return response()->json(["message" => "bad request"], 400);
+
+            if(config("app.debug")) {
+                return response()->json([
+                    "message" => $e->getMessage(),
+                    "line" => $e->getLine(),
+                    "file" => $e->getFile(),
+                    "exception" => get_class($e)
+                ], 500);
+            }
+
+        } catch(Throwable $e){}
 
         return response()->json(["message" => "unexpected error"], 500);
     }

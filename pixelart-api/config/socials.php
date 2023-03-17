@@ -9,6 +9,7 @@ return [
         "api_key" => env("YOUTUBE_API_KEY")
     ],
     "instagram" => [
-        "session_id" => env("INSTAGRAM_SESSION_ID")
+        "username" => env("INSTAGRAM_USERNAME"),
+        "password" => env("INSTAGRAM_PASSWORD")
     ]
 ];
