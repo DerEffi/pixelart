@@ -43,12 +43,12 @@ export default class Settings extends React.Component<ISettingsComponentProps, I
 
                     {this.props.dataService.getStatus() === Status.connected &&
                         <Routes>
-                            <Route path="/display" element={<DisplaySettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/pictures" element={<PictureSettings dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/display" element={<DisplaySettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/pictures" element={<PictureSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="/time" element={<TimeSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/wifi" element={<WifiSettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/socials" element={<SocialsSettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/system" element={<SystemSettings dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/wifi" element={<WifiSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/socials" element={<SocialsSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/system" element={<SystemSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="*" element={<NotFound/>} />
                         </Routes>
                     }

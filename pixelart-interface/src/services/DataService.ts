@@ -1,6 +1,6 @@
 import axios, { AxiosResponse, AxiosError } from "axios";
 import { APIError, APIErrorType } from "../models/Errors";
-import { Display, Time, Wifi } from "../models/Settings";
+import { Display, Images, Socials, Time, Wifi, IWifiNetwork } from "../models/Settings";
 import { Status } from "../models/Status";
 
 export default class DataService {
@@ -14,7 +14,9 @@ export default class DataService {
     public data: {
         wifi?: Wifi,
         time?: Time,
-        display?: Display
+        display?: Display,
+        socials?: Socials,
+        images?: Images
     } = {};
 
     constructor(onChanged: () => void) {
@@ -64,33 +66,82 @@ export default class DataService {
         this.onChanged();
     }
 
-    public async refresh() {
-        await this.requestDevice<Wifi>("GET", "/api/wifi")
-            .then(resp => {
-                this.data.wifi = resp
-            })
-            .catch((e: APIError) => {
-                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending)
-                    this.setStatus(Status.disconnected);
-            });
+    public async refresh(ignoreError: boolean = false) {
+        await this.refreshDisplay(ignoreError);
+        await this.refreshWifi(ignoreError);
+        await this.refreshTime(ignoreError);
+        await this.refreshSocials(ignoreError);
+        await this.refreshImages(ignoreError);
+    }
 
-        await this.requestDevice<Time>("GET", "/api/time")
-            .then(resp => {
-                this.data.time = resp
-            })
-            .catch((e: APIError) => {
-                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending)
-                    this.setStatus(Status.disconnected);
-            });
-
+    public async refreshDisplay(ignoreError: boolean = false) {
         await this.requestDevice<Display>("GET", "/api/display")
             .then(resp => {
                 this.data.display = resp
             })
             .catch((e: APIError) => {
-                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending)
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
                     this.setStatus(Status.disconnected);
             });
+        this.onChanged();
+    }
+
+    public async refreshWifi(ignoreError: boolean = false) {
+        await this.requestDevice<Wifi>("GET", "/api/wifi")
+            .then(resp => {
+                this.data.wifi = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
+                    this.setStatus(Status.disconnected);
+            });
+        this.onChanged();
+    }
+
+    public async refreshTime(ignoreError: boolean = false) {
+        await this.requestDevice<Time>("GET", "/api/time")
+            .then(resp => {
+                this.data.time = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
+                    this.setStatus(Status.disconnected);
+            });
+        this.onChanged();
+    }
+
+    public async refreshSocials(ignoreError: boolean = false) {
+        await this.requestDevice<Socials>("GET", "/api/socials")
+            .then(resp => {
+                this.data.socials = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
+                    this.setStatus(Status.disconnected);
+            });
+        this.onChanged();
+    }
+    
+    public async refreshImages(ignoreError: boolean = false) {
+        await this.requestDevice<Images>("GET", "/api/images")
+            .then(resp => {
+                this.data.images = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
+                    this.setStatus(Status.disconnected);
+            });
+        this.onChanged();
+    }
+
+    public async scnaWifi(): Promise<IWifiNetwork[]> {
+        return await this.requestDevice<{networks: IWifiNetwork[]}>("GET", "/api/wifi/available")
+            .then(resp => {
+                if(resp.networks)
+                    return resp.networks
+                return [];
+            })
+            .catch(() => []);
     }
 
     public async requestDevice<ResponseType>(method: string, endpoint: string, data: any = null): Promise<ResponseType> {

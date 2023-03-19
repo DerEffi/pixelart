@@ -5,6 +5,7 @@ import { Toast } from 'primereact/toast';
 export interface IWifiSettingsComponentProps {
 	dataService: DataService;
 	toast: Toast | null;
+	advanced: boolean;
 }
 
 interface IWifiSettingsComponentState {

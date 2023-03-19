@@ -149,7 +149,7 @@ export default class TimeSettings extends React.Component<ITimeSettingsComponent
 
 	public setTimeData(data: any) {
         this.props.dataService.requestDevice("POST", "/api/time", data)
-			.then(() => this.props.dataService.refresh())
+			.then(() => this.props.dataService.refreshTime())
 			.catch((e: APIError) => {
 				if(this.props.toast)
 					this.props.toast.show({
@@ -162,7 +162,7 @@ export default class TimeSettings extends React.Component<ITimeSettingsComponent
 
 	public setNtpServer(server: string) {
         this.props.dataService.requestDevice("POST", "/api/time", {ntpServer: server})
-			.then(() => this.props.dataService.refresh().then(() => this.setState({ntpServer: undefined})))
+			.then(() => this.props.dataService.refreshTime().then(() => this.setState({ntpServer: undefined})))
 			.catch((e: APIError) => {
 				if(this.props.toast)
 					this.props.toast.show({
@@ -185,7 +185,7 @@ export default class TimeSettings extends React.Component<ITimeSettingsComponent
 		}
 
         this.props.dataService.requestDevice("POST", "/api/time", {time: parseInt((time.getTime() / 1000).toFixed(0))})
-			.then(() => this.props.dataService.refresh().then(() => this.setState({deviceTime: undefined})))
+			.then(() => this.props.dataService.refreshTime().then(() => this.setState({deviceTime: undefined})))
 			.catch((e: APIError) => {
 				if(this.props.toast)
 					this.props.toast.show({
@@ -202,7 +202,7 @@ export default class TimeSettings extends React.Component<ITimeSettingsComponent
 		else
 			localStorage.removeItem("selectedTimezone");
 		this.props.dataService.requestDevice("POST", "/api/time", {timezone: timezone.indexOf("%") !== -1 ? timezone.substring(timezone.indexOf("%") + 1, timezone.length) : timezone})
-			.then(() => this.props.dataService.refresh().then(() => this.setState({timezone: timezone, timezoneChanged: false})))
+			.then(() => this.props.dataService.refreshTime().then(() => this.setState({timezone: timezone, timezoneChanged: false})))
 			.catch((e: APIError) => {
 				if(this.props.toast)
 					this.props.toast.show({

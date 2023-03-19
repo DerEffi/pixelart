@@ -174,7 +174,7 @@ unsigned long ms_diashow = 0;
 bool wifi_connect = WIFI_CONNECT_DEFAULT;
 bool wifi_host = WIFI_HOST_DEFAULT;
 bool wifi_setup_complete = true;
-bool wifi_scan_requested = false;
+bool ms_wifi_scan_requested = 0;
 bool wifi_scan_pending = false;
 std::vector<available_network> available_networks;
 char* wifi_ssid = strdup(WIFI_SSID_DEFAULT);
@@ -1575,6 +1575,7 @@ void server_setup() {
 				JsonVariant& root = response->getRoot();
 
 				root["displayImage"] = selected_image;
+				root["imageNumber"] = image_index.size();
 				root["imagePrefixMax"] = image_prefix_max;
 				root["imageLoaded"] = image_loaded;
 				JsonArray images = root.createNestedArray("images");
@@ -1607,6 +1608,7 @@ void server_setup() {
 				root["server"] = socials_request_server;
 				root["apiKey"] = socials_api_key;
 				root["displayChannel"] = socials_channel_current;
+				root["channelNumber"] = socials_channels.size();
 
 				response->setLength();
 				request->send(response);
@@ -1659,7 +1661,7 @@ void server_setup() {
 				response->setLength();
 				request->send(response);
 
-				wifi_scan_requested = true;
+				ms_wifi_scan_requested = millis() + 500;
 			} else {
 				request->send(403, "application/json", "{}");
 			}
@@ -1672,16 +1674,18 @@ void server_setup() {
 				response->setCode(200);
 				JsonVariant& root = response->getRoot();
 
-				root["wifiAP"] = wifi_host;
-				root["wifiAPSSID"] = wifi_ap_ssid;
-				root["wifiAPPassword"] = wifi_ap_password;
-				root["wifiAPIP"] = WiFi.softAPIP();
+				root["ap"] = wifi_host;
+				root["apSSID"] = wifi_ap_ssid;
+				root["apPassword"] = wifi_ap_password;
+				root["apIP"] = WiFi.softAPIP();
 
-				root["wifiConnect"] = wifi_connect;
-				root["wifiSetupComplete"] = wifi_setup_complete;
-				root["wifiSSID"] = wifi_ssid;
-				root["wifiIP"] = WiFi.localIP();
-				root["wifiHostname"] = WiFi.getHostname();
+				root["connect"] = wifi_connect;
+				root["setupComplete"] = wifi_setup_complete;
+				root["ssid"] = wifi_ssid;
+				root["ip"] = WiFi.localIP();
+				root["hostname"] = WiFi.getHostname();
+				root["rssi"] = WiFi.RSSI();
+				root["mac"] = WiFi.macAddress();
 				
 				response->setLength();
 				request->send(response);
@@ -1821,6 +1825,7 @@ void server_setup() {
 				}
 				
 				preferences.end();
+				ms_socials_request = 1;
 				display_change = true;
 				request->send(200, "application/json");
 			} else {
@@ -1901,32 +1906,32 @@ void server_setup() {
 				JsonObject body = json.as<JsonObject>();
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
-				if(body.containsKey("wifiConnect") && body["wifiConnect"].is<bool>()) {
-					wifi_connect = body["wifiConnect"];
+				if(body.containsKey("connect") && body["connect"].is<bool>()) {
+					wifi_connect = body["connect"];
 					preferences.putBool("wifi_connect", wifi_connect);
 				}
-				if(body.containsKey("wifiAP") && body["wifiAP"].is<bool>()) {
-					wifi_host = body["wifiAP"];
+				if(body.containsKey("ap") && body["ap"].is<bool>()) {
+					wifi_host = body["ap"];
 					preferences.putBool("wifi_host", wifi_host);
 				}
-				if(body.containsKey("wifiSSID") && body["wifiSSID"].is<const char*>()) {
+				if(body.containsKey("ssid") && body["ssid"].is<const char*>()) {
 					free(wifi_ssid);
-					wifi_ssid = strdup(body["wifiSSID"]);
+					wifi_ssid = strdup(body["ssid"]);
 					preferences.putString("wifi_ssid", wifi_ssid);
 				}
-				if(body.containsKey("wifiAPSSID") && body["wifiAPSSID"].is<const char*>()) {
+				if(body.containsKey("apSSID") && body["apSSID"].is<const char*>()) {
 					free(wifi_ap_ssid);
-					wifi_ap_ssid = strdup(body["wifiAPSSID"]);
+					wifi_ap_ssid = strdup(body["apSSID"]);
 					preferences.putString("wifi_ap_ssid", wifi_ap_ssid);
 				}
-				if(body.containsKey("wifiPassword") && body["wifiPassword"].is<const char*>()) {
+				if(body.containsKey("password") && body["password"].is<const char*>()) {
 					free(wifi_password);
-					wifi_password = strdup(body["wifiPassword"]);
+					wifi_password = strdup(body["password"]);
 					preferences.putString("wifi_password", wifi_password);
 				}
-				if(body.containsKey("wifiAPPassword") && body["wifiAPPassword"].is<const char*>()) {
+				if(body.containsKey("apPassword") && body["apPassword"].is<const char*>()) {
 					free(wifi_ap_password);
-					wifi_ap_password = strdup(body["wifiAPPassword"]);
+					wifi_ap_password = strdup(body["apPassword"]);
 					preferences.putString("wifi_ap_password", wifi_ap_password);
 				}
 
@@ -2182,6 +2187,7 @@ void loop() {
 				if(diashow_modes && image_index.size() > 0) {
 					current_mode = MODE_IMAGES;
 					selected_image = 0;
+					image_loaded = sd_load_image(image_index[selected_image]);
 				}
 			}
 			ms_diashow = ms_current + diashow_time;
@@ -2548,8 +2554,8 @@ void loop() {
 	}
 
 	//Wifi scan
-	if(wifi_scan_requested && !wifi_scan_pending) {
-		wifi_scan_requested = false;
+	if(ms_wifi_scan_requested != 0 && ms_wifi_scan_requested < ms_current && !wifi_scan_pending) {
+		ms_wifi_scan_requested = 0;
 		wifi_scan_pending = true;
 
 		wifi_setup_complete = true;
@@ -2580,7 +2586,7 @@ void loop() {
 
 			//clear state
 			wifi_scan_pending = false;
-			wifi_scan_requested = false;
+			ms_wifi_scan_requested = 0;
 		}
 	}
 

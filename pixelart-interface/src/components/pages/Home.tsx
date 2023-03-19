@@ -26,7 +26,7 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 
 				<div className="content">
 					
-                    TBD How to guide
+                    {/* TDB */}
 
 				</div>
 				
