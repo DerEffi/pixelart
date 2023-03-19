@@ -13,6 +13,10 @@ import { IoShareSocial } from 'react-icons/io5';
 import { BsInstagram, BsTwitch, BsYoutube } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
 import {v4 as uuid} from 'uuid';
+import { CgMenu } from 'react-icons/cg';
+import { Dropdown } from 'primereact/dropdown';
+import { FiEdit2 } from 'react-icons/fi';
+import { Tooltip } from 'primereact/tooltip';
 
 export interface ISocialsSettingsComponentProps {
 	dataService: DataService;
@@ -26,6 +30,9 @@ interface ISocialsSettingsComponentState {
 	server?: string;
 	testResponse: SocialItem[];
 	loadingTest: boolean;
+	socialList: SocialItem[];
+	lastDataServiceRequest: string;
+	editItem?: string;
 }
 
 export default class SocialsSettings extends React.Component<ISocialsSettingsComponentProps, ISocialsSettingsComponentState> {
@@ -34,9 +41,19 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 		super(props);
 
 		this.state = {
+			lastDataServiceRequest: this.props.dataService.data.socials?.request || "",
 			testResponse: [],
-			loadingTest: false
+			loadingTest: false,
+			socialList: this.decodeSocialRequest()
 		};
+	}
+
+	componentDidUpdate(prevProps: Readonly<ISocialsSettingsComponentProps>, prevState: Readonly<ISocialsSettingsComponentState>, snapshot?: any): void {
+		if(this.state.request === undefined && this.state.lastDataServiceRequest !== (this.props.dataService.data.socials?.request || ""))
+			this.setState({
+				lastDataServiceRequest: (this.props.dataService.data.socials?.request || ""),
+				socialList: this.decodeSocialRequest((this.props.dataService.data.socials?.request || ""))
+			});
 	}
 
     public render() {
@@ -44,6 +61,12 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
             <div className='fullwidth'>
 
 				<div className="content">
+
+					<Dialog header="Edit Social" closable closeOnEscape dismissableMask draggable={false} resizable={false} maximizable={false} visible={this.state.editItem !== undefined} className="socials-edit content" headerClassName="socials-edit-header" onHide={() => this.setState({editItem: undefined})}>
+						<>
+							{this.renderEditDialog(this.state.editItem as string)}
+						</>
+					</Dialog>
 
 					<Dialog header="Socials" closable closeOnEscape dismissableMask draggable={false} resizable={false} maximizable={false} visible={this.state.testResponse.length > 0} className="socials-test content" headerClassName="socials-test-header" onHide={() => this.setState({testResponse: []})}>
 						<div className='socials-test-items'>
@@ -87,7 +110,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 					<div>
 						<div className='headline'>Display Channel</div>
 						<div  className='input-group'>
-							<Button icon="pi pi-angle-left" style={{borderRadius: "100%"}} onClick={() => this.setSocialData({displayChannel: (this.props.dataService.data.socials && this.props.dataService.data.socials.displayChannel > 0 ? this.props.dataService.data.socials.displayChannel - 1 : 999)})} />
+							<Button icon="pi pi-angle-left" style={{borderRadius: "100%"}} onClick={() => this.setSocialData({displayChannel: (this.props.dataService.data.socials && this.props.dataService.data.socials.displayChannel > 0 ? this.props.dataService.data.socials.displayChannel - 1 : (this.props.dataService.data.socials?.channelNumber || 1) - 1)})} />
 							{this.props.dataService.data.socials?.displayChannel}
 							<Button icon="pi pi-angle-right" style={{borderRadius: "100%"}} onClick={() => this.setSocialData({displayChannel: this.props.dataService.data.socials ? this.props.dataService.data.socials.displayChannel + 1 : 1})} />
 						</div>
@@ -96,17 +119,32 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 					{!this.props.advanced &&
 						<>
 							<OrderList
-								value={this.decodeSocialRequest(this.state.request || this.props.dataService.data.socials?.request || "[]")}
+								value={this.state.socialList}
 								header="Socials"
 								dragdrop
 								itemTemplate={(item: SocialItem) =>
-									<>
-										<div>{item.t}</div>
-										<div>{item.c}</div>
-										<div>{item.d}</div>
-									</>
+									<div className='socials-list-item'>
+										<Tooltip target={".socials-list-item-tooltip-" + item.id} position='bottom' />
+										<CgMenu className='socials-list-item-icon'/>
+										<FiEdit2 style={{cursor: "pointer"}} data-pr-tooltip="Edit Item" className={"socials-list-item-input-icon socials-list-item-tooltip-" + item.id} onClick={() => this.setState({editItem: item.id})} />
+										
+										<div  className='socials-list-item-input'>
+											{item.t === "t" &&
+												<BsTwitch data-pr-tooltip="Twitch" className={"socials-list-item-input-icon socials-list-item-tooltip-" + item.id}/>
+											}
+											{item.t === "y" &&
+												<BsYoutube data-pr-tooltip="Youtube" className={"socials-list-item-input-icon socials-list-item-tooltip-" + item.id}/>
+											}
+											{item.t === "i" &&
+												<BsInstagram data-pr-tooltip="Instagram" className={"socials-list-item-input-icon socials-list-item-tooltip-" + item.id}/>
+											}
+											
+											<div>{item.d || item.c}</div>
+											<div>{item.d ? `(${item.c})` : ""}</div>
+										</div>
+									</div>
 								}
-								onChange={(e) => this.setState({request: JSON.stringify(e.value)})}
+								onChange={(e) => this.updateRequest(e.value)}
 							/>	
 						</>
 					}
@@ -116,7 +154,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 							<div>
 								<div className='headline'>Request</div>
 								<div className='input-group'>
-									<InputTextarea className='input-group-field' value={this.state.request || this.props.dataService.data.socials?.request} onChange={(e) => this.setState({request: e.target.value})} />
+									<InputTextarea className='input-group-field' value={this.state.request || this.props.dataService.data.socials?.request} onChange={(e) => this.setState({request: e.target.value, socialList: this.decodeSocialRequest()})} />
 									<Button icon="pi pi-check" style={{borderRadius: "100%"}} disabled={!this.state.request} onClick={() => this.setSocialRequest(this.state.request || "")} />
 								</div>
 							</div>
@@ -160,13 +198,68 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
         );
     }
 
-	public decodeSocialRequest(request: string): any[] {
+	public renderEditDialog(id: string): JSX.Element {
+		let items: SocialItem[] = this.state.socialList.filter(i => i.id === id);
+		if(items.length !== 1)
+			return <></>;
+
+		let item = items[0];
+		return(
+			<div className='socials-edit-form'>
+				<div>
+					<div className='socials-edit-label'>Platform</div>
+					<Dropdown
+						value={item.t}
+						placeholder='Platform'
+						onChange={(e) => { let newItem = item; newItem.t = e.value; this.updateSocialItem(newItem); }}
+						options={[
+							{value: "t", label: "Twitch"},
+							{value: "y", label: "Youtube"},
+							{value: "i", label: "Instagram"}
+						]}
+					/>
+				</div>
+				<div>
+					<div className='socials-edit-label'>Display Name</div>
+					<InputText value={item.d} placeholder={item.c} onChange={(e) => { item.d = e.target.value; this.updateSocialItem(item); }} />
+				</div>
+				<div>
+					<div className='socials-edit-label'>Channel Name</div>
+					<InputText value={item.c} placeholder="channel name" onChange={(e) => { item.c = e.target.value; this.updateSocialItem(item); }} />
+				</div>
+
+				<div className="socials-edit-submit">
+					<Button>Save</Button>
+				</div>
+			</div>
+		);
+	}
+
+	public decodeSocialRequest(request: string = (this.state ? this.state.request : undefined) || this.props.dataService.data.socials?.request || "[]"): SocialItem[] {
 		try {
-			let requestItems = JSON.parse(request) as SocialItem[]
-			return requestItems.map((i) => { i.id = uuid(); return i;});
+			return (JSON.parse(request) as SocialItem[]).map((i) => { i.id = uuid(); return i;});
 		} catch {
 			return [];
 		}
+	}
+
+	public updateRequest(items: SocialItem[]) {	
+		this.setState({
+			socialList: items,
+			request: JSON.stringify([...items].map(x => ({...x})).map(x => {x.id = undefined; return x;}))
+		});
+	}
+
+	public updateSocialItem(newItem: SocialItem) {
+		let updated = this.state.socialList.map(item => {
+			if(item.id === newItem.id)
+				item = newItem;
+			return item;
+		});
+		this.setState({
+			socialList: updated,
+			request: JSON.stringify([...updated].map(x => ({...x})).map(x => {x.id = undefined; return x;}))
+		});
 	}
 
 	public setSocialData(data: any) {

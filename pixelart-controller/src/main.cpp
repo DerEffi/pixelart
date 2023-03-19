@@ -1812,20 +1812,22 @@ void server_setup() {
 					free(socials_request);
 					socials_request = strdup(body["request"]);
 					preferences.putString("socials_request", socials_request);
+					ms_socials_request = millis() + 100;
 				}
 				if(body.containsKey("server") && body["server"].is<const char*>()) {
 					free(socials_request_server);
 					socials_request_server = strdup(body["server"]);
 					preferences.putString("socials_server", socials_request_server);
+					ms_socials_request = millis() + 100;
 				}
 				if(body.containsKey("apiKey") && body["apiKey"].is<const char*>()) {
 					free(socials_api_key);
 					socials_api_key = strdup(body["apiKey"]);
 					preferences.putString("socials_api_key", socials_api_key);
+					ms_socials_request = millis() + 100;
 				}
 				
 				preferences.end();
-				ms_socials_request = 1;
 				display_change = true;
 				request->send(200, "application/json");
 			} else {
