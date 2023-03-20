@@ -1970,22 +1970,22 @@ void server_setup() {
 
 		//React webserver
 		server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-			if(sd_connected() && SD.exists("/webserver/index.html")) {
-				request->send(SD, "/webserver/index.html", String());
+			if(sd_connected() && SD.exists("/webinterface/index.html")) {
+				request->send(SD, "/webinterface/index.html", String());
 			} else {
 				request->send(200, "text/plain", "SD Card or Files missing");
 			}
 		});
 
-		server.on("/interface.version.json", HTTP_GET, [](AsyncWebServerRequest *request) {
-			if(sd_connected() && SD.exists("/webserver/interface.version.json")) {
-				request->send(SD, "/webserver/interface.version.json", String());
+		server.on("/version.json", HTTP_GET, [](AsyncWebServerRequest *request) {
+			if(sd_connected() && SD.exists("/webinterface/version.json")) {
+				request->send(SD, "/webinterface/version.json", String());
 			} else {
 				request->send(200, "text/plain", "SD Card or Files missing");
 			}
 		});
 
-		server.serveStatic("/", SD, "/webserver").setCacheControl("max-age=600");
+		server.serveStatic("/", SD, "/webinterface").setCacheControl("max-age=600");
 	}
 }
 
