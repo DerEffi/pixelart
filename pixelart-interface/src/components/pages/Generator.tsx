@@ -6,7 +6,7 @@ import {Buffer} from 'buffer';
 import { Tooltip } from 'primereact/tooltip';
 import { Button } from 'primereact/button';
 import {Md5} from 'ts-md5';
-import { asyncTimeout, c2dArray, cAnimationArray, rgb565, rgb888 } from '../../services/Helper';
+import { asyncTimeout, c2dArray, cAnimationArray, padLeft, rgb565, rgb888 } from '../../services/Helper';
 import { InputText } from 'primereact/inputtext';
 import { Status } from '../../models/Status';
 import JSZip from 'jszip';
@@ -115,7 +115,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 						<Tooltip target=".image-generator-menu-button" position="bottom" />
 
 						<div className="input-group-field p-inputgroup">
-    						<span className="p-inputgroup-addon">xxx - </span>
+    						<span className="p-inputgroup-addon">{padLeft((this.props.dataService.data.images?.imagePrefixMax || 0) + 1, 3)} - </span>
 							<InputText placeholder='image name' value={this.state.name} onChange={(e) => this.setState({name: e.target.value})} />
 						</div>
 						<Button type="button" disabled={this.state.rendering} icon="pi pi-download" data-pr-tooltip="Download Pixelart" className="image-generator-menu-button p-button-outlined p-button-rounded p-button-success ml-auto" onClick={() => this.downloadImage()}/>
@@ -350,10 +350,11 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 			let frames = animation.length > 0 ? this.getAnimationArray(animation) : [];
 
 			let zip = new JSZip();
-			zip.file("000 - " + this.state.name + "/image.pxart", image);
-			zip.file("place inside images folder on your sd card", "");
+			let prefix = padLeft((this.props.dataService.data.images?.imagePrefixMax || 0) + 1, 3);
+			zip.file(prefix + " - " + this.state.name + "/image.pxart", image);
+			zip.file("_place inside images folder on your sd card_", "");
 			if(animation.length)
-				zip.file("000 - " + this.state.name + "/animation.pxart", frames);
+				zip.file(prefix + " - " + this.state.name + "/animation.pxart", frames);
 			zip.generateAsync({type: "blob"}).then((blob: Blob) => {
 				let file = document.createElement("a");
 				file.href = window.URL.createObjectURL(blob);

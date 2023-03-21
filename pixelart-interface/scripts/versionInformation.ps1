@@ -14,8 +14,8 @@ if((Test-Path -Path $templateFile) -and (Test-Path -Path $envFile)) {
     cd $buildfolder
     $json = Get-Content $versionFile | ConvertFrom-Json
     $json.version = $env.REACT_APP_VERSION
-    $json.type = $env.REACT_APP_ENVIRONMENT
-    $json.files = get-childitem -file -path .\ -Recurse | Resolve-Path -Relative | % { if(!$_.StartsWith(".\")) {$_ = ".\$($_)"}; "$($env["REACT_APP_UPDATE_SERVER"])/interface$(($_ -replace "\\", "/") -replace "\.\/", "/")" }
+    $json.environment = $env.REACT_APP_ENVIRONMENT
+    $json.files = get-childitem -file -path .\ -Recurse | Resolve-Path -Relative | % { if(!$_.StartsWith(".\")) {$_ = ".\$($_)"}; "$(($_ -replace "\\", "/") -replace "\.\/", '')" } | ? { $_ -notlike "*.htaccess*" }
     $json | ConvertTo-Json -depth 32 | Out-File $versionFile
 } else {
     Write-Error "Version file in build folder does not exist"

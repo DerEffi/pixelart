@@ -8,7 +8,7 @@
     "version": "0.1.0",
     "type": "firmware",
     "files": [
-        "https://update.pixelart.dereffi.de/firmware/firmware.bin"
+        "firmware.bin"
     ]
   }
   

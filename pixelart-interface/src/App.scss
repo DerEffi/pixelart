@@ -211,7 +211,11 @@
 
 a {
     text-decoration: none;
-    color: var(--text-color);
+    color: var(--primary-color);
+    
+    &:hover {
+        color: var(--primary-400);
+    }
 }
 
 body {
@@ -823,5 +827,14 @@ img {
                 }
             }
         }
+    }
+}
+
+.update-table {
+    margin: auto;
+    
+    & td {
+        padding: .5rem 1rem;
+        text-align: right;
     }
 }

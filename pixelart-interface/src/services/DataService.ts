@@ -2,6 +2,7 @@ import axios, { AxiosResponse, AxiosError } from "axios";
 import { APIError, APIErrorType } from "../models/Errors";
 import { Display, Images, Socials, Time, Wifi, IWifiNetwork } from "../models/Settings";
 import { Status } from "../models/Status";
+import { VersionDetails } from "../models/Version";
 
 export default class DataService {
 
@@ -16,8 +17,10 @@ export default class DataService {
         time?: Time,
         display?: Display,
         socials?: Socials,
-        images?: Images
+        images?: Images,
     } = {};
+    public newestFirmware?: VersionDetails;
+    public newestWebinterface?: VersionDetails;
 
     constructor(onChanged: () => void) {
         this.onChanged = onChanged;
@@ -36,7 +39,24 @@ export default class DataService {
         if(apiKey)
             this.apiKey = apiKey;
 
+        this.checkUpdateVersions();
         this.refresh();
+    }
+
+    public async checkUpdateVersions() {
+        axios.get(process.env.REACT_APP_UPDATE_SERVER + "/webinterface/version.json")
+        .then(resp => {
+            if(resp.status === 200 && resp.data.version && resp.data.files)
+                this.newestWebinterface = resp.data;
+        })
+        .catch(() => {});
+
+        axios.get(process.env.REACT_APP_UPDATE_SERVER + "/firmware/version.json")
+        .then(resp => {
+            if(resp.status === 200 && resp.data.version && resp.data.files)
+                this.newestFirmware = resp.data;
+        })
+        .catch(() => {});
     }
 
     public getDeviceAddress() {

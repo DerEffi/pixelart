@@ -28,3 +28,11 @@ export async function asyncTimeout(ms: number): Promise<void> {
         setTimeout(() => resolve(), ms);
     });
 }
+
+export function padLeft(number: number, length: number, character: string = '0'): string {
+    let result = String(number);
+    for (let i = result.length; i < length; ++i) {
+      result = character + result;
+    }
+    return result;
+  };
