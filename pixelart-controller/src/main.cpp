@@ -5,6 +5,7 @@
 #include <Font4x5Fixed.h>
 #include <Font4x7Fixed.h>
 #include <SPI.h>
+#include <SPIFFS.h>
 #include <SD.h>
 #include <Update.h>
 #include <Preferences.h>
@@ -1377,6 +1378,22 @@ void IRAM_ATTR trigger_rot3_btn() {
 **	Setup  **
 *************/
 
+//Load config data from internal filesystem
+void spiffs_setup() {
+	if(SPIFFS.begin() && SPIFFS.exists("/wifi.conf")) {
+		File file = SPIFFS.open("/wifi.conf");
+		if(!file.isDirectory()) {
+			size_t filesize = file.size();
+			char buffer[filesize];
+			file.readBytes(buffer, filesize);
+			buffer[filesize] = '\0';
+			free(wifi_ap_password);
+			wifi_ap_password = strdup(buffer);
+		}
+	}
+	SPIFFS.end();
+}
+
 // Show boot sequence
 void setup_boot_sequence() {
 	for(int row = 0; row < boot_sequence.size(); row++) {
@@ -2133,6 +2150,7 @@ void booted_setup() {
 void setup() {
 	Serial.begin(9600); //TODO remove
 
+	spiffs_setup(); //call before preferences_load to not overwrite user defined preferences
 	preferences_load();
 	panel_setup(); //depends on preferences
 	setup_boot_sequence(); //depends on panel
