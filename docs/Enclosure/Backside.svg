@@ -25,7 +25,7 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="1.6385"
-     inkscape:cx="353.67714"
+     inkscape:cx="354.28746"
      inkscape:cy="303.32621"
      inkscape:window-width="3840"
      inkscape:window-height="2054"
@@ -46,14 +46,15 @@
        height="134"
        x="21.70433"
        y="-184.17638"
-       transform="rotate(90)" />
+       transform="rotate(90)"
+       inkscape:label="PCB" />
     <rect
        style="fill:#ffff00;stroke-width:0.264583"
        id="rect121"
        width="29"
        height="3"
-       x="-129"
-       y="29.5"
+       x="-151"
+       y="57"
        transform="rotate(-90)"
        inkscape:label="SD-Card" />
     <g
@@ -88,9 +89,9 @@
        id="rect320"
        width="8"
        height="3"
-       x="-35"
-       y="-145"
-       transform="scale(-1)"
+       x="132.5"
+       y="-80"
+       transform="rotate(90)"
        inkscape:label="Micro USB" />
     <g
        id="g315"
@@ -195,5 +196,34 @@
          y="189"
          transform="rotate(-90)" />
     </g>
+    <g
+       id="g304"
+       inkscape:label="Power switch"
+       transform="translate(21,120)">
+      <rect
+         style="fill:#88aa00;stroke-width:0.347443"
+         id="rect299"
+         width="20"
+         height="33"
+         x="0"
+         y="0"
+         inkscape:label="switch pcb" />
+      <circle
+         style="fill:#aa0000;stroke-width:0.190929"
+         id="path245"
+         cx="10"
+         cy="16.5"
+         r="6"
+         inkscape:label="hole" />
+    </g>
+    <rect
+       style="fill:#aa0000;stroke-width:0.212191"
+       id="rect358"
+       width="12"
+       height="25"
+       x="130.5"
+       y="-182"
+       transform="rotate(90)"
+       inkscape:label="power connector" />
   </g>
 </svg>
