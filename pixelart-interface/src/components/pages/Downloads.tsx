@@ -118,7 +118,7 @@ export default class Downloads extends React.Component<IDownloadsComponentProps,
             let zip = new JSZip();
 			zip.file("_place inside root folder on your sd card_", "");
             files.forEach(file => {
-                zip.file(file.path, file.content);
+                zip.file("webinterface/" + file.path, file.content);
             });
 
 			zip.generateAsync({type: "blob"}).then((blob: Blob) => {

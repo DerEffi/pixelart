@@ -1979,9 +1979,9 @@ void server_setup() {
 			}
 		});
 
-		server.on("/version.json", HTTP_GET, [](AsyncWebServerRequest *request) {
+		server.on("/webinterface/version.json", HTTP_GET, [](AsyncWebServerRequest *request) {
 			if(sd_connected() && SD.exists("/webinterface/version.json")) {
-				request->send(SD, "/webinterface/version.json", String());
+				request->send(SD, "/webinterface/version.json", "application/json");
 			} else {
 				request->send(200, "text/plain", "SD Card or Files missing");
 			}

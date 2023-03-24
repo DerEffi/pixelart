@@ -1,6 +1,8 @@
 import axios, { AxiosResponse, AxiosError } from "axios";
+import moment from "moment";
 import { APIError, APIErrorType } from "../models/Errors";
 import { Display, Images, Socials, Time, Wifi, IWifiNetwork } from "../models/Settings";
+import { IStatistics } from "../models/Statistics";
 import { Status } from "../models/Status";
 import { VersionDetails } from "../models/Version";
 
@@ -23,6 +25,8 @@ export default class DataService {
     } = {
         wifiScan: []
     };
+    public statistics: IStatistics[] = [];
+    public deviceWebinterfaceVersion?: VersionDetails;
     public newestFirmware?: VersionDetails;
     public newestWebinterface?: VersionDetails;
 
@@ -34,7 +38,6 @@ export default class DataService {
             this.darkTheme = false;
 
         let dismissedWifiWarning: string | null = localStorage.getItem("dismissedWifiWarning");
-        console.log(dismissedWifiWarning);
         if(dismissedWifiWarning === "true")
             this.dismissedWifiWarning = true;
 
@@ -106,6 +109,18 @@ export default class DataService {
         await this.refreshTime(ignoreError);
         await this.refreshSocials(ignoreError);
         await this.refreshImages(ignoreError);
+        await this.refreshWebinterfaceVersion();
+    }
+
+    public async refreshWebinterfaceVersion(ignoreError: boolean = false) {
+        await this.requestDevice<VersionDetails>("GET", "/webinterface/version.json")
+            .then(resp => {
+                if(resp.files && resp.type && resp.version)
+                    this.deviceWebinterfaceVersion = resp;
+            })
+            .catch(() => {});
+        
+        this.onChanged();
     }
 
     public async refreshDisplay(ignoreError: boolean = false) {
@@ -117,6 +132,13 @@ export default class DataService {
                 if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
                     this.setStatus(Status.disconnected);
             });
+        if(this.data.display)
+            this.statistics.push({
+                internal: this.data.display.freeMemory,
+                external: this.data.display.freeSPIMemory,
+                time: moment()
+            });
+
         this.onChanged();
     }
 
