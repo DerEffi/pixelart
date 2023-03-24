@@ -184,10 +184,12 @@ char* wifi_password = strdup(WIFI_PASSWORD_DEFAULT);
 char* wifi_ap_password = strdup(WIFI_AP_PASSWORD_DEFAULT);
 unsigned long ms_wifi_routine = 0;
 unsigned long ms_wifi_reconnect = 0;
+unsigned long ms_wifi_restart = 0;
 DNSServer dns_server;
 
 //Server
 AsyncWebServer server(80);
+bool server_setup_complete = false;
 char* api_key = strdup("");
 unsigned long ms_api_key_request = 0;
 unsigned long ms_api_key_approve = 0;
@@ -1502,38 +1504,6 @@ void panel_setup() {
 
 }
 
-// Initialize Wifi if enabled
-void wifi_setup(bool force = false) {
-
-	WiFi.persistent(false);
-	WiFi.setHostname(WIFI_HOSTNAME);
-	WiFi.setAutoReconnect(true);
-	WiFi.disconnect(true);
-
-	if(WiFi.softAPgetStationNum() == 0 || force)
-		WiFi.softAPdisconnect(true);
-	
-	ms_wifi_reconnect = millis() + 30000;
-	wifi_setup_complete = true;
-	
-	dns_server.stop();
-	dns_server.setErrorReplyCode(DNSReplyCode::NoError);
-
-	delay(100); //wait to properly disconnect
-
-	if(wifi_connect) {
-		WiFi.begin(wifi_ssid, wifi_password);
-		WiFi.waitForConnectResult(500);
-		wifi_setup_complete = false;
-	}
-	
-	if(wifi_host) {
-		if(WiFi.softAPgetStationNum() == 0 || force)
-			WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
-		dns_server.start(53, "*", WiFi.softAPIP());
-	}
-}
-
 // Server setup
 void server_setup() {
 	if(WiFi.getMode() != WIFI_MODE_NULL) {
@@ -1547,9 +1517,10 @@ void server_setup() {
 		server.onNotFound([](AsyncWebServerRequest *request) {
 			if(request->method() == HTTP_OPTIONS)
 				request->send(200);
-			else if(wifi_host) {
-				if(sd_connected() && SD.exists("/webserver/index.html")) {
-					request->send(SD, "/webserver/index.html", String());
+			//Captive portal but no on connected ap only on softAP
+			else if(wifi_host && strcmp(request->host().c_str(), WiFi.localIP().toString().c_str()) != 0) {
+				if(sd_connected() && SD.exists("/webinterface/index.html")) {
+					request->send(SD, "/webinterface/index.html", String());
 				} else {
 					request->send(200, "text/plain", "SD Card or Files missing");
 				}
@@ -1733,6 +1704,7 @@ void server_setup() {
 		server.on("/api/apiKey", HTTP_DELETE, [](AsyncWebServerRequest * request) {
 			if(verify_api_key(request)) {
 				preferences.begin(PREFERENCES_NAMESPACE, false);
+				free(api_key);
 				api_key = generate_uid();
 				preferences.putString("api_key", api_key);
 				preferences.end();
@@ -1749,38 +1721,38 @@ void server_setup() {
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
 				if(body.containsKey("displayMode") && body["displayMode"].is<int>() && body["displayMode"] >= 0) {
-					current_mode = body["displayMode"] > DISPLAY_MODE_NUMBER ? MODE_IMAGES : static_cast<display_mode>(body["displayMode"]);
+					current_mode = body["displayMode"].as<int>() > DISPLAY_MODE_NUMBER ? MODE_IMAGES : static_cast<display_mode>(body["displayMode"].as<int>());
 					preferences.putUInt("current_mode", current_mode);
 				}
 				if(body.containsKey("brightness") && body["brightness"].is<int>()) {
-					brightness = body["brightness"] > 248 ? 248 : body["brightness"] < 16 ? 16 : body["brightness"];
+					brightness = body["brightness"].as<int>() > 248 ? 248 : body["brightness"].as<int>() < 16 ? 16 : body["brightness"].as<int>();
 					preferences.putUInt("brightness", brightness);
 					panel->setBrightness(brightness);
 				}
 				if(body.containsKey("animation") && body["animation"].is<bool>()) {
-					animation_enabled = body["animation"];
+					animation_enabled = body["animation"].as<bool>();
 					preferences.putBool("animation", animation_enabled);
 				}
 				if(body.containsKey("diashow") && body["diashow"].is<bool>()) {
-					diashow_enabled = body["diashow"];
+					diashow_enabled = body["diashow"].as<bool>();
 					preferences.putBool("diashow", diashow_enabled);
 				}
 				if(body.containsKey("diashowModes") && body["diashowModes"].is<bool>()) {
-					diashow_modes = body["diashowModes"];
+					diashow_modes = body["diashowModes"].as<bool>();
 					preferences.putBool("diashow_modes", diashow_modes);
 				}
 				if(body.containsKey("animationTime") && body["animationTime"].is<int>() && body["animationTime"] > 0) {
-					animation_time = body["animationTime"];
+					animation_time = body["animationTime"].as<int>();
 					preferences.putUInt("animation_time", animation_time);
 				}
 				if(body.containsKey("diashowTime") && body["diashowTime"].is<int>() && body["diashowTime"] > 0) {
-					diashow_time = body["diashowTime"];
+					diashow_time = body["diashowTime"].as<int>();
 					preferences.putUInt("diashow_time", diashow_time);
 				}
 				
 				preferences.end();
-				display_change = true;
 				request->send(200, "application/json");
+				display_change = true;
 			} else {
 				request->send(403, "application/json");
 			}
@@ -1791,8 +1763,8 @@ void server_setup() {
 				JsonObject body = json.as<JsonObject>();
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
-				if(body.containsKey("displayImage") && body["displayImage"].is<int>() && body["displayImage"] >= 0) {
-					selected_image = body["displayImage"];
+				if(body.containsKey("displayImage") && body["displayImage"].is<int>() && body["displayImage"].as<int>() >= 0) {
+					selected_image = body["displayImage"].as<int>();
 					if(sd_connected() && image_index.size() > 0) {
 						if(selected_image >= image_index.size())
 							selected_image = 0;
@@ -1815,38 +1787,43 @@ void server_setup() {
 		server.addHandler(new AsyncCallbackJsonWebHandler("/api/socials", [](AsyncWebServerRequest * request, JsonVariant &json) {
 			if(verify_api_key(request)) {
 				JsonObject body = json.as<JsonObject>();
+
+				const char* json_request = body["request"].as<const char*>();
+				const char* json_server = body["server"].as<const char*>();
+				const char* json_apiKey = body["apiKey"].as<const char*>();
+
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
 				if(body.containsKey("displayChannel") && body["displayChannel"].is<int>() && body["displayChannel"] >= 0) {
 					current_mode = MODE_SOCIALS;
 					preferences.putUInt("current_mode", current_mode);
-					socials_channel_current = body["displayChannel"];
+					socials_channel_current = body["displayChannel"].as<int>();
 					if(socials_channel_current >= socials_channels.size())
 						socials_channel_current = 0;
 					preferences.putUInt("current_social", socials_channel_current);
 				}
-				if(body.containsKey("request") && body["request"].is<const char*>()) {
+				if(json_request) {
 					free(socials_request);
-					socials_request = strdup(body["request"]);
+					socials_request = strdup(json_request);
 					preferences.putString("socials_request", socials_request);
-					ms_socials_request = millis() + 100;
+					ms_socials_request = millis() + 500;
 				}
-				if(body.containsKey("server") && body["server"].is<const char*>()) {
+				if(json_server) {
 					free(socials_request_server);
-					socials_request_server = strdup(body["server"]);
+					socials_request_server = strdup(json_server);
 					preferences.putString("socials_server", socials_request_server);
-					ms_socials_request = millis() + 100;
+					ms_socials_request = millis() + 500;
 				}
-				if(body.containsKey("apiKey") && body["apiKey"].is<const char*>()) {
+				if(json_apiKey) {
 					free(socials_api_key);
-					socials_api_key = strdup(body["apiKey"]);
+					socials_api_key = strdup(json_apiKey);
 					preferences.putString("socials_api_key", socials_api_key);
-					ms_socials_request = millis() + 100;
+					ms_socials_request = millis() + 500;
 				}
 				
 				preferences.end();
-				display_change = true;
 				request->send(200, "application/json");
+				display_change = true;
 			} else {
 				request->send(403, "application/json");
 			}
@@ -1855,6 +1832,10 @@ void server_setup() {
 		server.addHandler(new AsyncCallbackJsonWebHandler("/api/time", [](AsyncWebServerRequest * request, JsonVariant &json) {
 			if(verify_api_key(request)) {
 				JsonObject body = json.as<JsonObject>();
+
+				const char* json_timezone = body["timezone"].as<const char*>();
+				const char* json_ntpServer = body["ntpServer"].as<const char*>();
+
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
 				if(body.containsKey("seconds") && body["seconds"].is<bool>()) {
@@ -1877,26 +1858,26 @@ void server_setup() {
 					update_time = body["updateTime"].as<bool>();
 					preferences.putBool("update_time", update_time);
 				}
-				if(body.containsKey("timezone") && body["timezone"].is<const char*>()) {
+				if(json_timezone) {
 					free(timezone);
-					timezone = strdup(body["timezone"]);
+					timezone = strdup(json_timezone);
 					preferences.putString("timezone", timezone);
 					setenv("TZ", timezone, 1);
 					tzset();
 				}
-				if(body.containsKey("ntpServer") && body["ntpServer"].is<const char*>()) {
+				if(json_ntpServer) {
 					free(ntp_server);
-					ntp_server = strdup(body["ntpServer"]);
+					ntp_server = strdup(json_ntpServer);
 					preferences.putString("ntpServer", ntp_server);
 				}
 				if(body.containsKey("displayMode") && body["displayMode"].is<int>()) {
 					current_mode = MODE_CLOCK;
 					preferences.putUInt("current_mode", current_mode);
-					current_clock_mode = body["displayMode"] > CLOCK_TYPE_NUMBER ? CLOCK_ANALOG : static_cast<clock_type>(body["displayMode"]);
+					current_clock_mode = body["displayMode"].as<int>() > CLOCK_TYPE_NUMBER ? CLOCK_ANALOG : static_cast<clock_type>(body["displayMode"].as<int>());
 					preferences.putUInt("clock_mode", current_clock_mode);
 				}
 				if(body.containsKey("time") && body["time"].is<int>() && body["time"] > 0) {
-					rtc_int.setTime(body["time"]);
+					rtc_int.setTime(body["time"].as<int>());
 					update_time = false;
 					preferences.putBool("update_time", false);
 					if(rtc_ext_enabled) {
@@ -1904,17 +1885,15 @@ void server_setup() {
 						rtc_ext_adjust = true;
 					}
 				}
-
-				//get current time from ntp server if wanted with new settings
-				if(update_time && WiFi.waitForConnectResult(50) == WL_CONNECTED) {
-					configTzTime(timezone, ntp_server);
-					ms_rtc_ext_adjust = millis() + 10000;
-					rtc_ext_adjust = true;
-				}
 				
 				preferences.end();
-				display_change = true;
 				request->send(200, "application/json");
+
+				//get current time from ntp server if wanted with new settings
+				if(update_time) {
+					wifi_setup_complete = false;
+				}
+				display_change = true;
 			} else {
 				request->send(403, "application/json");
 			}
@@ -1923,41 +1902,47 @@ void server_setup() {
 		server.addHandler(new AsyncCallbackJsonWebHandler("/api/wifi", [](AsyncWebServerRequest * request, JsonVariant &json) {
 			if(verify_api_key(request)) {
 				JsonObject body = json.as<JsonObject>();
+
+				const char* json_ssid = body["ssid"].as<const char*>();
+				const char* json_apSSID = body["apSSID"].as<const char*>();
+				const char* json_password = body["password"].as<const char*>();
+				const char* json_apPassword = body["apPassword"].as<const char*>();
+
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
 				if(body.containsKey("connect") && body["connect"].is<bool>()) {
-					wifi_connect = body["connect"];
+					wifi_connect = body["connect"].as<bool>();
 					preferences.putBool("wifi_connect", wifi_connect);
 				}
 				if(body.containsKey("ap") && body["ap"].is<bool>()) {
-					wifi_host = body["ap"];
+					wifi_host = body["ap"].as<bool>();
 					preferences.putBool("wifi_host", wifi_host);
 				}
-				if(body.containsKey("ssid") && body["ssid"].is<const char*>()) {
+				if(json_ssid) {
 					free(wifi_ssid);
-					wifi_ssid = strdup(body["ssid"]);
+					wifi_ssid = strdup(json_ssid);
 					preferences.putString("wifi_ssid", wifi_ssid);
 				}
-				if(body.containsKey("apSSID") && body["apSSID"].is<const char*>()) {
+				if(json_apSSID) {
 					free(wifi_ap_ssid);
-					wifi_ap_ssid = strdup(body["apSSID"]);
+					wifi_ap_ssid = strdup(json_apSSID);
 					preferences.putString("wifi_ap_ssid", wifi_ap_ssid);
 				}
-				if(body.containsKey("password") && body["password"].is<const char*>()) {
+				if(json_password) {
 					free(wifi_password);
-					wifi_password = strdup(body["password"]);
+					wifi_password = strdup(json_password);
 					preferences.putString("wifi_password", wifi_password);
 				}
-				if(body.containsKey("apPassword") && body["apPassword"].is<const char*>()) {
+				if(json_apPassword) {
 					free(wifi_ap_password);
-					wifi_ap_password = strdup(body["apPassword"]);
-					preferences.putString("wifi_ap_password", wifi_ap_password);
+					wifi_ap_password = strdup(json_apPassword);
+					preferences.putString("wifi_ap_pass", wifi_ap_password);
 				}
 
-				wifi_setup(!wifi_host);
-				
 				preferences.end();
 				request->send(200, "application/json");
+
+				ms_wifi_restart = millis() + 500;
 			} else {
 				request->send(403, "application/json");
 			}
@@ -1966,8 +1951,8 @@ void server_setup() {
 		//API POST
 		server.on("/api/refresh", HTTP_POST, [](AsyncWebServerRequest * request) {
 			if(verify_api_key(request)) {
-				display_change = true;
 				request->send(200, "application/json");
+				display_change = true;
 			} else {
 				request->send(403, "application/json");
 			}
@@ -2003,6 +1988,45 @@ void server_setup() {
 		});
 
 		server.serveStatic("/", SD, "/webinterface").setCacheControl("max-age=600");
+
+		server_setup_complete = true;
+	}
+}
+
+// Initialize Wifi if enabled
+void wifi_setup(bool ignoreAP = false) {
+
+	WiFi.persistent(false);
+	WiFi.setHostname(WIFI_HOSTNAME);
+	WiFi.setAutoReconnect(true);
+	WiFi.disconnect(true, true);
+
+	if(!ignoreAP)
+		WiFi.softAPdisconnect(true);
+	
+	ms_wifi_reconnect = millis() + 30000;
+	wifi_setup_complete = true;
+	
+	dns_server.stop();
+	dns_server.setErrorReplyCode(DNSReplyCode::NoError);
+
+	delay(100); //wait to properly disconnect
+
+	if(wifi_connect) {
+		WiFi.begin(wifi_ssid, wifi_password);
+		WiFi.waitForConnectResult(500);
+		wifi_setup_complete = false;
+	}
+	
+	if(wifi_host && !ignoreAP) {
+		WiFi.softAP(wifi_ap_ssid, wifi_ap_password);
+		dns_server.start(53, "*", WiFi.softAPIP());
+	}
+
+	delay(100); //wait to properly start
+
+	if(!server_setup_complete) {
+		server_setup();
 	}
 }
 
@@ -2046,9 +2070,9 @@ void preferences_load() {
 		free(wifi_password);
 		wifi_password = strdup(preferences.getString("wifi_password", WIFI_PASSWORD_DEFAULT).c_str());
 	}
-	if(preferences.isKey("wifi_ap_password")) {
+	if(preferences.isKey("wifi_ap_pass")) {
 		free(wifi_ap_password);
-		wifi_ap_password = strdup(preferences.getString("wifi_ap_password", WIFI_AP_PASSWORD_DEFAULT).c_str());
+		wifi_ap_password = strdup(preferences.getString("wifi_ap_pass", WIFI_AP_PASSWORD_DEFAULT).c_str());
 	}
 
 	//ntp
@@ -2156,8 +2180,7 @@ void setup() {
 	setup_boot_sequence(); //depends on panel
 	gpio_setup();
 	time_setup(); //depends on gpio and preferences
-	wifi_setup(true); //depends on preferences
-	server_setup(); //depends on preferences and gpio
+	wifi_setup(); //depends on preferences (and gpio and wifi for server)
 	firmware_update(); //depends on gpio and panel
 	
 	booted_setup();
@@ -2464,7 +2487,7 @@ void loop() {
 				case 2:
 					wifi_host = !wifi_host;
 					preferences.putBool("wifi_host", wifi_host);
-					wifi_setup(true);
+					wifi_setup();
 					break;
 				case 3:
 					menu = MENU_WIFI_HOST;
@@ -2613,12 +2636,16 @@ void loop() {
 	//Wifi connection routine
 	if(!wifi_setup_complete && ms_wifi_routine <= ms_current) {
 		ms_wifi_routine = ms_current + 5000;
-		if(WiFi.waitForConnectResult(5) == WL_CONNECTED) {
+		if(WiFi.waitForConnectResult(25) == WL_CONNECTED) {
 			wifi_setup_complete = true;
 			wifi_on_connected();
 		} else if(ms_wifi_reconnect <= ms_current) {
-			wifi_setup();
+			wifi_setup(true);
 		}
+	}
+	if(ms_wifi_restart != 0 && ms_wifi_restart <= ms_current) {
+		ms_wifi_restart = 0;
+		wifi_setup();
 	}
 
 	//DNS Routine
