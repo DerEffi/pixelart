@@ -35,6 +35,10 @@ export default class App extends React.Component<{}, IAppState> {
 
 	private dataService: DataService = new DataService(() => {this.setState({});});
 	private toast: Toast | null = null;
+	private resizeEvent = () => {
+		if(window.screen.width < 769)
+			this.changeSidebar(false);
+	};
 
 	constructor(props: {}) {
 		super(props);
@@ -52,6 +56,12 @@ export default class App extends React.Component<{}, IAppState> {
 
 		if(window.screen.width < 769)
 			this.changeSidebar(false);
+
+		window.addEventListener("resize", this.resizeEvent);
+	}
+
+	componentWillUnmount(): void {
+		window.removeEventListener("resize", this.resizeEvent);
 	}
 
 	public render(): JSX.Element {

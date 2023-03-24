@@ -48,7 +48,7 @@
     }
 
     .font-xxl {
-        font-size: 40px;
+        font-size: 65px;
     }
 
     .font-xl {
@@ -70,6 +70,15 @@
     #sidebar { 
         width: calc(100vw - 4rem) !important;
     }
+
+    .p-message-wrapper {
+        display: block !important;
+        text-align: center;
+
+        & > * {
+            text-align: left;
+        }
+    }
 }
 
 //Tablets
@@ -83,7 +92,7 @@
     }
 
     .font-xxl {
-        font-size: 50px;
+        font-size: 75px;
     }
 
     .font-xl {
@@ -526,6 +535,7 @@ img {
         margin-top: 2rem;
         position: relative;
         transition: margin-left .2s;
+        overflow: auto;
     }
 }
 
@@ -836,5 +846,26 @@ img {
     & td {
         padding: .5rem 1rem;
         text-align: right;
+    }
+}
+
+.message-icon {
+    flex: 0 0 auto;
+    font-size: 2rem;
+    margin-right: 1rem;
+}
+
+.wifi-network-item {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: .5rem;
+
+    &-icon {
+        flex: 0 0 auto;
+        font-size: 1.2rem;
+    }
+
+    &-label {
+        margin: 0 15px;
     }
 }

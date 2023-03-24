@@ -6,6 +6,8 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import JSZip from 'jszip';
 import { VersionDetails } from '../../models/Version';
+import { Messages } from 'primereact/messages';
+import { BiInfoCircle } from 'react-icons/bi';
 
 export interface IDownloadsComponentProps {
 	dataService: DataService;
@@ -19,6 +21,8 @@ interface IDownloadsComponentState {
 
 export default class Downloads extends React.Component<IDownloadsComponentProps, IDownloadsComponentState> {
 
+    private messages: Messages | null = null;
+
 	constructor(props: IDownloadsComponentProps) {
 		super(props);
 
@@ -26,6 +30,27 @@ export default class Downloads extends React.Component<IDownloadsComponentProps,
             downloading: false
 		}
 	}
+
+    componentDidMount(): void {
+        if(this.messages)
+            this.messages.show({
+                closable: false,
+                sticky: true,
+                severity: "info",
+                content: <>
+                    <BiInfoCircle className='message-icon'/>
+                    <div>
+                        <p>
+                            Download the current version of the firmware, running the LED-Panel itself, and the webinterface for remote access from any device on your network.
+                            After downloading you can place the files in the root directory of your sd card to start the update.
+                        </p>
+                        <p>
+                            You can also automatically update your device under <Link to={"/settings/system"}>'Settings' &gt; 'System'</Link> if you have established a connection with your device.
+                        </p>
+                    </div>
+                </>,
+            });
+    }
 
     public render() {
         return(
@@ -48,15 +73,7 @@ export default class Downloads extends React.Component<IDownloadsComponentProps,
                         </tbody>
                     </table>
 
-                    <div style={{textAlign: 'left'}}>
-                        <p>
-                            Download the current version of the firmware, running the LED-Panel itself, and the webinterface for remote access from any device on your network.
-                            After downloading you can place the files in the root directory of your sd card to start the update.
-                        </p>
-                        <p>
-                            You can also automatically update your device under <Link to={"/settings/system"}>'Settings' &gt; 'System'</Link> if you have established a connection.
-                        </p>
-                    </div>
+                    <Messages ref={(el) => this.messages = el} style={{textAlign: 'left'}} />
                 </div>
 				
             </div>
