@@ -8,17 +8,21 @@ export default class DataService {
 
     private deviceAddress: string = process.env.REACT_APP_ENVIRONMENT !== "device" ? "" : window.location.host;
     private darkTheme: boolean = true;
+    public dismissedWifiWarning: boolean = false;
     private status: Status = Status.pending;
     private apiKey: string | undefined;
     private authInterval: NodeJS.Timer | undefined;
     public onChanged: () => void;
     public data: {
+        wifiScan: IWifiNetwork[],
         wifi?: Wifi,
         time?: Time,
         display?: Display,
         socials?: Socials,
         images?: Images,
-    } = {};
+    } = {
+        wifiScan: []
+    };
     public newestFirmware?: VersionDetails;
     public newestWebinterface?: VersionDetails;
 
@@ -28,6 +32,11 @@ export default class DataService {
         let theme: string | null = localStorage.getItem("theme");
         if(theme && theme === "light")
             this.darkTheme = false;
+
+        let dismissedWifiWarning: string | null = localStorage.getItem("dismissedWifiWarning");
+        console.log(dismissedWifiWarning);
+        if(dismissedWifiWarning === "true")
+            this.dismissedWifiWarning = true;
 
         if(process.env.REACT_APP_ENVIRONMENT) {
             let deviceAddress: string | null = localStorage.getItem("deviceAddress");
@@ -57,6 +66,11 @@ export default class DataService {
                 this.newestFirmware = resp.data;
         })
         .catch(() => {});
+    }
+
+    public async dismissWifiWarning() {
+        localStorage.setItem("dismissedWifiWarning", "true");
+        this.dismissedWifiWarning = true;
     }
 
     public getDeviceAddress() {
@@ -154,14 +168,25 @@ export default class DataService {
         this.onChanged();
     }
 
-    public async scnaWifi(): Promise<IWifiNetwork[]> {
-        return await this.requestDevice<{networks: IWifiNetwork[]}>("GET", "/api/wifi/available")
+    public async scanWifi(): Promise<IWifiNetwork[]> {
+        let networks = await this.requestDevice<{networks: IWifiNetwork[]}>("GET", "/api/wifi/available")
             .then(resp => {
                 if(resp.networks)
                     return resp.networks
                 return [];
             })
             .catch(() => []);
+        
+        //Sort by strength and remove duplicates
+        this.data.wifiScan = networks
+            .sort((a, b) => b.rssi - a.rssi)
+            .filter((network, index, array) => 
+                index === array.findIndex(n =>
+                    n.ssid === network.ssid
+                )
+            );
+
+        return this.data.wifiScan;
     }
 
     public async requestDevice<ResponseType>(method: string, endpoint: string, data: any = null): Promise<ResponseType> {
@@ -219,6 +244,8 @@ export default class DataService {
                     clearInterval(this.authInterval);
                     this.authInterval = undefined;
                     this.setStatus(Status.disconnected);
+                } else {
+                    this.setStatus(Status.unauthorized);
                 }
             }).catch((e: AxiosError) => {
                 this.setStatus(Status.disconnected);
