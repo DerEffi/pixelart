@@ -11,7 +11,7 @@ import { SelectItemOptionsType } from 'primereact/selectitem';
 import { BiHide, BiShow, BiWifi, BiWifi0, BiWifi1, BiWifi2, BiWifiOff } from 'react-icons/bi';
 import { FaLock, FaLockOpen } from 'react-icons/fa';
 import { ListBox } from 'primereact/listbox';
-import { asyncTimeout } from '../../../services/Helper';
+import { asyncTimeout, validateSSID, validateWPA } from '../../../services/Helper';
 import { IWifiNetwork } from '../../../models/Settings';
 import { APIError } from '../../../models/Errors';
 
@@ -60,13 +60,10 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
                 content: <>
                     <IoWarningOutline className='message-icon'/>
                     <div>
-                        <p>
-                            Settings on this page do NOT apply automatically, but rather on clicking the button on the bottom of this page.
-                        </p>
 						<p>
 							Your device may disconnect temporarily on applying settings or searching for wifi networks. Depending on the settings you choose and the way you are connected to your device, you might loose connection permanently.
 							<br/>
-							Enableing WiFi connection on your device is described under <Link to="/#wifi">'WiFi' on the 'Home' page</Link>.
+							Reenableing WiFi connection on your device is described under <Link to="/#wifi">'WiFi' on the 'Home' page</Link>.
 						</p>
                     </div>
                 </>,
@@ -74,6 +71,12 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
     }
 
     public render() {
+
+		const validSSID: boolean = !this.state.ssid || validateSSID(this.state.ssid);
+		const validApSSID: boolean = !this.state.apSSID || validateSSID(this.state.apSSID);
+		const validPassword: boolean = !this.state.password || validateWPA(this.state.password);
+		const validApPassword: boolean = !this.state.apPassword || validateWPA(this.state.apPassword);
+
         return(
             <div className='fullwidth'>
 
@@ -119,7 +122,7 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
 								}
 								{this.props.advanced &&
 									<div className='input-group'>
-										<InputText className='input-group-field' value={this.state.ssid || this.props.dataService.data.wifi?.ssid} onChange={(e) => this.setState({ssid: e.target.value})} />
+										<InputText placeholder='(unchanged)' className={'input-group-field' + (validSSID ? "" : " p-invalid")} value={this.state.ssid === undefined ? this.props.dataService.data.wifi?.ssid : this.state.ssid} onChange={(e) => this.setState({ssid: e.target.value})} />
 									</div>
 								}
 							</div>
@@ -127,7 +130,7 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
 							<div>
 								<div className='headline'>WiFi Password</div>
 								<div className='input-group'>
-									<InputText placeholder='(unchanged)' type={this.state.showPassword ? "text" : "password"} className='input-group-field' value={this.state.password || ""} onChange={(e) => this.setState({password: e.target.value})} />
+									<InputText placeholder='(unchanged)' type={this.state.showPassword ? "text" : "password"} className={'input-group-field' + (validPassword ? "" : " p-invalid")} value={this.state.password || ""} onChange={(e) => this.setState({password: e.target.value})} />
 									{this.state.showPassword
 										? <BiHide style={{cursor: "pointer"}} onClick={() => {this.setState({showPassword: false})}} />
 										: <BiShow style={{cursor: "pointer"}} onClick={() => {this.setState({showPassword: true})}} />
@@ -151,14 +154,14 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
 							<div>
 								<div className='headline'>Hosted WiFi Name</div>
 								<div className='input-group'>
-									<InputText className='input-group-field' value={this.state.apSSID || this.props.dataService.data.wifi?.apSSID} onChange={(e) => this.setState({apSSID: e.target.value})} />
+									<InputText placeholder='(unchanged)' className={'input-group-field' + (validApSSID ? "" : " p-invalid")} value={this.state.apSSID === undefined ? this.props.dataService.data.wifi?.apSSID : this.state.apSSID} onChange={(e) => this.setState({apSSID: e.target.value})} />
 								</div>
 							</div>
 
 							<div>
 								<div className='headline'>Hosted WiFi Password</div>
 								<div className='input-group'>
-									<InputText type={this.state.showApPassword ? "text" : "password"} className='input-group-field' value={this.state.apPassword || this.props.dataService.data.wifi?.apPassword} onChange={(e) => this.setState({apPassword: e.target.value})} />
+									<InputText placeholder='(unchanged)' type={this.state.showApPassword ? "text" : "password"} className={'input-group-field' + (validApPassword ? "" : " p-invalid")} value={this.state.apPassword === undefined ? this.props.dataService.data.wifi?.apPassword : this.state.apPassword} onChange={(e) => this.setState({apPassword: e.target.value})} />
 									{this.state.showApPassword
 										? <BiHide style={{cursor: "pointer"}} onClick={() => {this.setState({showApPassword: false})}} />
 										: <BiShow style={{cursor: "pointer"}} onClick={() => {this.setState({showApPassword: true})}} />
@@ -202,7 +205,26 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
 
 					<div>
 						<div className='input-group'>
-							<Button onClick={() => this.applyWifiSettings()} disabled={this.state.applying || (this.state.ap === undefined && !this.state.apPassword && !this.state.apSSID && this.state.connect === undefined && !this.state.password && !this.state.ssid)} >Apply</Button>
+							<Button
+								onClick={() => this.applyWifiSettings()}
+								disabled={
+									this.state.applying
+									|| (
+										this.state.ap === undefined
+										&& !this.state.apPassword
+										&& !this.state.apSSID
+										&& this.state.connect === undefined
+										&& !this.state.password
+										&& !this.state.ssid
+									)
+									|| !validSSID
+									|| !validPassword
+									|| !validApSSID
+									|| !validApPassword
+								}
+							>
+								Apply
+							</Button>
 						</div>
 					</div>
 
@@ -243,7 +265,7 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
 
 		//delete undefined values
 		for(let setting in wifiSettings) {
-			if(wifiSettings[setting] === undefined)
+			if(wifiSettings[setting] === undefined || wifiSettings[setting] === "")
 				delete wifiSettings[setting];
 		}
 		

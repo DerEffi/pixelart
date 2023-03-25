@@ -29,10 +29,26 @@ export async function asyncTimeout(ms: number): Promise<void> {
     });
 }
 
+//converting numbers to *zero*-padded string
 export function padLeft(number: number, length: number, character: string = '0'): string {
     let result = String(number);
     for (let i = result.length; i < length; ++i) {
       result = character + result;
     }
     return result;
-  };
+};
+
+//check for valid ssid input with regex
+export function validateSSID(ssid: string) {
+    return /^[^!#;+\]\/"\t][^+\]\/"\t]{0,30}[^ +\]\/"\t]$|^[^ !#;+\]\/"\t]$[ \t]+$/.test(ssid); //eslint-disable-line no-useless-escape
+}
+
+
+//check for valid wpa passphrase with regex
+export function validateWPA(passphrase: string) {
+    return /^[\u0020-\u007e\u00a0-\u00ff]{8,62}$/g.test(passphrase); //eslint-disable-line no-useless-escape
+}
+
+export function convertToFoldername(name: string) {
+    return name.replaceAll(/[^ \w\.!@#$^+=-]/g, "_").replaceAll(/ {2}/g, " ").substring(0, 240).replaceAll(/^[ .]/g, "_").replaceAll(/[ .]$/g, "_"); //eslint-disable-line no-useless-escape
+}

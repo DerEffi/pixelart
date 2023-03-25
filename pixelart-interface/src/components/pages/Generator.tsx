@@ -6,7 +6,7 @@ import {Buffer} from 'buffer';
 import { Tooltip } from 'primereact/tooltip';
 import { Button } from 'primereact/button';
 import {Md5} from 'ts-md5';
-import { asyncTimeout, c2dArray, cAnimationArray, padLeft, rgb565, rgb888 } from '../../services/Helper';
+import { asyncTimeout, c2dArray, cAnimationArray, convertToFoldername, padLeft, rgb565, rgb888 } from '../../services/Helper';
 import { InputText } from 'primereact/inputtext';
 import { Status } from '../../models/Status';
 import JSZip from 'jszip';
@@ -354,11 +354,11 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 			zip.file(prefix + " - " + this.state.name + "/image.pxart", image);
 			zip.file("_place inside images folder on your sd card_", "");
 			if(animation.length)
-				zip.file(prefix + " - " + this.state.name + "/animation.pxart", frames);
+				zip.file(convertToFoldername(prefix + " - " + this.state.name) + "/animation.pxart", frames);
 			zip.generateAsync({type: "blob"}).then((blob: Blob) => {
 				let file = document.createElement("a");
 				file.href = window.URL.createObjectURL(blob);
-				file.download = this.state.name;
+				file.download = convertToFoldername(prefix + " - " + this.state.name) + ".zip";
 				file.click();
 				file.remove();
 			});
@@ -690,12 +690,15 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 
 		//load image on canvas
 		this.setPixels(image, ctx);
+		frames.push(ctx.getImageData(0, 0, 64, 64));
 		
 		//load frames
 		var id = ctx.createImageData(1,1);
-		animation.forEach(frame => {
-			//push before foreach to first save base image without animation and dont push loopback frame (last frame)
-			frames.push(ctx.getImageData(0, 0, 64, 64));
+		animation.forEach((frame, index) => {
+			//push before foreach to dont push loopback frame (last frame)
+			if(index !== 0)
+				frames.push(ctx.getImageData(0, 0, 64, 64));
+			
 			frame.forEach(change => {
 				var pixel = rgb888(change[2]);
 				id.data[0]   = pixel.r;

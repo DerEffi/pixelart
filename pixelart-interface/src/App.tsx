@@ -35,9 +35,12 @@ export default class App extends React.Component<{}, IAppState> {
 
 	private dataService: DataService = new DataService(() => {this.setState({});});
 	private toast: Toast | null = null;
+	private windowWidth: number = 0;
 	private resizeEvent = () => {
-		if(window.screen.width < 769)
+		if(window.screen.width < 769 && this.windowWidth >= 769 && this.windowWidth !== window.screen.width)
 			this.changeSidebar(false);
+
+		this.windowWidth = window.screen.width;
 	};
 
 	constructor(props: {}) {

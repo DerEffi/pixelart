@@ -7,6 +7,7 @@ import 'moment-duration-format';
 import { Button } from 'primereact/button';
 import axios from 'axios';
 import { VersionDetails } from '../../../models/Version';
+import * as semver from 'semver';
 
 export interface ISystemSettingsComponentProps {
 	dataService: DataService;
@@ -51,13 +52,49 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
                                 <td>Firmware</td>
                                 <td>{this.props.dataService.data.display?.version || "-"}</td>
                                 <td>{this.props.dataService.newestFirmware?.version || "-"}</td>
-                                <td><Button disabled={!this.props.dataService.newestFirmware || !this.props.dataService.data.display?.version || this.state.downloading} onClick={() => { this.performUpdate(this.props.dataService.newestFirmware); }} >Update</Button></td>
+                                <td>
+									<Button
+										disabled={
+											!this.props.dataService.newestFirmware
+											|| this.state.downloading
+											|| (
+												!this.props.advanced 
+												&& (
+													!semver.valid(this.props.dataService.newestFirmware.version)
+													|| !semver.valid(this.props.dataService.data.display?.version)
+													|| !semver.gt(this.props.dataService.newestFirmware.version, this.props.dataService.data.display?.version || "0.0.1")
+												)
+											)
+										}
+										onClick={() => { this.performUpdate(this.props.dataService.newestFirmware); }}
+									>
+										{this.props.advanced ? "Force " : "" }Update
+									</Button>
+								</td>
                             </tr>
                             <tr>
                                 <td>Webinterface</td>
                                 <td>{this.props.dataService.deviceWebinterfaceVersion?.version || "-"}</td>
                                 <td>{this.props.dataService.newestWebinterface?.version || "-"}</td>
-                                <td><Button disabled={!this.props.dataService.newestWebinterface || !this.props.dataService.deviceWebinterfaceVersion || this.state.downloading} onClick={() => { this.performUpdate(this.props.dataService.newestWebinterface); }} >Update</Button></td>
+                                <td>
+									<Button
+										disabled={
+											!this.props.dataService.newestWebinterface
+											|| this.state.downloading
+											|| (
+												!this.props.advanced 
+												&& (
+													!semver.valid(this.props.dataService.newestWebinterface.version)
+													|| !semver.valid(this.props.dataService.deviceWebinterfaceVersion?.version)
+													|| !semver.gt(this.props.dataService.newestWebinterface.version, this.props.dataService.deviceWebinterfaceVersion?.version || "0.0.1")
+												)
+											)
+										}
+										onClick={() => { this.performUpdate(this.props.dataService.newestWebinterface); }}
+									>
+										{this.props.advanced ? "Force " : "" }Update
+									</Button>
+								</td>
                             </tr>
                         </tbody>
                     </table>
