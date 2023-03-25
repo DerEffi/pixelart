@@ -122,7 +122,7 @@ export default class DisplaySettings extends React.Component<IDisplaySettingsCom
         );
     }
 
-	public setBrightness(val: number) {
+	private setBrightness(val: number) {
 		this.props.dataService.requestDevice("POST", "/api/display", {brightness: val})
 			.then(() => this.props.dataService.refreshDisplay().then(() => this.setState({brightness: undefined})))
 			.catch((e: APIError) => {
@@ -135,7 +135,7 @@ export default class DisplaySettings extends React.Component<IDisplaySettingsCom
 			});
 	}
 
-	public setDiashowTime(val: number) {
+	private setDiashowTime(val: number) {
 		this.props.dataService.requestDevice("POST", "/api/display", {diashowTime: val, diashow: true})
 			.then(() => this.props.dataService.refreshDisplay().then(() => this.setState({diashowTime: undefined})))
 			.catch((e: APIError) => {
@@ -148,7 +148,7 @@ export default class DisplaySettings extends React.Component<IDisplaySettingsCom
 			});
 	}
 
-	public setAnimationTime(val: number) {
+	private setAnimationTime(val: number) {
 		this.props.dataService.requestDevice("POST", "/api/display", {animationTime: val, animation: true})
 			.then(() => this.props.dataService.refreshDisplay().then(() => this.setState({animationTime: undefined})))
 			.catch((e: APIError) => {
@@ -161,7 +161,7 @@ export default class DisplaySettings extends React.Component<IDisplaySettingsCom
 			});
 	}
 
-	public setDisplayData(data: any) {
+	private setDisplayData(data: any) {
         this.props.dataService.requestDevice("POST", "/api/display", data)
 			.then(() => this.props.dataService.refreshDisplay())
 			.catch((e: APIError) => {

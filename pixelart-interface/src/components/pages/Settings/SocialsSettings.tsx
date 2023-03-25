@@ -62,13 +62,33 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 
 				<div className="content">
 
-					<Dialog header="Edit Social" closable closeOnEscape dismissableMask draggable={false} resizable={false} maximizable={false} visible={this.state.editItem !== undefined} className="socials-edit content" headerClassName="socials-edit-header" onHide={() => this.setState({editItem: undefined})}>
+					<Dialog
+						header="Edit Social"
+						dismissableMask
+						blockScroll
+						draggable={false}
+						resizable={false}
+						visible={this.state.editItem !== undefined}
+						className="socials-edit content"
+						headerClassName="socials-edit-header"
+						onHide={() => this.setState({editItem: undefined})}
+					>
 						<>
 							{this.renderEditDialog(this.state.editItem as string)}
 						</>
 					</Dialog>
 
-					<Dialog header="Socials" closable closeOnEscape dismissableMask draggable={false} resizable={false} maximizable={false} visible={this.state.testResponse.length > 0} className="socials-test content" headerClassName="socials-test-header" onHide={() => this.setState({testResponse: []})}>
+					<Dialog
+						header="Socials"
+						dismissableMask
+						blockScroll
+						draggable={false}
+						resizable={false}
+						visible={this.state.testResponse.length > 0}
+						className="socials-test content"
+						headerClassName="socials-test-header"
+						onHide={() => this.setState({testResponse: []})}
+					>
 						<div className='socials-test-items'>
 							{this.state.testResponse.map(social => {
 
@@ -179,14 +199,14 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 
 					<div>
 						<div className='input-group'>
-							<Button onClick={() => this.testSocials(this.state.server || this.props.dataService.data.socials?.server || "", this.state.apiKey || this.props.dataService.data.socials?.apiKey || "", this.state.request || this.props.dataService.data.socials?.request || "[]")} disabled={this.state.loadingTest} >Test Socials</Button>
+							<Button onClick={() => this.testSocials(this.state.server || this.props.dataService.data.socials?.server || "", this.state.apiKey || this.props.dataService.data.socials?.apiKey || "", this.state.request || this.props.dataService.data.socials?.request || "[]")} disabled={this.state.loadingTest} label='Test' iconPos='left' icon="pi pi-check-square" />
 						</div>
 
 						{!this.props.advanced &&
 							<>
 								<br/>
 								<div className='input-group'>
-									<Button disabled={!this.state.request} onClick={() => this.setSocialRequest(this.state.request || "")}>Update Socials</Button>
+									<Button disabled={!this.state.request} onClick={() => this.setSocialRequest(this.state.request || "")} label='Apply' iconPos='left' icon="pi pi-send" />
 								</div>
 							</>
 						}
@@ -198,7 +218,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
         );
     }
 
-	public renderEditDialog(id: string): JSX.Element {
+	private renderEditDialog(id: string): JSX.Element {
 		let items: SocialItem[] = this.state.socialList.filter(i => i.id === id);
 		if(items.length !== 1)
 			return <></>;
@@ -235,7 +255,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 		);
 	}
 
-	public decodeSocialRequest(request: string = (this.state ? this.state.request : undefined) || this.props.dataService.data.socials?.request || "[]"): SocialItem[] {
+	private decodeSocialRequest(request: string = (this.state ? this.state.request : undefined) || this.props.dataService.data.socials?.request || "[]"): SocialItem[] {
 		try {
 			return (JSON.parse(request) as SocialItem[]).map((i) => { i.id = uuid(); return i;});
 		} catch {
@@ -243,14 +263,14 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 		}
 	}
 
-	public updateRequest(items: SocialItem[]) {	
+	private updateRequest(items: SocialItem[]) {	
 		this.setState({
 			socialList: items,
 			request: JSON.stringify([...items].map(x => ({...x})).map(x => {x.id = undefined; return x;}))
 		});
 	}
 
-	public updateSocialItem(newItem: SocialItem) {
+	private updateSocialItem(newItem: SocialItem) {
 		let updated = this.state.socialList.map(item => {
 			if(item.id === newItem.id)
 				item = newItem;
@@ -262,7 +282,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 		});
 	}
 
-	public setSocialData(data: any) {
+	private setSocialData(data: any) {
         this.props.dataService.requestDevice("POST", "/api/socials", data)
 			.then(() => this.props.dataService.refreshSocials())
 			.catch((e: APIError) => {
@@ -275,7 +295,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 			});
     }
 
-	public setSocialServer(server: string) {
+	private setSocialServer(server: string) {
         this.props.dataService.requestDevice("POST", "/api/socials", {server: server})
 			.then(() => this.props.dataService.refreshSocials().then(() => this.setState({server: undefined})))
 			.catch((e: APIError) => {
@@ -288,7 +308,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 			});
     }
 
-	public setSocialApiKey(apiKey: string) {
+	private setSocialApiKey(apiKey: string) {
         this.props.dataService.requestDevice("POST", "/api/socials", {apiKey: apiKey})
 			.then(() => this.props.dataService.refreshSocials().then(() => this.setState({apiKey: undefined})))
 			.catch((e: APIError) => {
@@ -301,7 +321,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 			});
     }
 
-	public setSocialRequest(request: string) {
+	private setSocialRequest(request: string) {
 		//check for json format and strip unnecessary spaces
 		try {
 			let jsonRequest = JSON.parse(request);
@@ -328,7 +348,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 			});
     }
 
-	public testSocials(server: string, apiKey: string, request: string) {
+	private testSocials(server: string, apiKey: string, request: string) {
 
 		this.setState({loadingTest: true});
 

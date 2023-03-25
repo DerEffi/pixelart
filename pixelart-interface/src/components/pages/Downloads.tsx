@@ -63,12 +63,12 @@ export default class Downloads extends React.Component<IDownloadsComponentProps,
                             <tr>
                                 <td>Firmware</td>
                                 <td>{this.props.dataService.newestFirmware?.version || "-"}</td>
-                                <td><Button disabled={!this.props.dataService.newestFirmware || this.state.downloading} onClick={() => { this.downloadFiles(this.props.dataService.newestFirmware); }} >Download</Button></td>
+                                <td><Button disabled={!this.props.dataService.newestFirmware || this.state.downloading} onClick={() => { this.downloadFiles(this.props.dataService.newestFirmware); }} label='Download' iconPos='left' icon="pi pi-download" /></td>
                             </tr>
                             <tr>
                                 <td>Webinterface</td>
                                 <td>{this.props.dataService.newestWebinterface?.version || "-"}</td>
-                                <td><Button disabled={!this.props.dataService.newestWebinterface || this.state.downloading} onClick={() => { this.downloadFiles(this.props.dataService.newestWebinterface); }} >Download</Button></td>
+                                <td><Button disabled={!this.props.dataService.newestWebinterface || this.state.downloading} onClick={() => { this.downloadFiles(this.props.dataService.newestWebinterface); }} label='Download' iconPos='left' icon="pi pi-download" /></td>
                             </tr>
                         </tbody>
                     </table>
@@ -80,7 +80,7 @@ export default class Downloads extends React.Component<IDownloadsComponentProps,
         );
     }
 
-    public async downloadFiles(version?: VersionDetails) {
+    private async downloadFiles(version?: VersionDetails) {
         this.setState({
             downloading: true
         });

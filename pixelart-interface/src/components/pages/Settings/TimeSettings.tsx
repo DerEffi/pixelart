@@ -147,7 +147,7 @@ export default class TimeSettings extends React.Component<ITimeSettingsComponent
         );
     }
 
-	public setTimeData(data: any) {
+	private setTimeData(data: any) {
         this.props.dataService.requestDevice("POST", "/api/time", data)
 			.then(() => this.props.dataService.refreshTime())
 			.catch((e: APIError) => {
@@ -160,7 +160,7 @@ export default class TimeSettings extends React.Component<ITimeSettingsComponent
 			});
     }
 
-	public setNtpServer(server: string) {
+	private setNtpServer(server: string) {
         this.props.dataService.requestDevice("POST", "/api/time", {ntpServer: server})
 			.then(() => this.props.dataService.refreshTime().then(() => this.setState({ntpServer: undefined})))
 			.catch((e: APIError) => {
@@ -173,7 +173,7 @@ export default class TimeSettings extends React.Component<ITimeSettingsComponent
 			});
     }
 
-	public setDeviceTime(time: Date | undefined) {
+	private setDeviceTime(time: Date | undefined) {
 		if(!time) {
 			if(this.props.toast)
 			this.props.toast.show({
@@ -196,7 +196,7 @@ export default class TimeSettings extends React.Component<ITimeSettingsComponent
 			});
     }
 
-	public setTimezone(timezone: string) {
+	private setTimezone(timezone: string) {
 		if(timezone.indexOf("%") !== -1)
 			localStorage.setItem("selectedTimezone", timezone);
 		else

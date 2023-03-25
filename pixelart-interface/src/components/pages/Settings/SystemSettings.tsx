@@ -8,6 +8,9 @@ import { Button } from 'primereact/button';
 import axios from 'axios';
 import { VersionDetails } from '../../../models/Version';
 import * as semver from 'semver';
+import { asyncTimeout } from '../../../services/Helper';
+import { APIError } from '../../../models/Errors';
+import { ConfirmDialog } from 'primereact/confirmdialog';
 
 export interface ISystemSettingsComponentProps {
 	dataService: DataService;
@@ -17,6 +20,7 @@ export interface ISystemSettingsComponentProps {
 
 interface ISystemSettingsComponentState {
 	downloading: boolean;
+	showResetConfirmDialog: boolean;
 }
 
 const maxDataPoints: number = 50;
@@ -27,7 +31,8 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
 		super(props);
 
 		this.state = {
-			downloading: false
+			downloading: false,
+			showResetConfirmDialog: false
 		};
 	}
 
@@ -38,6 +43,24 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
             <div className='fullwidth'>
 
 				<div className="content">
+
+					<ConfirmDialog
+						visible={this.state.showResetConfirmDialog}
+						draggable={false}
+						dismissableMask
+						blockScroll
+						onHide={() => this.setState({showResetConfirmDialog: false})}
+						rejectLabel="Abort"
+						acceptLabel='Reset'
+						acceptIcon="pi pi-trash"
+						message={
+							<div style={{textAlign: "center"}}>
+								<p>Resetting the device to "Factory" Settings
+									<br/>will remove all your adjustments</p>
+								<p>Do you want to proceed?</p>
+							</div>
+						}
+					/>
 
 					<table className='update-table'>
 						<thead>
@@ -67,9 +90,10 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
 											)
 										}
 										onClick={() => { this.performUpdate(this.props.dataService.newestFirmware); }}
-									>
-										{this.props.advanced ? "Force " : "" }Update
-									</Button>
+										label='Update'
+										iconPos='left'
+										icon="pi pi-arrow-up"
+									/>
 								</td>
                             </tr>
                             <tr>
@@ -91,11 +115,34 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
 											)
 										}
 										onClick={() => { this.performUpdate(this.props.dataService.newestWebinterface); }}
-									>
-										{this.props.advanced ? "Force " : "" }Update
-									</Button>
+										label='Update'
+										iconPos='left'
+										icon="pi pi-arrow-up"
+									/>
 								</td>
                             </tr>
+							<tr>
+								<td colSpan={4} style={{textAlign: "center"}}>
+									<Button label='Logout on all devices' iconPos='left' icon="pi pi-sign-out" severity='warning' onClick={() => this.resetAPIKey()} />
+								</td>
+							</tr>
+							{this.props.advanced &&
+								<tr>
+									<td colSpan={4} style={{textAlign: "center"}}>
+										<Button label='Refresh Display' iconPos='left' icon="pi pi-desktop" severity='info' onClick={() => this.refresh()} />
+									</td>
+								</tr>
+							}
+							<tr>
+								<td colSpan={4} style={{textAlign: "center"}}>
+									<Button label='Restart' iconPos='left' icon="pi pi-refresh" severity='info' onClick={() => this.restart()} />
+								</td>
+							</tr>
+							<tr>
+								<td colSpan={4} style={{textAlign: "center"}}>
+									<Button label='Reset' iconPos='left' icon="pi pi-trash" severity='danger' onClick={() => this.setState({showResetConfirmDialog: true})} />
+								</td>
+							</tr>
                         </tbody>
                     </table>
 					
@@ -216,6 +263,7 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
 
             //upload update to device
 			//TODO
+			console.log(files);
 
         } catch(e) {
             if(this.props.toast)
@@ -230,4 +278,96 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
             downloading: false
         });
     }
+
+	private restart() {
+		this.props.dataService.requestDevice("POST", "/api/restart")
+			.then(async () => {
+				await asyncTimeout(10000);
+				await this.props.dataService.refresh().catch((e: APIError) => {
+					if(this.props.toast)
+						this.props.toast.show({
+							content: e.message,
+							severity: 'error',
+							closable: false
+						});
+				});
+			})
+			.catch((e: APIError) => {
+				if(this.props.toast)
+					this.props.toast.show({
+						content: e.message,
+						severity: 'error',
+						closable: false
+					});
+			});
+	}
+
+	private refresh() {
+		this.props.dataService.requestDevice("POST", "/api/refresh")
+			.then(async () => {
+				await asyncTimeout(100);
+				await this.props.dataService.refresh().catch((e: APIError) => {
+					if(this.props.toast)
+						this.props.toast.show({
+							content: e.message,
+							severity: 'error',
+							closable: false
+						});
+				});
+			})
+			.catch((e: APIError) => {
+				if(this.props.toast)
+					this.props.toast.show({
+						content: e.message,
+						severity: 'error',
+						closable: false
+					});
+			});
+	}
+
+	private reset() {
+		this.props.dataService.requestDevice("POST", "/api/reset")
+			.then(async () => {
+				await asyncTimeout(10000);
+				await this.props.dataService.refresh().catch((e: APIError) => {
+					if(this.props.toast)
+						this.props.toast.show({
+							content: e.message,
+							severity: 'error',
+							closable: false
+						});
+				});
+			})
+			.catch((e: APIError) => {
+				if(this.props.toast)
+					this.props.toast.show({
+						content: e.message,
+						severity: 'error',
+						closable: false
+					});
+			});
+	}
+
+	private resetAPIKey() {
+		this.props.dataService.requestDevice("DELETE", "/api/apiKey")
+			.then(async () => {
+				await asyncTimeout(100);
+				await this.props.dataService.refresh().catch((e: APIError) => {
+					if(this.props.toast)
+						this.props.toast.show({
+							content: e.message,
+							severity: 'error',
+							closable: false
+						});
+				});
+			})
+			.catch((e: APIError) => {
+				if(this.props.toast)
+					this.props.toast.show({
+						content: e.message,
+						severity: 'error',
+						closable: false
+					});
+			});
+	}
 }

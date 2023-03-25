@@ -69,7 +69,17 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 
 				<div className="content">
 
-					<Dialog header="Image History" closable closeOnEscape dismissableMask draggable={false} resizable={false} maximizable={false} visible={this.state.viewHistory} className="image-generator-history content" headerClassName="image-generator-history-header" onHide={() => this.setState({viewHistory: false})}>
+					<Dialog
+						header="Image History"
+						dismissableMask
+						blockScroll
+						draggable={false}
+						resizable={false}
+						visible={this.state.viewHistory}
+						className="image-generator-history content"
+						headerClassName="image-generator-history-header"
+						onHide={() => this.setState({viewHistory: false})}
+					>
 						<div className='image-generator-history-images'>
 							<Tooltip target={".custom-upload-history-item"} content="Draw Image" position="bottom" />
 							
@@ -125,7 +135,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 					{this.props.advanced &&
 						<div className="input-group" style={{marginTop: "1rem"}}>
 							<Tooltip target=".image-generator-menu-button-advanced" position="bottom" />
-							<ConfirmPopup />
+							<ConfirmPopup/>
 
 							<Button type="button" icon={"pi pi-" + (this.state.frameInterval ? "pause" : "play")} data-pr-tooltip="Play/Pause" className="image-generator-menu-button-advanced p-button-outlined p-button-rounded p-button-success ml-auto" onClick={() => this.playAnimation()}/>
 							<Button type="button" icon="pi pi-step-forward" className="image-generator-menu-button-advanced p-button-outlined p-button-rounded p-button-success ml-auto" data-pr-tooltip="Next Frame" disabled={this.state.frameInterval != null} onClick={() => this.drawFrame()} />

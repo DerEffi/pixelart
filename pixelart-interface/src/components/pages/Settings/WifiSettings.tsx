@@ -116,7 +116,7 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
 										</div>
 										<br/>
 										<div className='input-group'>
-											<Button onClick={() => this.scanWifi()} disabled={this.state.scanning}>Scan Networks</Button>
+											<Button onClick={() => this.scanWifi()} disabled={this.state.scanning} label='Scan Networks' iconPos='left' icon="pi pi-wifi" />
 										</div>
 									</>
 								}
@@ -222,9 +222,10 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
 									|| !validApSSID
 									|| !validApPassword
 								}
-							>
-								Apply
-							</Button>
+								label='Apply'
+								iconPos='left'
+								icon="pi pi-send"
+							/>
 						</div>
 					</div>
 
@@ -234,7 +235,7 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
         );
     }
 
-	public async scanWifi() {
+	private async scanWifi() {
 		this.setState({
 			scanning: true
 		});
@@ -249,7 +250,7 @@ export default class WifiSettings extends React.Component<IWifiSettingsComponent
 		});
 	}
 
-	public applyWifiSettings() {
+	private applyWifiSettings() {
 		this.setState({
 			applying: true
 		});

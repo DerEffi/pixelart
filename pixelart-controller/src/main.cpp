@@ -1970,6 +1970,15 @@ void server_setup() {
 			}
 		});
 
+		server.on("/api/restart", HTTP_POST, [](AsyncWebServerRequest * request) {
+			if(verify_api_key(request)) {
+				request->send(200);
+				requested_restart = true;
+			} else {
+				request->send(403, "application/json");
+			}
+		});
+
 		//React webserver
 		server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
 			if(sd_connected() && SD.exists("/webinterface/index.html")) {
