@@ -137,6 +137,15 @@ struct available_network {
 	ssid(ssid), rssi(rssi), encryption(encryption) {}
 };
 
+struct file_operation {
+	char * src;
+	char * dst;
+	file_operation(char* src, char* dst):
+	src(src), dst(dst) {}
+	file_operation(char* src):
+	src(src), dst(strdup("")) {}
+};
+
 const std::vector<boot_row> boot_sequence = {{59,{31,32}},{58,{30,31,32,33}},{57,{29,30,33,34}},{56,{28,29,34,35}},{55,{28,35}},{54,{27,28,35,36}},{53,{26,27,36,37}},{52,{25,26,37,38}},{51,{24,25,38,39}},{50,{24,39}},{49,{23,24,39,40}},{48,{22,23,40,41}},{47,{21,22,41,42}},{46,{20,21,42,43}},{45,{20,43}},{44,{19,20,43,44}},{43,{18,19,44,45}},{42,{17,18,45,46}},{41,{16,17,46,47}},{40,{16,47}},{39,{15,16,47,48}},{38,{14,15,48,49}},{37,{13,14,49,50}},{36,{12,13,50,51}},{35,{12,51}},{34,{11,12,51,52}},{33,{11,52}},{32,{10,11,52,53}},{31,{10,53}},{30,{10,53}},{29,{10,53}},{28,{10,53}},{27,{10,53}},{26,{10,53}},{25,{10,53}},{24,{10,53}},{23,{9,10,53,54}},{22,{9,10,53,54}},{21,{9,10,53,54}},{20,{9,10,53,54}},{19,{9,10,53,54}},{18,{9,54}},{17,{9,54}},{16,{9,54}},{15,{9,54}},{14,{9,54}},{13,{9,54}},{12,{9,54}},{11,{9,54}},{10,{9,54}},{9,{8,9,54,55}},{8,{8,9,54,55}},{7,{8,9,54,55}},{6,{8,9,54,55}},{5,{8,9,54,55}},{4,{8,9,54,55}},{3,{8,9,54,55}},{4,{10,53}},{5,{10,11,52,53}},{6,{10,11,12,51,52,53}},{7,{10,12,13,50,51,53}},{8,{10,13,14,49,50,53}},{9,{10,11,14,15,48,49,52,53}},{10,{11,15,16,47,48,52}},{11,{11,16,17,46,47,52}},{12,{11,12,17,18,45,46,51,52}},{13,{12,18,19,44,45,51}},{14,{12,13,19,20,43,44,50,51}},{15,{13,20,21,42,43,50}},{16,{13,21,22,41,42,50}},{17,{13,14,22,23,40,41,49,50}},{18,{14,23,24,39,40,49}},{19,{14,15,24,25,38,39,48,49}},{19, {26,27,28,35,36,37}}, {18, {29,30,31,32,33,34}},{20,{15,23,24,39,40,48}},{21,{15,22,23,40,41,48}},{22,{15,16,21,22,41,42,47,48}},{23,{16,20,21,42,43,47}},{24,{16,17,19,20,43,44,46,47}},{25,{17,18,19,44,45,46}},{26,{17,18,45,46}},{27,{16,17,18,45,46,47}},{28,{15,16,18,19,44,45,47,48}},{29,{14,15,19,44,48,49}},{30,{13,14,19,20,43,44,49,50}},{31,{12,13,20,43,50,51}},{32,{12,13,20,43,50,51}},{33,{12,13,14,15,16,20,21,42,43,47,48,49,50,51}},{34,{16,17,21,42,46,47}},{35,{17,18,19,21,22,41,42,44,45,46}},{36,{19,20,22,41,43,44}},{37,{20,21,22,41,42,43}},{38,{21,22,23,40,41,42}},{39,{22,23,40,41}},{40,{23,24,39,40}},{41,{24,39}},{42,{24,25,38,39}},{43,{25,38}},{44,{25,26,37,38}},{45,{26,37}},{46,{26,37}},{47,{26,27,36,37}},{48,{27,36}},{49,{27,28,35,36}},{50,{28,35}},{51,{28,35}},{52,{28,29,34,35}},{53,{28,29,34,35}},{54,{29,34}},{55,{29,30,33,34}},{56,{30,33}},{57,{31,32}}};
 uint8_t loading_step = 0;
 unsigned long ms_loading = 0;
@@ -189,16 +198,25 @@ DNSServer dns_server;
 
 //Server
 AsyncWebServer server(80);
+const char* server_home_dir = "/webinterface";
+const char* server_home_file = "/webinterface/index.html";
+const char* server_version_file = "/webinterface/version.json";
 bool server_setup_complete = false;
 char* api_key = strdup("");
 unsigned long ms_api_key_request = 0;
 unsigned long ms_api_key_approve = 0;
+File uploading_file;
+bool upload_success = true;
+const char* upload_directory = "/tmp";
+std::vector<file_operation> file_operations;
 
 //LED Panel
 MatrixPanel_I2S_DMA *panel = nullptr;
 display_mode current_mode = MODE_IMAGES;
 bool display_change = false;
 
+SPIClass *spi = NULL;
+const char* images_folder = "/images";
 std::vector<image_meta> image_index;
 uint16_t image_prefix_max = 0;
 uint16_t selected_image = 0;
@@ -358,7 +376,7 @@ void wifi_on_connected() {
 	}
 
 	display_change = true;
-	socials_refresh();
+	ms_socials_request = millis() + 100;
 }
 
 char* generate_uid(){
@@ -433,6 +451,72 @@ bool compare_image_name(image_meta i1, image_meta i2) {
 	return strcmp(i1.folder, i2.folder) < 0;
 }
 
+char* get_parent_folder(const char* folder) {
+	std::string folder_str(folder);
+	size_t found = folder_str.find_last_of("/\\");
+	return found > 0 ? strdup(folder_str.substr(0, found).c_str()) : strdup("/");
+}
+
+bool remove_recursive(fs::FS &fs, File file) {
+	if(file) {
+		char path[strlen(file.path()) + 1];
+		strcpy(path, file.path());
+
+		if(file.isDirectory()) {
+
+			File nested_file = file.openNextFile();
+			while(nested_file) {
+				if(!remove_recursive(fs, nested_file)) {
+					return false;
+				}
+				nested_file = file.openNextFile();
+			}
+
+			file.close();
+			return fs.rmdir(path);
+		} else {
+			file.close();
+			return fs.remove(path);
+		}
+	}
+
+	return false;
+}
+
+bool remove_recursive(fs::FS &fs, const char * path) {
+	if(SD.exists(path)) {
+		return remove_recursive(fs, fs.open(path));		
+	}
+
+	return false;
+}
+
+bool ensure_folder(fs::FS &fs, const char * path) {
+	if(SD.exists(path)) {
+		File path_object = SD.open(path);
+		if(path_object) {
+			bool isDirectory = path_object.isDirectory();
+			path_object.close();
+			if(!isDirectory) {
+				if(SD.remove(path)) {
+					return SD.mkdir(path);
+				}
+			} else {
+				return true;
+			}
+		}
+	} else {
+		char * parent = get_parent_folder(path);
+		if(strlen(parent) > 1) {
+			ensure_folder(fs, parent);
+		}
+		free(parent);
+		return SD.mkdir(path);
+	}
+
+	return false;
+}
+
 //reindex images folder of sd card for loading and diplaying byte data
 void sd_index() {
 
@@ -441,10 +525,11 @@ void sd_index() {
 		free(image_index[i].folder);
 	}
 	image_index.clear();
+	image_prefix_max = 0;
 
 	//fill vector with new data
-	if(SD.exists("/images")) {
-		File folder = SD.open("/images");
+	if(SD.exists(images_folder)) {
+		File folder = SD.open(images_folder);
 		if(folder.isDirectory()) {
 			char file_path[255]; 
 			File image = folder.openNextFile();
@@ -475,7 +560,8 @@ void sd_index() {
 							do {
 								meta.prefix++;
 								sprintf(prefix, "%03d", meta.prefix);
-								strcpy(file_path, "/images/");
+								strcpy(file_path, images_folder);
+								strcat(file_path, "/");
 								strcat(file_path, prefix);
 								strcat(file_path, " - ");
 								strcat(file_path, name);
@@ -516,12 +602,18 @@ bool sd_connected() {
 		return true;
 	
 	SD.end();
-	if(!SD.begin(GPIO_SD_CS, SPI))
+	if(!SD.begin(GPIO_SD_CS, *spi))
 		return false;
 	
 	bool success = SD.exists("/");
-	if(success)
+	if(success) {
+		//setup default directories
+		remove_recursive(SD, upload_directory);
+		ensure_folder(SD, images_folder);
+		ensure_folder(SD, server_home_dir);
+
 		sd_index();
+	}
 	
 	return success;
 }
@@ -648,55 +740,57 @@ void firmware_update() {
 		File firmware = SD.open("/firmware.bin");
 		if(!firmware.isDirectory()) {
 			size_t update_size = firmware.size();
-			if(update_size > 1024 && Update.begin(update_size)) {
+			if(update_size > 524288 && Update.begin(update_size)) {
 				size_t written_size = Update.writeStream(firmware);
 				if((written_size != update_size || !Update.end() || !Update.isFinished()) && Update.canRollBack())
 					Update.rollBack();
 			}
 		}
+
+		//clean up
 		firmware.close();
 		SD.remove("/firmware.bin");
 		restart();
 	}
 }
 
+void sd_operate_files() {
+	int count = file_operations.size();
+	if(count > 0) {
+
+		if(sd_connected()) {
+			for(int i = 0; i < count; i++) {
+				if(strlen(file_operations[i].src) >= 3 && SD.exists(file_operations[i].src)) {
+					if(strlen(file_operations[i].dst) >= 3) {
+						remove_recursive(SD, file_operations[i].dst);
+						
+						char * dst_folder = get_parent_folder(file_operations[i].dst);
+						ensure_folder(SD, dst_folder);
+						free(dst_folder);
+						
+						SD.rename(file_operations[i].src, file_operations[i].dst);
+					} else {
+						remove_recursive(SD, file_operations[i].src);
+					}
+				}
+
+				free(file_operations[i].src);
+				free(file_operations[i].dst);
+			}
+
+			sd_index();
+		}
+
+		file_operations.erase(file_operations.begin(), file_operations.begin() + count);
+	}
+}
+
+
 
 
 /**************
 **	Display  **
 **************/
-
-//Display loading animation
-void display_loading() {
-	if(ms_loading == 0)
-		ms_loading = millis() + 20;
-
-	if(loading_step == 0 && loading_cycle) {
-		panel->clearScreen();
-		if(PANEL_DOUBLE_BUFFER) {
-			panel->flipDMABuffer();
-			panel->clearScreen();
-		}
-	}
-
-	for(int pixel = 0; pixel < boot_sequence[loading_step].pixels.size(); pixel++) {
-		panel->drawPixel(boot_sequence[loading_step].pixels[pixel], boot_sequence[loading_step].row, loading_cycle ? 0xFFFF : 0);
-	}
-
-	if(PANEL_DOUBLE_BUFFER) {
-		panel->flipDMABuffer();
-
-		for(int pixel = 0; pixel < boot_sequence[loading_step].pixels.size(); pixel++) {
-			panel->drawPixel(boot_sequence[loading_step].pixels[pixel], boot_sequence[loading_step].row, loading_cycle ? 0xFFFF : 0);
-		}
-	}
-}
-
-void reset_loading() {
-	ms_loading = 0;
-	loading_step = 0;
-	loading_cycle = true;
-}
 
 //Display overlay menu for io switches
 void display_overlay() {
@@ -958,6 +1052,38 @@ void display_menu() {
 
 	if(PANEL_DOUBLE_BUFFER)
 		panel->flipDMABuffer();
+}
+
+//Display loading animation
+void display_loading() {
+	if(ms_loading == 0)
+		ms_loading = millis() + 20;
+
+	if(loading_step == 0 && loading_cycle) {
+		panel->clearScreen();
+		if(PANEL_DOUBLE_BUFFER) {
+			panel->flipDMABuffer();
+			panel->clearScreen();
+		}
+	}
+
+	for(int pixel = 0; pixel < boot_sequence[loading_step].pixels.size(); pixel++) {
+		panel->drawPixel(boot_sequence[loading_step].pixels[pixel], boot_sequence[loading_step].row, loading_cycle ? 0xFFFF : 0);
+	}
+
+	if(PANEL_DOUBLE_BUFFER) {
+		panel->flipDMABuffer();
+
+		for(int pixel = 0; pixel < boot_sequence[loading_step].pixels.size(); pixel++) {
+			panel->drawPixel(boot_sequence[loading_step].pixels[pixel], boot_sequence[loading_step].row, loading_cycle ? 0xFFFF : 0);
+		}
+	}
+}
+
+void reset_loading() {
+	ms_loading = 0;
+	loading_step = 0;
+	loading_cycle = true;
 }
 
 // Display static images on led matrix by pixelarray
@@ -1455,7 +1581,9 @@ void gpio_setup() {
   	Wire.begin();
 
 	//SPI
-	SPI.begin(GPIO_SD_SCLK, GPIO_SD_MISO, GPIO_SD_MOSI, GPIO_SD_CS);
+	spi = new SPIClass(HSPI);
+	spi->begin(GPIO_SD_SCLK, GPIO_SD_MISO, GPIO_SD_MOSI, GPIO_SD_CS);
+	
 }
 
 // Initialize LED Matrix
@@ -1519,8 +1647,8 @@ void server_setup() {
 				request->send(200);
 			//Captive portal but no on connected ap only on softAP
 			else if(wifi_host && strcmp(request->host().c_str(), WiFi.localIP().toString().c_str()) != 0) {
-				if(sd_connected() && SD.exists("/webinterface/index.html")) {
-					request->send(SD, "/webinterface/index.html", String());
+				if(sd_connected() && SD.exists(server_home_file)) {
+					request->send(SD, server_home_file, String());
 				} else {
 					request->send(200, "text/plain", "SD Card or Files missing");
 				}
@@ -1566,6 +1694,7 @@ void server_setup() {
 				root["imageNumber"] = image_index.size();
 				root["imagePrefixMax"] = image_prefix_max;
 				root["imageLoaded"] = image_loaded;
+				root["imagesFolder"] = images_folder;
 				JsonArray images = root.createNestedArray("images");
 
 				char nameBuffer[255];
@@ -1674,6 +1803,8 @@ void server_setup() {
 				root["hostname"] = WiFi.getHostname();
 				root["rssi"] = WiFi.RSSI();
 				root["mac"] = WiFi.macAddress();
+
+				root["serverFolder"] = server_home_dir;
 				
 				response->setLength();
 				request->send(response);
@@ -1710,7 +1841,7 @@ void server_setup() {
 				preferences.end();
 				request->send(200);
 			} else {
-				request->send(403, "application/json");
+				request->send(403);
 			}
 		});
 
@@ -1754,7 +1885,7 @@ void server_setup() {
 				request->send(200, "application/json");
 				display_change = true;
 			} else {
-				request->send(403, "application/json");
+				request->send(403);
 			}
 		}));
 
@@ -1775,12 +1906,49 @@ void server_setup() {
 					preferences.putUInt("selected_image", selected_image);
 				}
 
+				if(body.containsKey("imageOperations") && body["imageOperations"].is<JsonArray>()) {
+					JsonArray imageOperations = body["imageOperations"].as<JsonArray>();
+					char buffer[512];
+					for(int i = 0; i < imageOperations.size(); i++) {
+						
+						const char* src = imageOperations[i]["src"].as<const char *>();
+						const char* dst = imageOperations[i]["dst"].as<const char *>();
+
+						if(src) {
+							strcpy(buffer, images_folder);
+							strcat(buffer, "/");
+							strcat(buffer, src);
+
+							size_t srcLen = strlen(buffer) + 1;
+							char src[srcLen];
+							strncpy(src, buffer, srcLen);
+
+							if(dst) {
+								strcpy(buffer, images_folder);
+								strcat(buffer, "/");
+								strcat(buffer, dst);
+								
+								file_operation operation = {
+									strdup(src),
+									strdup(buffer)
+								};
+								file_operations.emplace_back(operation);
+							} else {
+								file_operation operation = {
+									strdup(src)
+								};
+								file_operations.emplace_back(operation);
+							}
+						}
+					}
+				}
+
 				display_change = true;
 				
 				preferences.end();
-				request->send(200, "application/json");
+				request->send(202, "application/json");
 			} else {
-				request->send(403, "application/json");
+				request->send(403);
 			}
 		}));
 
@@ -1825,7 +1993,7 @@ void server_setup() {
 				request->send(200, "application/json");
 				display_change = true;
 			} else {
-				request->send(403, "application/json");
+				request->send(403);
 			}
 		}));
 
@@ -1895,7 +2063,7 @@ void server_setup() {
 				}
 				display_change = true;
 			} else {
-				request->send(403, "application/json");
+				request->send(403);
 			}
 		}));
 
@@ -1944,7 +2112,7 @@ void server_setup() {
 
 				ms_wifi_restart = millis() + 500;
 			} else {
-				request->send(403, "application/json");
+				request->send(403);
 			}
 		}));
 
@@ -1954,7 +2122,7 @@ void server_setup() {
 				request->send(200, "application/json");
 				display_change = true;
 			} else {
-				request->send(403, "application/json");
+				request->send(403);
 			}
 		});
 
@@ -1966,7 +2134,7 @@ void server_setup() {
 				request->send(200);
 				requested_restart = true;
 			} else {
-				request->send(403, "application/json");
+				request->send(403);
 			}
 		});
 
@@ -1975,28 +2143,95 @@ void server_setup() {
 				request->send(200);
 				requested_restart = true;
 			} else {
-				request->send(403, "application/json");
+				request->send(403);
+			}
+		});
+
+		//File uploads
+		server.on("/api/upload", HTTP_PUT, [](AsyncWebServerRequest * request) {
+
+			if(uploading_file) {
+				uploading_file.close();
+			}
+			upload_success = true;
+
+			if(verify_api_key(request)) {
+				if(!upload_success) {
+					request->send(500);
+				} else {
+					request->send(202);
+				}
+
+				//add file operations for moving from temp upload path
+				int params = request->params();
+				for(int i=0;i<params;i++){
+					AsyncWebParameter* p = request->getParam(i);
+					if(p->isFile() && strlen(p->name().c_str()) > 3){
+						char tmp_path[512];
+						strcpy(tmp_path, upload_directory);
+						strcat(tmp_path, "/");
+						strcat(tmp_path, p->value().c_str());
+
+						file_operation operation = {
+							strdup(tmp_path),
+							strdup(p->name().c_str())
+						};
+
+						file_operations.emplace_back(operation);
+					}
+				}	
+			} else {
+				request->send(403);
+			}
+		}, [](AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t length, bool final) {
+			if(upload_success && verify_api_key(request) && ((index == 0 && !uploading_file) || (index != 0 && uploading_file)) && sd_connected()) {
+				char tmp_path[512];
+				strcpy(tmp_path, upload_directory);
+				strcat(tmp_path, "/");
+				strcat(tmp_path, filename.c_str());
+
+				//remove old file before writing and setting current upload as blocking
+				if(index == 0) {
+					remove_recursive(SD, tmp_path);
+					if(ensure_folder(SD, upload_directory)) {
+						uploading_file = SD.open(tmp_path, "w", true);
+					} else {
+						upload_success = false;
+					}
+				}
+
+				//check if still writing to right file
+				if(strcmp(tmp_path, uploading_file.path()) == 0) {
+					bool upload_success = uploading_file.write(data, length);
+				}
+
+				//resetting current blocking upload
+				if(final && upload_success) {
+					uploading_file.close();
+				}
+			} else {
+				upload_success = false;
 			}
 		});
 
 		//React webserver
 		server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-			if(sd_connected() && SD.exists("/webinterface/index.html")) {
-				request->send(SD, "/webinterface/index.html", String());
+			if(sd_connected() && SD.exists(server_home_file)) {
+				request->send(SD, server_home_file, String());
 			} else {
 				request->send(200, "text/plain", "SD Card or Files missing");
 			}
 		});
 
-		server.on("/webinterface/version.json", HTTP_GET, [](AsyncWebServerRequest *request) {
-			if(sd_connected() && SD.exists("/webinterface/version.json")) {
-				request->send(SD, "/webinterface/version.json", "application/json");
+		server.on(server_version_file, HTTP_GET, [](AsyncWebServerRequest *request) {
+			if(sd_connected() && SD.exists(server_version_file)) {
+				request->send(SD, server_version_file, "application/json");
 			} else {
 				request->send(200, "text/plain", "SD Card or Files missing");
 			}
 		});
 
-		server.serveStatic("/", SD, "/webinterface").setCacheControl("max-age=600");
+		server.serveStatic("/", SD, server_home_dir).setCacheControl("max-age=600");
 
 		server_setup_complete = true;
 	}
@@ -2174,15 +2409,14 @@ void booted_setup() {
 		image_loaded = sd_load_image(image_index[selected_image]);
 	}
 
-	display_change = true;
 	ms_current = millis();
 	ms_animation = ms_current + animation_time;
 	ms_diashow = ms_current + diashow_time;
+
+	display_overlay(OVERLAY_TEXT, current_mode == MODE_IMAGES ? "Pictures" : current_mode == MODE_CLOCK ? "Clock" : "Socials");
 }
 
 void setup() {
-	Serial.begin(9600); //TODO remove
-
 	spiffs_setup(); //call before preferences_load to not overwrite user defined preferences
 	preferences_load();
 	panel_setup(); //depends on preferences
@@ -2192,7 +2426,7 @@ void setup() {
 	wifi_setup(); //depends on preferences (and gpio and wifi for server)
 	firmware_update(); //depends on gpio and panel
 	
-	booted_setup();
+	booted_setup(); //finish setup and transfer to loop
 }
 
 
@@ -2201,7 +2435,6 @@ void setup() {
 /***********
 **	Loop  **
 ************/
-
 void loop() {
 
 	ms_current = millis();
@@ -2673,7 +2906,7 @@ void loop() {
 	}
 
 	//Routine for async http
-	if(menu == MENU_NONE) {
+	if(menu == MENU_NONE && wifi_connect && wifi_setup_complete) {
 		if(socials_response_check != 0 && socials_response_check <= ms_current) {
 			if(http_socials.readyState() == readyStateDone) {
 				socials_response_check = 0;
@@ -2686,6 +2919,9 @@ void loop() {
 			socials_refresh();
 		}
 	}
+
+	//Routine for file operations (moves/renames/deletes)
+	sd_operate_files();
 
 	//refresh display if needed
 	if(display_change) {
