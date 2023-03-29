@@ -308,7 +308,7 @@ class SocialStats extends Controller
         }
 
         foreach($userIds as $userId) {
-            Cache::put("twitch_user_views_".$userId, -1, 60);
+            Cache::put("twitch_user_views_".$userId, -1, 300);
         }
 
         if(empty($response["data"]))
@@ -316,7 +316,7 @@ class SocialStats extends Controller
 
         return collect($response["data"])->map(function($user) {
 
-            Cache::put("twitch_user_views_".$user["user_id"], $user["viewer_count"], 60);
+            Cache::put("twitch_user_views_".$user["user_id"], $user["viewer_count"], 30);
 
             return [
                 "v" => $user["viewer_count"],
@@ -429,9 +429,9 @@ class SocialStats extends Controller
         }
 
         if($response->status() == 404) {
-            Cache::put("instagram_user_id_".$username, -1, 3600);
-            Cache::put("instagram_user_follower_".$username, -1, 3600);
-            Cache::put("instagram_user_liked_".$username, -1, 3600);
+            Cache::put("instagram_user_id_".$username, -1, 21600);
+            Cache::put("instagram_user_follower_".$username, -1, 21600);
+            Cache::put("instagram_user_liked_".$username, -1, 21600);
         }
 
         $response->throwUnlessStatus(200);
@@ -448,12 +448,12 @@ class SocialStats extends Controller
             return throw new AuthorizationException("Failed to retrive data from twitch");
 
         Cache::forever("instagram_user_id_".$username, $responseData["data"]["user"]["id"]);
-        Cache::put("instagram_user_follower_".$username, $responseData["data"]["user"]["edge_followed_by"]["count"], 3600);
+        Cache::put("instagram_user_follower_".$username, $responseData["data"]["user"]["edge_followed_by"]["count"], 1800);
 
         $likes = 0;
         if(!empty($responseData["data"]["user"]["edge_owner_to_timeline_media"]["edges"]))
             $likes = $responseData["data"]["user"]["edge_owner_to_timeline_media"]["edges"][0]["node"]["edge_liked_by"]["count"];
-        Cache::put("instagram_user_liked_".$username, $likes, 3600);
+        Cache::put("instagram_user_liked_".$username, $likes, 1800);
 
         return [
             "id" => $responseData["data"]["user"]["id"],
