@@ -211,6 +211,35 @@ export default class DataService {
         return this.data.wifiScan;
     }
 
+    public async uploadFiles(type: "images" | "webinterface" | "firmware", files: FormData): Promise<void> {
+
+        files.append("type", type);
+
+        return axios.request({
+            method: "POST",
+            url: "http://" + this.deviceAddress + "/api/file",
+            data: files,
+            headers: {
+                "Content-Type": "multipart/form-data",
+                "apiKey": this.apiKey
+            }
+        }).then((resp: AxiosResponse<any, any>) => {
+            if(resp.status !== 202) {
+                throw new APIError(APIErrorType.ConnectionError, "Error sending data from your device");
+            } else {
+                this.setStatus(Status.connected);
+                return;
+            }
+        }).catch((e: AxiosError) => {
+            if(e.response?.status === 403) {
+                this.setStatus(Status.unauthorized);
+                throw new APIError(APIErrorType.UnauthorizedError, "Please authorize your device");
+            } else {
+                throw new APIError(APIErrorType.ConnectionError, "Error sending data from your device");
+            }
+        });
+    }
+
     public async requestDevice<ResponseType>(method: string, endpoint: string, data: any = null): Promise<ResponseType> {
         if(!this.deviceAddress || this.deviceAddress.length < 5)
             throw new APIError(APIErrorType.DeviceAddressError, "Please enter your device's address");
@@ -226,7 +255,7 @@ export default class DataService {
             },
             data: data
         }).then((resp: AxiosResponse<any, any>) => {
-            if(resp.status !== 200) {
+            if(resp.status >= 300) {
                 throw new APIError(APIErrorType.ConnectionError, "Error requesting data from your device");
             } else {
                 this.setStatus(Status.connected);

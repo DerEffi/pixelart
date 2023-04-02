@@ -56,6 +56,14 @@ const uint16_t icon_instagram[900] = {0x0,0x0,0x0,0x0,0x0,0x0,0x7118,0x7118,0x71
 
 const uint8_t marks_clock[44][2] = {{0,31},{1,31},{2,31},{3,31},{0,32},{1,32},{2,32},{3,32},{60,31},{61,31},{62,31},{63,31},{60,32},{61,32},{62,32},{63,32},{31,0},{31,1},{31,2},{31,3},{32,0},{32,1},{32,2},{32,3},{31,60},{31,61},{31,62},{31,63},{32,60},{32,61},{32,62},{32,63},{16,5},{47,5},{58,16},{58,47},{5,16},{5,47},{16,58},{47,58},{32,32},{31,31},{32,31},{31,32}};
 
+struct boot_row {
+	uint8_t row;
+	std::vector<uint8_t> pixels;
+	boot_row(uint8_t row, std::vector<uint8_t> pixels):
+	row(row), pixels(pixels) {}
+};
+const std::vector<boot_row> boot_sequence = {{59,{31,32}},{58,{30,31,32,33}},{57,{29,30,33,34}},{56,{28,29,34,35}},{55,{28,35}},{54,{27,28,35,36}},{53,{26,27,36,37}},{52,{25,26,37,38}},{51,{24,25,38,39}},{50,{24,39}},{49,{23,24,39,40}},{48,{22,23,40,41}},{47,{21,22,41,42}},{46,{20,21,42,43}},{45,{20,43}},{44,{19,20,43,44}},{43,{18,19,44,45}},{42,{17,18,45,46}},{41,{16,17,46,47}},{40,{16,47}},{39,{15,16,47,48}},{38,{14,15,48,49}},{37,{13,14,49,50}},{36,{12,13,50,51}},{35,{12,51}},{34,{11,12,51,52}},{33,{11,52}},{32,{10,11,52,53}},{31,{10,53}},{30,{10,53}},{29,{10,53}},{28,{10,53}},{27,{10,53}},{26,{10,53}},{25,{10,53}},{24,{10,53}},{23,{9,10,53,54}},{22,{9,10,53,54}},{21,{9,10,53,54}},{20,{9,10,53,54}},{19,{9,10,53,54}},{18,{9,54}},{17,{9,54}},{16,{9,54}},{15,{9,54}},{14,{9,54}},{13,{9,54}},{12,{9,54}},{11,{9,54}},{10,{9,54}},{9,{8,9,54,55}},{8,{8,9,54,55}},{7,{8,9,54,55}},{6,{8,9,54,55}},{5,{8,9,54,55}},{4,{8,9,54,55}},{3,{8,9,54,55}},{4,{10,53}},{5,{10,11,52,53}},{6,{10,11,12,51,52,53}},{7,{10,12,13,50,51,53}},{8,{10,13,14,49,50,53}},{9,{10,11,14,15,48,49,52,53}},{10,{11,15,16,47,48,52}},{11,{11,16,17,46,47,52}},{12,{11,12,17,18,45,46,51,52}},{13,{12,18,19,44,45,51}},{14,{12,13,19,20,43,44,50,51}},{15,{13,20,21,42,43,50}},{16,{13,21,22,41,42,50}},{17,{13,14,22,23,40,41,49,50}},{18,{14,23,24,39,40,49}},{19,{14,15,24,25,38,39,48,49}},{19, {26,27,28,35,36,37}}, {18, {29,30,31,32,33,34}},{20,{15,23,24,39,40,48}},{21,{15,22,23,40,41,48}},{22,{15,16,21,22,41,42,47,48}},{23,{16,20,21,42,43,47}},{24,{16,17,19,20,43,44,46,47}},{25,{17,18,19,44,45,46}},{26,{17,18,45,46}},{27,{16,17,18,45,46,47}},{28,{15,16,18,19,44,45,47,48}},{29,{14,15,19,44,48,49}},{30,{13,14,19,20,43,44,49,50}},{31,{12,13,20,43,50,51}},{32,{12,13,20,43,50,51}},{33,{12,13,14,15,16,20,21,42,43,47,48,49,50,51}},{34,{16,17,21,42,46,47}},{35,{17,18,19,21,22,41,42,44,45,46}},{36,{19,20,22,41,43,44}},{37,{20,21,22,41,42,43}},{38,{21,22,23,40,41,42}},{39,{22,23,40,41}},{40,{23,24,39,40}},{41,{24,39}},{42,{24,25,38,39}},{43,{25,38}},{44,{25,26,37,38}},{45,{26,37}},{46,{26,37}},{47,{26,27,36,37}},{48,{27,36}},{49,{27,28,35,36}},{50,{28,35}},{51,{28,35}},{52,{28,29,34,35}},{53,{28,29,34,35}},{54,{29,34}},{55,{29,30,33,34}},{56,{30,33}},{57,{31,32}}};
+
 //slopes for mapping ranges to pixel width
 //? (output_end - output_start) / (input_end - input_start)
 //? 44 / input_range
@@ -63,7 +71,15 @@ const double slope_brightness = .189;
 const double slope_animation = .09166;
 const double slope_diashow = .0007457;
 
-//structs
+//paths
+const char* update_file = "/firmware.bin";
+const char* server_home_dir = "/webinterface";
+const char* server_home_file = "/webinterface/index.html";
+const char* server_version_file = "/webinterface/version.json";
+const char* upload_directory = "/tmp";
+const char* images_folder = "/images";
+
+//enums
 enum overlay_type {
 	OVERLAY_NONE,
 	OVERLAY_BRIGHTNESS,
@@ -97,6 +113,7 @@ enum menu_mode {
 	MENU_WIFI_HOST
 };
 
+//data interfaces
 struct socials_channel {
 	char* type;
 	char* name;
@@ -122,13 +139,6 @@ struct pixel_data {
 	x(x), y(y), color(color) {}
 };
 
-struct boot_row {
-	uint8_t row;
-	std::vector<uint8_t> pixels;
-	boot_row(uint8_t row, std::vector<uint8_t> pixels):
-	row(row), pixels(pixels) {}
-};
-
 struct available_network {
 	char * ssid;
 	int32_t rssi;
@@ -146,15 +156,34 @@ struct file_operation {
 	src(src), dst(strdup("")) {}
 };
 
-const std::vector<boot_row> boot_sequence = {{59,{31,32}},{58,{30,31,32,33}},{57,{29,30,33,34}},{56,{28,29,34,35}},{55,{28,35}},{54,{27,28,35,36}},{53,{26,27,36,37}},{52,{25,26,37,38}},{51,{24,25,38,39}},{50,{24,39}},{49,{23,24,39,40}},{48,{22,23,40,41}},{47,{21,22,41,42}},{46,{20,21,42,43}},{45,{20,43}},{44,{19,20,43,44}},{43,{18,19,44,45}},{42,{17,18,45,46}},{41,{16,17,46,47}},{40,{16,47}},{39,{15,16,47,48}},{38,{14,15,48,49}},{37,{13,14,49,50}},{36,{12,13,50,51}},{35,{12,51}},{34,{11,12,51,52}},{33,{11,52}},{32,{10,11,52,53}},{31,{10,53}},{30,{10,53}},{29,{10,53}},{28,{10,53}},{27,{10,53}},{26,{10,53}},{25,{10,53}},{24,{10,53}},{23,{9,10,53,54}},{22,{9,10,53,54}},{21,{9,10,53,54}},{20,{9,10,53,54}},{19,{9,10,53,54}},{18,{9,54}},{17,{9,54}},{16,{9,54}},{15,{9,54}},{14,{9,54}},{13,{9,54}},{12,{9,54}},{11,{9,54}},{10,{9,54}},{9,{8,9,54,55}},{8,{8,9,54,55}},{7,{8,9,54,55}},{6,{8,9,54,55}},{5,{8,9,54,55}},{4,{8,9,54,55}},{3,{8,9,54,55}},{4,{10,53}},{5,{10,11,52,53}},{6,{10,11,12,51,52,53}},{7,{10,12,13,50,51,53}},{8,{10,13,14,49,50,53}},{9,{10,11,14,15,48,49,52,53}},{10,{11,15,16,47,48,52}},{11,{11,16,17,46,47,52}},{12,{11,12,17,18,45,46,51,52}},{13,{12,18,19,44,45,51}},{14,{12,13,19,20,43,44,50,51}},{15,{13,20,21,42,43,50}},{16,{13,21,22,41,42,50}},{17,{13,14,22,23,40,41,49,50}},{18,{14,23,24,39,40,49}},{19,{14,15,24,25,38,39,48,49}},{19, {26,27,28,35,36,37}}, {18, {29,30,31,32,33,34}},{20,{15,23,24,39,40,48}},{21,{15,22,23,40,41,48}},{22,{15,16,21,22,41,42,47,48}},{23,{16,20,21,42,43,47}},{24,{16,17,19,20,43,44,46,47}},{25,{17,18,19,44,45,46}},{26,{17,18,45,46}},{27,{16,17,18,45,46,47}},{28,{15,16,18,19,44,45,47,48}},{29,{14,15,19,44,48,49}},{30,{13,14,19,20,43,44,49,50}},{31,{12,13,20,43,50,51}},{32,{12,13,20,43,50,51}},{33,{12,13,14,15,16,20,21,42,43,47,48,49,50,51}},{34,{16,17,21,42,46,47}},{35,{17,18,19,21,22,41,42,44,45,46}},{36,{19,20,22,41,43,44}},{37,{20,21,22,41,42,43}},{38,{21,22,23,40,41,42}},{39,{22,23,40,41}},{40,{23,24,39,40}},{41,{24,39}},{42,{24,25,38,39}},{43,{25,38}},{44,{25,26,37,38}},{45,{26,37}},{46,{26,37}},{47,{26,27,36,37}},{48,{27,36}},{49,{27,28,35,36}},{50,{28,35}},{51,{28,35}},{52,{28,29,34,35}},{53,{28,29,34,35}},{54,{29,34}},{55,{29,30,33,34}},{56,{30,33}},{57,{31,32}}};
+//Interrupt flags
+bool rot1_a_flag = false;
+bool rot1_b_flag = false;
+bool rot2_a_flag = false;
+bool rot2_b_flag = false;
+bool rot3_a_flag = false;
+bool rot3_b_flag = false;
+
+bool btn1_pressed = false;
+bool btn2_pressed = false;
+unsigned long ms_btn3_pressed = 0;
+bool btn3_released = false;
+bool rot1_pressed = false;
+bool rot2_pressed = false;
+bool rot3_pressed = false;
+int rot1_clicks = 0;
+int rot2_clicks = 0;
+int rot3_clicks = 0;
+
+//boot sequence
 uint8_t loading_step = 0;
 unsigned long ms_loading = 0;
+bool loading_cycle = true;
 
-//settings
+//general state
 Preferences preferences;
 unsigned long ms_current = 0;
-bool requested_restart = false;
-bool loading_cycle = true;
+unsigned long ms_requested_restart = 0;
 
 overlay_type overlay = OVERLAY_NONE;
 char* overlay_text = strdup("");
@@ -180,6 +209,38 @@ unsigned long ms_animation = 0;
 uint32_t diashow_time = 5000;
 unsigned long ms_diashow = 0;
 
+//Display
+MatrixPanel_I2S_DMA *panel = nullptr;
+display_mode current_mode = MODE_IMAGES;
+bool display_change = false;
+
+SPIClass *spi = NULL;
+std::vector<image_meta> image_index;
+uint16_t image_prefix_max = 0;
+uint16_t selected_image = 0;
+uint16_t current_image[64][64] = {};
+std::vector<std::vector<pixel_data>> animation;
+bool image_loaded = false;
+uint16_t animation_frame = 0;
+
+//RTC
+RTC_DS3231 rtc_ext;
+ESP32Time rtc_int(0);
+bool rtc_ext_enabled = false;
+char* ntp_server = strdup(TIME_SERVER);
+char* timezone = strdup(TIME_ZONE);
+bool update_time = TIME_UPDATE_AUTO;
+bool time_format24 = TIME_FORMAT24;
+bool rtc_ext_adjust = false;
+unsigned long ms_rtc_ext_adjust = 0;
+
+//Clock
+unsigned long ms_clock = 0;
+clock_type current_clock_mode = CLOCK_ANALOG;
+bool clock_seconds = true;
+bool clock_blink = false;
+bool clock_year = true;
+
 //Wifi
 bool wifi_connect = WIFI_CONNECT_DEFAULT;
 bool wifi_host = WIFI_HOST_DEFAULT;
@@ -198,32 +259,13 @@ DNSServer dns_server;
 
 //Server
 AsyncWebServer server(80);
-const char* server_home_dir = "/webinterface";
-const char* server_home_file = "/webinterface/index.html";
-const char* server_version_file = "/webinterface/version.json";
 bool server_setup_complete = false;
 char* api_key = strdup("");
 unsigned long ms_api_key_request = 0;
 unsigned long ms_api_key_approve = 0;
 File uploading_file;
 bool upload_success = true;
-const char* upload_directory = "/tmp";
 std::vector<file_operation> file_operations;
-
-//LED Panel
-MatrixPanel_I2S_DMA *panel = nullptr;
-display_mode current_mode = MODE_IMAGES;
-bool display_change = false;
-
-SPIClass *spi = NULL;
-const char* images_folder = "/images";
-std::vector<image_meta> image_index;
-uint16_t image_prefix_max = 0;
-uint16_t selected_image = 0;
-uint16_t current_image[64][64] = {};
-std::vector<std::vector<pixel_data>> animation;
-bool image_loaded = false;
-uint16_t animation_frame = 0;
 
 //Socials
 AsyncHTTPSRequest http_socials;
@@ -234,43 +276,6 @@ unsigned long socials_response_check = 0;
 char* socials_request = strdup(SOCIALS_REQUEST);
 int socials_channel_current = 0;
 std::vector<socials_channel> socials_channels;
-
-//Clock
-unsigned long ms_clock = 0;
-clock_type current_clock_mode = CLOCK_ANALOG;
-bool clock_seconds = true;
-bool clock_blink = false;
-bool clock_year = true;
-
-//Interrupt flags
-bool rot1_a_flag = false;
-bool rot1_b_flag = false;
-bool rot2_a_flag = false;
-bool rot2_b_flag = false;
-bool rot3_a_flag = false;
-bool rot3_b_flag = false;
-
-bool btn1_pressed = false;
-bool btn2_pressed = false;
-unsigned long ms_btn3_pressed = 0;
-bool btn3_released = false;
-bool rot1_pressed = false;
-bool rot2_pressed = false;
-bool rot3_pressed = false;
-int rot1_clicks = 0;
-int rot2_clicks = 0;
-int rot3_clicks = 0;
-
-//RTC
-RTC_DS3231 rtc_ext;
-ESP32Time rtc_int(0);
-bool rtc_ext_enabled = false;
-char* ntp_server = strdup(TIME_SERVER);
-char* timezone = strdup(TIME_ZONE);
-bool update_time = TIME_UPDATE_AUTO;
-bool time_format24 = TIME_FORMAT24;
-bool rtc_ext_adjust = false;
-unsigned long ms_rtc_ext_adjust = 0;
 
 
 
@@ -717,8 +722,9 @@ void restart() {
 }
 
 void firmware_update() {
-	if(sd_connected() && SD.exists("/firmware.bin")) {
+	if(sd_connected() && SD.exists(update_file)) {
 		//Display update process
+		panel->clearScreen();
 		panel->setTextSize(1);
 		panel->setTextWrap(false);
 		panel->setBrightness(192);
@@ -737,7 +743,7 @@ void firmware_update() {
 			panel->flipDMABuffer();
 
 		//Update
-		File firmware = SD.open("/firmware.bin");
+		File firmware = SD.open(update_file);
 		if(!firmware.isDirectory()) {
 			size_t update_size = firmware.size();
 			if(update_size > 524288 && Update.begin(update_size)) {
@@ -749,7 +755,7 @@ void firmware_update() {
 
 		//clean up
 		firmware.close();
-		SD.remove("/firmware.bin");
+		SD.remove(update_file);
 		restart();
 	}
 }
@@ -760,6 +766,7 @@ void sd_operate_files() {
 
 		if(sd_connected()) {
 			for(int i = 0; i < count; i++) {
+				Serial.printf("%s -> %s\n", file_operations[i].src, file_operations[i].dst);
 				if(strlen(file_operations[i].src) >= 3 && SD.exists(file_operations[i].src)) {
 					if(strlen(file_operations[i].dst) >= 3) {
 						remove_recursive(SD, file_operations[i].dst);
@@ -1652,8 +1659,9 @@ void server_setup() {
 				} else {
 					request->send(200, "text/plain", "SD Card or Files missing");
 				}
-			} else
-				request->send(404, "application/json", String());
+			} else {
+				request->send(404);
+			}
 		});
 
 		//API GET
@@ -1679,7 +1687,7 @@ void server_setup() {
 				response->setLength();
 				request->send(response);
 			} else {
-				request->send(403, "application/json", "{}");
+				request->send(403);
 			}
 		});
 
@@ -1694,7 +1702,6 @@ void server_setup() {
 				root["imageNumber"] = image_index.size();
 				root["imagePrefixMax"] = image_prefix_max;
 				root["imageLoaded"] = image_loaded;
-				root["imagesFolder"] = images_folder;
 				JsonArray images = root.createNestedArray("images");
 
 				char nameBuffer[255];
@@ -1710,7 +1717,7 @@ void server_setup() {
 				response->setLength();
 				request->send(response);
 			} else {
-				request->send(403, "application/json", "{}");
+				request->send(403);
 			}
 		});
 
@@ -1730,7 +1737,7 @@ void server_setup() {
 				response->setLength();
 				request->send(response);
 			} else {
-				request->send(403, "application/json", "{}");
+				request->send(403);
 			}
 		});
 
@@ -1756,7 +1763,7 @@ void server_setup() {
 				response->setLength();
 				request->send(response);
 			} else {
-				request->send(403, "application/json", "{}");
+				request->send(403);
 			}
 		});
 
@@ -1780,7 +1787,7 @@ void server_setup() {
 
 				ms_wifi_scan_requested = millis() + 500;
 			} else {
-				request->send(403, "application/json", "{}");
+				request->send(403);
 			}
 		});
 
@@ -1803,13 +1810,11 @@ void server_setup() {
 				root["hostname"] = WiFi.getHostname();
 				root["rssi"] = WiFi.RSSI();
 				root["mac"] = WiFi.macAddress();
-
-				root["serverFolder"] = server_home_dir;
 				
 				response->setLength();
 				request->send(response);
 			} else {
-				request->send(403, "application/json", "{}");
+				request->send(403);
 			}
 		});
 
@@ -1882,7 +1887,7 @@ void server_setup() {
 				}
 				
 				preferences.end();
-				request->send(200, "application/json");
+				request->send(200);
 				display_change = true;
 			} else {
 				request->send(403);
@@ -1908,7 +1913,7 @@ void server_setup() {
 
 				if(body.containsKey("imageOperations") && body["imageOperations"].is<JsonArray>()) {
 					JsonArray imageOperations = body["imageOperations"].as<JsonArray>();
-					char buffer[512];
+					char buffer[255];
 					for(int i = 0; i < imageOperations.size(); i++) {
 						
 						const char* src = imageOperations[i]["src"].as<const char *>();
@@ -1946,7 +1951,7 @@ void server_setup() {
 				display_change = true;
 				
 				preferences.end();
-				request->send(202, "application/json");
+				request->send(202);
 			} else {
 				request->send(403);
 			}
@@ -1990,7 +1995,7 @@ void server_setup() {
 				}
 				
 				preferences.end();
-				request->send(200, "application/json");
+				request->send(200);
 				display_change = true;
 			} else {
 				request->send(403);
@@ -2055,7 +2060,7 @@ void server_setup() {
 				}
 				
 				preferences.end();
-				request->send(200, "application/json");
+				request->send(200);
 
 				//get current time from ntp server if wanted with new settings
 				if(update_time) {
@@ -2108,7 +2113,7 @@ void server_setup() {
 				}
 
 				preferences.end();
-				request->send(200, "application/json");
+				request->send(200);
 
 				ms_wifi_restart = millis() + 500;
 			} else {
@@ -2119,7 +2124,7 @@ void server_setup() {
 		//API POST
 		server.on("/api/refresh", HTTP_POST, [](AsyncWebServerRequest * request) {
 			if(verify_api_key(request)) {
-				request->send(200, "application/json");
+				request->send(200);
 				display_change = true;
 			} else {
 				request->send(403);
@@ -2132,7 +2137,7 @@ void server_setup() {
 				preferences.clear();
 				preferences.end();
 				request->send(200);
-				requested_restart = true;
+				ms_requested_restart = millis() + 500;
 			} else {
 				request->send(403);
 			}
@@ -2141,51 +2146,83 @@ void server_setup() {
 		server.on("/api/restart", HTTP_POST, [](AsyncWebServerRequest * request) {
 			if(verify_api_key(request)) {
 				request->send(200);
-				requested_restart = true;
+				ms_requested_restart = millis() + 500;
 			} else {
 				request->send(403);
 			}
 		});
 
 		//File uploads
-		server.on("/api/upload", HTTP_PUT, [](AsyncWebServerRequest * request) {
+		server.on("/api/file", HTTP_POST, [](AsyncWebServerRequest * request) {
 
 			if(uploading_file) {
 				uploading_file.close();
 			}
-			upload_success = true;
 
-			if(verify_api_key(request)) {
-				if(!upload_success) {
-					request->send(500);
-				} else {
-					request->send(202);
-				}
-
-				//add file operations for moving from temp upload path
-				int params = request->params();
-				for(int i=0;i<params;i++){
-					AsyncWebParameter* p = request->getParam(i);
-					if(p->isFile() && strlen(p->name().c_str()) > 3){
-						char tmp_path[512];
-						strcpy(tmp_path, upload_directory);
-						strcat(tmp_path, "/");
-						strcat(tmp_path, p->value().c_str());
-
-						file_operation operation = {
-							strdup(tmp_path),
-							strdup(p->name().c_str())
-						};
-
-						file_operations.emplace_back(operation);
-					}
-				}	
-			} else {
+			if(!verify_api_key(request)) {
 				request->send(403);
+				return;
 			}
+
+			if(!upload_success) {
+				request->send(500);
+				upload_success = true;
+				return;
+			}
+
+			//add file operations for moving from temp upload path
+			if(!request->hasParam("type", true)) {
+				request->send(400, "application/json", "{\"message\":\"parameter type is mandatory\"}");
+				return;
+			}
+
+			AsyncWebParameter* type_param = request->getParam("type", true);
+			const char * type = type_param->value().c_str();
+
+			int params = request->params();
+			for(int i=0;i<params;i++){
+				AsyncWebParameter* p = request->getParam(i);
+				if(p->isFile() && strlen(p->name().c_str()) > 3){
+					char src_path[255];
+					strcpy(src_path, upload_directory);
+					strcat(src_path, "/");
+					strcat(src_path, p->value().c_str());
+
+					char dst_path[255];
+
+					if(strcmp(type, "images") == 0) {
+						strcpy(dst_path, images_folder);
+					} else if(strcmp(type, "webinterface") == 0) {
+						strcpy(dst_path, server_home_dir);
+					} else if(strcmp(type, "firmware") == 0) {
+						strcpy(dst_path, update_file);
+					} else {
+						request->send(400, "application/json", "{\"message\":\"unexpected value for parameter type - expected 'images' | 'webinterface' | 'firmware'\"}");
+						return;
+					}
+
+					if(strcmp(type, "firmware") != 0) {
+						const char * dst_value = p->name().c_str();
+						if(dst_value[0] != '/') {
+							strcat(dst_path, "/");
+						}
+						strcat(dst_path, dst_value);
+					}
+
+					file_operation operation = {
+						strdup(src_path),
+						strdup(dst_path)
+					};
+
+					file_operations.emplace_back(operation);
+				}
+			}
+
+			request->send(202);
+
 		}, [](AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t length, bool final) {
 			if(upload_success && verify_api_key(request) && ((index == 0 && !uploading_file) || (index != 0 && uploading_file)) && sd_connected()) {
-				char tmp_path[512];
+				char tmp_path[255];
 				strcpy(tmp_path, upload_directory);
 				strcat(tmp_path, "/");
 				strcat(tmp_path, filename.c_str());
@@ -2401,7 +2438,7 @@ void booted_setup() {
 	rot1_clicks = 0;
 	rot2_clicks = 0;
 	rot3_clicks = 0;
-	requested_restart = false;
+	ms_requested_restart = 0;
 
 	if(sd_connected() && image_index.size() > 0) {
 		if(selected_image >= image_index.size())
@@ -2417,6 +2454,8 @@ void booted_setup() {
 }
 
 void setup() {
+	Serial.begin(9600);
+
 	spiffs_setup(); //call before preferences_load to not overwrite user defined preferences
 	preferences_load();
 	panel_setup(); //depends on preferences
@@ -2749,7 +2788,7 @@ void loop() {
 		preferences.begin(PREFERENCES_NAMESPACE, false);
 		preferences.clear();
 		preferences.end();
-		requested_restart = true;
+		ms_requested_restart = ms_current;
 	} else if(btn3_released) {
 		if(menu == MENU_NONE) {
 			//approve api key for server if requested else open meu
@@ -2901,7 +2940,7 @@ void loop() {
 	}
 
 	//Execute reset from api request
-	if(requested_restart) {
+	if(ms_requested_restart != 0 && ms_requested_restart >= ms_current) {
 		restart();
 	}
 

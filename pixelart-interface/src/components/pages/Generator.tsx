@@ -17,6 +17,7 @@ import { ICachedImage } from '../../models/Cache';
 import { Dialog } from 'primereact/dialog';
 import moment from 'moment';
 import { ConfirmPopup, confirmPopup } from 'primereact/confirmpopup';
+import { v4 as uuid } from 'uuid';
 
 export interface IGeneratorComponentProps {
 	dataService: DataService;
@@ -388,12 +389,90 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		if(this.state.canvasImages.length > 1)
 			this.playAnimation();
 
-			this.setState({rendering: false});
+		this.setState({rendering: false});
 	}
 
 	//calculate image and animation data for prepared images to directly upload to connected device
-	private uploadToDevice() {
-		//TODO
+	private async uploadToDevice() {
+		this.setState({rendering: true});
+		if(this.state.frameInterval)
+			this.playAnimation();
+
+		let ctx: CanvasRenderingContext2D | null = this.newCanvas();
+		if(ctx && this.state.canvasImages.length > 0) {
+			this.drawFrame(0, ctx);
+
+			let preview: string = ctx.canvas.toDataURL();
+			
+			let animation: number[][][] = [];
+
+			if(this.state.canvasImages.length > 1) {
+				for(let i = 1; i < this.state.canvasImages.length; i++) {
+					animation.push(await this.getPixelChanges(i - 1, i));
+					await asyncTimeout(1);
+				}
+
+				//add loopback frame
+				animation.push(await this.getPixelChanges(this.state.canvasImages.length - 1, 0));
+				await asyncTimeout(1);
+			}
+
+			let image = this.getPixelArray(ctx);
+			let frames = animation.length > 0 ? this.getAnimationArray(animation) : [];
+
+			let files: FormData = new FormData();
+			let prefix = padLeft((this.props.dataService.data.images?.imagePrefixMax || 0) + 1, 3);
+			let foldername: string = convertToFoldername(prefix + " - " + this.state.name);
+
+			files.append(foldername + "/image.pxart", new Blob([Uint8Array.from(image)], {type: "octet/stream"}), uuid());
+			if(animation.length)
+				files.append(foldername + "/animation.pxart", new Blob([Uint8Array.from(frames)], {type: "octet/stream"}), uuid());
+
+			//delete picture folder to be sure no artifacts from old pictures remain
+			await this.props.dataService.requestDevice("POST", "/api/images", {
+				imageOperations: [
+					{src: foldername}
+				]
+			})
+			.then(async () => {
+				return await this.props.dataService.uploadFiles("images", files).then(async () => {
+					await asyncTimeout(500);
+					this.props.dataService.refreshImages();
+					if(this.props.toast)
+						this.props.toast.show({
+							content: "Image uploaded to your device",
+							severity: 'success',
+							closable: false
+						});
+				}).catch((e) => {
+					throw e;
+				})
+			}).catch((e) => {
+				console.error(e);
+				if(this.props.toast)
+					this.props.toast.show({
+						content: "There was a problem uploading the image to your device",
+						severity: 'error',
+						closable: false
+					});
+			});
+
+			ctx.canvas.remove();
+
+			this.cacheImage(this.state.name, image, animation, preview);
+		} else {
+			if(this.props.toast)
+				this.props.toast.show({
+					content: "No image to generate pixel art from",
+					severity: 'error',
+					closable: false
+				});
+		}
+
+		if(this.state.canvasImages.length > 1)
+			this.playAnimation();
+
+		this.setState({rendering: false});
 	}
 
 	//copy image and animation data from current preview for use in c/c++

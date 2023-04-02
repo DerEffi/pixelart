@@ -11,6 +11,9 @@ import * as semver from 'semver';
 import { asyncTimeout } from '../../../services/Helper';
 import { APIError } from '../../../models/Errors';
 import { ConfirmDialog } from 'primereact/confirmdialog';
+import { v4 as uuid } from 'uuid';
+import { Messages } from 'primereact/messages';
+import { BiInfoCircle } from 'react-icons/bi';
 
 export interface ISystemSettingsComponentProps {
 	dataService: DataService;
@@ -26,6 +29,8 @@ interface ISystemSettingsComponentState {
 const maxDataPoints: number = 50;
 
 export default class SystemSettings extends React.Component<ISystemSettingsComponentProps, ISystemSettingsComponentState> {
+
+    private messages: Messages | null = null;
 
 	constructor(props: ISystemSettingsComponentProps) {
 		super(props);
@@ -61,6 +66,8 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
 							</div>
 						}
 					/>
+
+					<Messages ref={(el) => this.messages = el} style={{textAlign: 'left'}} />
 
 					<table className='update-table'>
 						<thead>
@@ -241,7 +248,6 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
             let files: {content: ArrayBuffer, path: string}[] = await Promise.all(
                 version.files.map(async path => 
                     new Promise((resolve, reject) => {
-                        console.dir(version);
                         axios({
                             url: `${process.env.REACT_APP_UPDATE_SERVER}/${version.type}/${path}`,
                             method: "GET",
@@ -262,8 +268,46 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
             );
 
             //upload update to device
-			//TODO
-			console.log(files);
+			if(version.type != "webinterface" && version.type != "firmware")
+				throw new Error("Unexpected update type");
+
+			let upload: FormData = new FormData();
+			files.forEach(file => {
+				upload.append(file.path, new Blob([file.content], {type: "octet/stream"}), uuid());
+			})
+			await this.props.dataService.uploadFiles(version.type, upload).then(async () => {
+				if(this.props.toast)
+					this.props.toast.show({
+						content: "Update uploaded to your device",
+						severity: 'success',
+						closable: false
+					});
+				
+				if(this.messages && version.type == "firmware")
+					this.messages.show({
+						closable: true,
+						sticky: true,
+						severity: "info",
+						content: <>
+							<BiInfoCircle className='message-icon'/>
+							<div>
+								<p>
+									The update has been uploaded to your device and will apply on the next start.
+									<br/>
+									<br/>
+									<div className='link' onClick={() => this.restart()}>Restart now</div>
+								</p>
+							</div>
+						</>,
+					});
+			}).catch((e) => {
+				if(this.props.toast)
+					this.props.toast.show({
+						content: "There was a problem uploding the update to your device",
+						severity: 'error',
+						closable: false
+					});
+			});
 
         } catch(e) {
             if(this.props.toast)

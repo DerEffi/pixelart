@@ -12,7 +12,6 @@ export interface Wifi {
 	hostname: string;
 	rssi: number;
 	mac: number;
-	serverFolder: string;
 }
 
 export interface IWifiNetwork {
@@ -54,7 +53,6 @@ export interface Images {
 	imageNumber: number;
 	imagePrefixMax: number;
 	imageLoaded: boolean;
-	imagesFolder: string;
 	images: IImageData[];
 }
 

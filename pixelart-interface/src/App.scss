@@ -218,9 +218,10 @@
     color: #fbc02d;
 }
 
-a {
+a, .link {
     text-decoration: none;
     color: var(--primary-color);
+    cursor: pointer;
     
     &:hover {
         color: var(--primary-400);
