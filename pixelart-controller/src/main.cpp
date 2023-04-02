@@ -1900,6 +1900,7 @@ void server_setup() {
 				preferences.begin(PREFERENCES_NAMESPACE);
 				
 				if(body.containsKey("displayImage") && body["displayImage"].is<int>() && body["displayImage"].as<int>() >= 0) {
+					current_mode = MODE_IMAGES;
 					selected_image = body["displayImage"].as<int>();
 					if(sd_connected() && image_index.size() > 0) {
 						if(selected_image >= image_index.size())
