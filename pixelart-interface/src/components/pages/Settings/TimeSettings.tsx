@@ -13,6 +13,7 @@ import { timezoneOptions } from '../../shared/Timezones';
 import { Checkbox } from 'primereact/checkbox';
 import { Calendar } from 'primereact/calendar';
 import { InputNumber } from 'primereact/inputnumber';
+import { InputSwitch } from 'primereact/inputswitch';
 import moment from 'moment';
 
 export interface ITimeSettingsComponentProps {
@@ -133,12 +134,12 @@ export default class TimeSettings extends React.Component<ITimeSettingsComponent
 								<td><Checkbox checked={this.props.dataService.data.time?.seconds || false} onChange={(e) => this.setTimeData({seconds: e.target.checked})} /></td>
 							</tr>
 							<tr>
-								<td>Show Blinking Dots</td>
+								<td>Blinking Dots</td>
 								<td><Checkbox checked={this.props.dataService.data.time?.blink || false} onChange={(e) => this.setTimeData({blink: e.target.checked})} /></td>
 							</tr>
 							<tr>
-								<td>Show 24h Format</td>
-								<td><Checkbox checked={this.props.dataService.data.time?.format24 || false} onChange={(e) => this.setTimeData({format24: e.target.checked})} /></td>
+								<td>{this.props.dataService.data.time?.format24 ? "24" : "12"}h Format</td>
+								<td><InputSwitch checked={this.props.dataService.data.time?.format24 || false} onChange={(e) => this.setTimeData({format24: e.value})} /></td>
 							</tr>
 						</tbody>
 					</table>

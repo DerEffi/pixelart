@@ -355,17 +355,14 @@ void socials_refresh() {
 **	Misc  **
 ************/
 void rtc_internal_adjust() {
-	DateTime time = rtc_ext.now();
-	rtc_int.setTime(time.second(), time.minute(), time.hour(), time.day(), time.month(), time.year());
+	if(rtc_ext_enabled) {
+		rtc_int.setTime(rtc_ext.now().unixtime());
+	}
 }
 
 void rtc_external_adjust() {
 	if(rtc_ext_enabled) {
-		struct tm timeinfo;
-		if(getLocalTime(&timeinfo, 500))
-		{
-			rtc_ext.adjust(DateTime(timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
-		}
+		rtc_ext.adjust(DateTime(rtc_int.getEpoch()));
 	}
 	rtc_ext_adjust = false;
 	ms_rtc_ext_adjust = 0;
@@ -766,7 +763,6 @@ void sd_operate_files() {
 
 		if(sd_connected()) {
 			for(int i = 0; i < count; i++) {
-				Serial.printf("%s -> %s\n", file_operations[i].src, file_operations[i].dst);
 				if(strlen(file_operations[i].src) >= 3 && SD.exists(file_operations[i].src)) {
 					if(strlen(file_operations[i].dst) >= 3) {
 						remove_recursive(SD, file_operations[i].dst);
@@ -2455,7 +2451,7 @@ void booted_setup() {
 }
 
 void setup() {
-	Serial.begin(9600);
+	delay(250); //solves issues with too fast restarting resulting in blank panel
 
 	spiffs_setup(); //call before preferences_load to not overwrite user defined preferences
 	preferences_load();
@@ -2942,6 +2938,7 @@ void loop() {
 
 	//Execute reset from api request
 	if(ms_requested_restart != 0 && ms_requested_restart >= ms_current) {
+		panel->stopDMAoutput();
 		restart();
 	}
 
