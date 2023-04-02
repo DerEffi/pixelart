@@ -56,6 +56,7 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
 						blockScroll
 						onHide={() => this.setState({showResetConfirmDialog: false})}
 						rejectLabel="Abort"
+						accept={() => this.reset()}
 						acceptLabel='Reset'
 						acceptIcon="pi pi-trash"
 						message={
@@ -268,7 +269,7 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
             );
 
             //upload update to device
-			if(version.type != "webinterface" && version.type != "firmware")
+			if(version.type !== "webinterface" && version.type !== "firmware")
 				throw new Error("Unexpected update type");
 
 			let upload: FormData = new FormData();
@@ -283,7 +284,7 @@ export default class SystemSettings extends React.Component<ISystemSettingsCompo
 						closable: false
 					});
 				
-				if(this.messages && version.type == "firmware")
+				if(this.messages && version.type === "firmware")
 					this.messages.show({
 						closable: true,
 						sticky: true,

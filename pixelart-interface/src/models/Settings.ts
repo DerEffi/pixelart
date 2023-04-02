@@ -60,6 +60,12 @@ export interface IImageData {
 	prefix: number;
 	folder: string;
 	animated: boolean;
+	rename?: string;
+}
+
+export interface IImageOperation {
+	src: string;
+	dst?: string
 }
 
 export interface Socials {

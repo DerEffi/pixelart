@@ -876,3 +876,67 @@ img {
     width: 850px;
     max-width: 100%;
 }
+
+.images {
+    &-edit {
+        background-color: var(--surface-a);
+
+        &-header {
+            background-color: var(--surface-b) !important;
+            border: 1px solid var(--surface-d) !important;
+        }
+
+        &-form {
+            text-align: center;
+            width: 100%;
+            
+            & > div {
+                margin: 2rem auto;
+                max-width: 100%;
+                width: 300px;
+
+                & > * {
+                    text-align: left;
+                    width: 100%;
+
+                    &.images-edit-label {
+                        text-align: center;
+                        margin: .5rem;
+                    }
+                }
+            }
+
+            & > div.images-edit-submit > * {
+                justify-content: center;
+            }
+        }
+    }
+
+    &-list {
+        &-item {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            cursor: grab;
+            flex-wrap: nowrap;
+
+            &-icon {
+                font-size: 1.75rem;
+                flex: 0 0 auto;
+            }
+
+            &-input {
+                flex: 1 1 auto;
+                display: flex;
+                flex-wrap: wrap;
+                gap: .5rem;
+                align-items: center;
+
+                &-icon {
+                    font-size: 1.33rem;
+                    flex: 0 0 auto;
+                }
+            }
+        }
+    }
+}
