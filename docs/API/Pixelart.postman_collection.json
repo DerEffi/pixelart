@@ -1,0 +1,501 @@
+{
+	"info": {
+		"_postman_id": "586f1ead-fa50-4d92-a90b-2ece26718bb7",
+		"name": "Pixelart",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "7829197"
+	},
+	"item": [
+		{
+			"name": "ServerAPI",
+			"item": [
+				{
+					"name": "API->SocialRequests",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "{{socialsApiKey}}",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "Authorization",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\r\n\t{\r\n\t\t\"t\": \"t\",\r\n\t\t\"c\": \"dereffi\",\r\n\t\t\"d\": \"@DerEffi\"\r\n\t},\r\n\t{\r\n\t\t\"t\": \"y\",\r\n\t\t\"c\": \"jadereffi\",\r\n\t\t\"d\": \"@JaDerEffi\"\r\n\t},\r\n\t{\r\n\t\t\"t\": \"i\",\r\n\t\t\"c\": \"jadereffi\",\r\n\t\t\"d\": \"@JaDerEffi\"\r\n\t}\r\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/socials",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"socials"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Display",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{deviceIp}}/api/display",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"display"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Display",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"displayMode\": 0,\r\n\t\"brightness\": 40,\r\n\t\"diashow\": false,\r\n\t\"animation\": true,\r\n\t\"animationTime\": 50,\r\n\t\"diashowTime\": 2000,\r\n\t\"diashowModes\": false\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{deviceIp}}/api/display",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"display"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Images",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{deviceIp}}/api/images",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"images"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Images",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"displayImage\": 0,\r\n\t\"imageOperations\": [\r\n\t\t{\r\n\t\t\t\"src\": \"001 - dereffi\",\r\n\t\t\t\"dst\": \"002 - dereffi\"\r\n\t\t}\r\n\t]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{deviceIp}}/api/images",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"images"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Socials",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{deviceIp}}/api/socials",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"socials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Socials",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"request\": \"[{\\\"t\\\":\\\"t\\\",\\\"c\\\":\\\"dereffi\\\",\\\"d\\\":\\\"@DerEffi\\\"},{\\\"t\\\":\\\"i\\\",\\\"c\\\":\\\"jadereffi\\\",\\\"d\\\":\\\"@JaDerEffi\\\"},{\\\"t\\\":\\\"y\\\",\\\"c\\\":\\\"jadereffi\\\",\\\"d\\\":\\\"@JaDerEffi\\\"}]\",\r\n\t\"server\": \"https://api.pixelart.dereffi.de\",\r\n\t\"apiKey\": \"{{socialsAPIKey}}\",\r\n\t\"displayChannel\": 0\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{deviceIp}}/api/socials",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"socials"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Time",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{deviceIp}}/api/time",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"time"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Time",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"time\": 0,\r\n\t\"displayMode\": 0,\r\n\t\"seconds\": true,\r\n\t\"year\": true,\r\n\t\"blink\": false,\r\n\t\"format24\": true,\r\n\t\"updateTime\": true,\r\n\t\"ntpServer\": \"pool.ntp.org\",\r\n\t\"timezone\": \"CET-1CEST,M3.5.0,M10.5.0/3\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{deviceIp}}/api/time",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"time"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Wifi",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{deviceIp}}/api/wifi",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"wifi"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Wifi Scan",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{deviceIp}}/api/wifi/available",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"wifi",
+						"available"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Wifi",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"ap\": true,\r\n\t\"apSSID\": \"DerEffi's Pixelart\",\r\n\t\"apPassword\": \"00000000\",\r\n\t\"connect\": false,\r\n\t\"ssid\": \"\",\r\n\t\"password\": \"\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{deviceIp}}/api/wifi",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"wifi"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "File",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "type",
+							"value": "images",
+							"type": "text"
+						},
+						{
+							"key": "001 - dereffi/image.pxart",
+							"type": "file",
+							"src": []
+						}
+					]
+				},
+				"url": {
+					"raw": "http://{{deviceIp}}/api/file",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"file"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "API-Key",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"try {\r",
+							"\tconst responseJson = pm.response.json();\r",
+							"\tvar apiKey = responseJson.apiKey;\r",
+							"\tif(apiKey)\r",
+							"\t\tpm.environment.set(\"apiKey\", apiKey);\r",
+							"} catch(e){}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{deviceIp}}/api/apiKey",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"apiKey"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "API-Key",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://{{deviceIp}}/api/apiKey",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"apiKey"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Reset",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://{{deviceIp}}/api/reset",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"reset"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Refresh",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://{{deviceIp}}/api/refresh",
+					"protocol": "http",
+					"host": [
+						"{{deviceIp}}"
+					],
+					"path": [
+						"api",
+						"refresh"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "in",
+				"value": "header",
+				"type": "string"
+			},
+			{
+				"key": "value",
+				"value": "{{apiKey}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "apiKey",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
