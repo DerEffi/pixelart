@@ -17,12 +17,16 @@ import { CgMenu } from 'react-icons/cg';
 import { IoShareSocialSharp } from 'react-icons/io5';
 import { TfiLayoutGrid4Alt } from 'react-icons/tfi';
 import { GoSettings } from 'react-icons/go';
-import { Route, Routes } from 'react-router-dom';
+import { Location, Route, Routes } from 'react-router-dom';
 import Settings from './components/pages/Settings';
 import { Toast } from 'primereact/toast';
 import Downloads from './components/pages/Downloads';
 
 PrimeReact.inputStyle = 'filled';
+
+export interface IAppProps {
+	location: Location;
+}
 
 interface IAppState {
 	loaded: boolean;
@@ -31,7 +35,7 @@ interface IAppState {
 	advanced: boolean;
 }
 
-export default class App extends React.Component<{}, IAppState> {
+export default class App extends React.Component<IAppProps, IAppState> {
 
 	private dataService: DataService = new DataService(() => {this.setState({});});
 	private toast: Toast | null = null;
@@ -43,7 +47,7 @@ export default class App extends React.Component<{}, IAppState> {
 		this.windowWidth = window.screen.width;
 	};
 
-	constructor(props: {}) {
+	constructor(props: IAppProps) {
 		super(props);
 
 		this.state = {
@@ -100,7 +104,7 @@ export default class App extends React.Component<{}, IAppState> {
 							<Route path="/settings/*" element={<Settings advanced={this.state.advanced} dataService={this.dataService} toast={this.toast} />} />
 							<Route path="/pictures" element={<Generator advanced={this.state.advanced} dataService={this.dataService} toast={this.toast} />} />
 							<Route path="/downloads" element={<Downloads advanced={this.state.advanced} dataService={this.dataService} toast={this.toast} />} />
-							<Route path="/" element={<Home dataService={this.dataService} toast={this.toast} />} />
+							<Route path="/" element={<Home location={this.props.location} dataService={this.dataService} toast={this.toast} />} />
 							<Route path="*" element={<NotFound/>} />
 						</Routes>
 					</div>

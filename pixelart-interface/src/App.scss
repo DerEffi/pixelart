@@ -30,6 +30,10 @@
     }
 }
 
+.p-chip-text {
+    margin: 0 !important;
+}
+
 
 
 
@@ -39,10 +43,6 @@
 
 //Phones
 @media (max-width: 480px) {
-    body {
-        font-size: 16px;
-    }
-
     .content {
         width: 90%;
     }
@@ -83,10 +83,6 @@
 
 //Tablets
 @media (min-width: 481px) and (max-width: 768px) {
-    body {
-        font-size: 17px;
-    }
-
     .content {
         width: 85%;
     }
@@ -110,10 +106,6 @@
 
 //Laptops
 @media (min-width: 769px) and (max-width: 1279px) {
-    body {
-        font-size: 20px;
-    }
-
     .content {
         width: 80%;
     }
@@ -157,10 +149,6 @@
 
 //Monitors
 @media (min-width: 1280px) {
-    body {
-        font-size: 20px;
-    }
-
     .content {
         width: 70%;
     }
@@ -229,6 +217,7 @@ a, .link {
 }
 
 body {
+    font-size: 1.1rem;
     background-color: var(--surface-ground);
     font-family: var(--font-family);
     color: var(--text-color);
@@ -936,6 +925,33 @@ img {
                     font-size: 1.33rem;
                     flex: 0 0 auto;
                 }
+            }
+        }
+    }
+}
+
+.home {
+    &-header {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: .75rem;
+        font-size: 1.2rem;
+
+        & svg {
+            font-size: 1.4rem;
+        }
+    }
+
+    &-table {
+        margin-left: 10px;
+        border-collapse: collapse;
+
+        & td {
+            padding: 5px 15px;
+            vertical-align: top;
+
+            &:first-child {
+                white-space: nowrap;
             }
         }
     }

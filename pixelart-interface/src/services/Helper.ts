@@ -52,3 +52,12 @@ export function validateWPA(passphrase: string) {
 export function convertToFoldername(name: string) {
     return name.replaceAll(/[^ \w\.!@#$^+=-]/g, "_").replaceAll(/ {2}/g, " ").substring(0, 240).replaceAll(/^[ .]/g, "_").replaceAll(/[ .]$/g, "_"); //eslint-disable-line no-useless-escape
 }
+
+export function scrollIntoView(id: string) {
+    if(id) {
+        let element = document.getElementById(id);
+        if(element) {
+            element.scrollIntoView();
+        }
+    }
+}
