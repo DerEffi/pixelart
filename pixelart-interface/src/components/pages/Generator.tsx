@@ -10,7 +10,6 @@ import { asyncTimeout, c2dArray, cAnimationArray, convertToFoldername, padLeft, 
 import { InputText } from 'primereact/inputtext';
 import { Status } from '../../models/Status';
 import JSZip from 'jszip';
-import { GifReader } from 'omggif';
 import { Knob } from 'primereact/knob';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { ICachedImage } from '../../models/Cache';
@@ -18,6 +17,7 @@ import { Dialog } from 'primereact/dialog';
 import moment from 'moment';
 import { ConfirmPopup, confirmPopup } from 'primereact/confirmpopup';
 import { v4 as uuid } from 'uuid';
+import { parseGIF, decompressFrames } from 'gifuct-js'
 
 export interface IGeneratorComponentProps {
 	dataService: DataService;
@@ -216,6 +216,9 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 
 	//Prepare image data for preview canvas from selected files
 	private async uploadImages(files: File[]) {
+		if(this.state.frameInterval) {
+			this.playAnimation();
+		}
 		this.state.canvasImages.forEach(img => {
 			if(img instanceof HTMLImageElement)
 				img.remove();
@@ -236,13 +239,20 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 							});
 						continue;
 					} else if (files[i].type === "image/gif") {
-						let gifReader = new GifReader(new Uint8Array(await files[i].arrayBuffer()));
+
+						let gif = parseGIF(await files[i].arrayBuffer());
+						let frames = decompressFrames(gif, true);
+
+						let ctx = this.newCanvas(gif.lsd.width, gif.lsd.height);
+						ctx.scale(1 / (gif.lsd.width / 64), 1 / (gif.lsd.height / 64));
 						
-						for(let frame: number = 0; frame < gifReader.numFrames(); frame++) {
-							let frameData = new ImageData(64, 64);
-							gifReader.decodeAndBlitFrameRGBA(frame, frameData.data as any);
-							images.push(frameData);
-						}
+						frames.forEach(frame => {
+							let scaledCtx = this.newCanvas(gif.lsd.width, gif.lsd.height);
+							scaledCtx.putImageData(new ImageData(frame.patch, frame.dims.width, frame.dims.height), frame.dims.left, frame.dims.top);
+							ctx.drawImage(scaledCtx.canvas, 0, 0);
+							images.push(ctx.getImageData(0, 0, 64, 64));
+						});
+
 					} else {
 						let byteArray = new Uint8Array(await files[i].arrayBuffer());
 						let base64image = Buffer.from(byteArray).toString("base64");
@@ -599,11 +609,11 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 	}
 
 	//create new canvas with custom settings
-	private newCanvas(): CanvasRenderingContext2D {
+	private newCanvas(width: number = 64, height: number = 64): CanvasRenderingContext2D {
 		let ctx = document.createElement("canvas").getContext("2d");
 		if(ctx) {
-			ctx.canvas.setAttribute("width", "64");
-			ctx.canvas.setAttribute("height", "64");
+			ctx.canvas.setAttribute("width", "" + width);
+			ctx.canvas.setAttribute("height", "" + height);
 			ctx.imageSmoothingEnabled = false;
 			return ctx;
 		}

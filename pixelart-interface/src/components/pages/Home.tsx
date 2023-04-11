@@ -118,15 +118,23 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 								</tr>
 								<tr>
 									<td>Size</td>
-									<td>Because of the LED panel size you cannot display more pixels. Although the generator resizes your image without any edge-interpolation you might loose some details, so for the best results you may want to manually edit your 64x64 image</td>
+									<td>The display has a size of <b>64x64</b> pixels. Although the generator resizes your image without any edge-interpolation you might loose some details, so for the best results you may want to manually edit your images to exactly that resolution</td>
 								</tr>
 								<tr>
 									<td>Color accuracy</td>
-									<td>Because of the limited color-depth of the Display you might want to try experimenting with the colors in your image. FYI: The panel uses RGB-565 and displays in 5bit color depth, but due to the color correction of the individuals LEDs the representation on the display itself might not be always accurate.</td>
+									<td>Because of the limited color-depth of the Display you might want to try experimenting with the colors in your image. FYI: The panel uses RGB-565 and displays in <b>5bit color depth</b>, but due to the color correction of the individuals LEDs the representation on the display itself might not be always accurate.</td>
 								</tr>
 								<tr>
 									<td>Animations</td>
-									<td>Due to the limited memory big animations with lots of pixel changes might cause problems. If your device does not start or load the images properly you might want to try removing the animation from the SD card.</td>
+									<td>Due to the limited memory big animations with lots of pixel changes might cause problems. If your device does not start or load the images properly you might want to try removing the animation from the SD card. The memory consumption depends mostly on the number of pixels changed between frames (please accord for the additional loopback frame) and based on my tests you should get away with 6 complete redraws of the image.</td>
+								</tr>
+								<tr>
+									<td>Frametime</td>
+									<td>Since the Pixelart display has it's own knob to control the speed of the animations, individual frametimes of your gif will be ignored. If you wish to display a single frame for longer, you can insert empty or duplicate frames.</td>
+								</tr>
+								<tr>
+									<td>Preview</td>
+									<td>Depending on your browser, the preview image(s) can juggle a bit during animations. This issue affects only the live preview of your uploaded images and will not be visible on your device after generation.</td>
 								</tr>
 							</tbody>
 						</table>
@@ -151,7 +159,9 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 						To connect your dispay to a network you first need to enable the <Chip label="Host"/> option in the onboard menu so that you can directly connect to the display itself with a browser of your choice. If you are unsure about the connection details, you can check the <Chip label='Host Stats'/> section for the current settings.
 						<br/>
 						<br/>
-						After connecting to the display's network, you should be redirected to webinterface, where you can enter your network information. If not you can manually browse to <Link to='http://192.168.4.1' target="_blank">192.168.4.1</Link>.
+						After connecting to the display's network, you should be redirected to webinterface, where you can enter your network information. If not you can manually browse to <Link to='http://192.168.4.1' target="_blank">192.168.4.1</Link>. Once you are connected to a network your device's IP-Adress will change. Either check your network or the display's onboard menu under <Chip label='Connection Stats'/> to find it.
+						<br/>
+						To adjust your preferences you can use the webinterface on the device itself or navigate to <Link to="https://pixelart.dereffi.de">pixelart.dereffi.de</Link> and enter the IP-Adress in the sidemenu on the left.
 						<br/>
 						<br/>
 						Make sure to deactivate the Host mode when you are finished setting up your device as it might occupy unnecessary resources you might rather want to use for a big animation... 
