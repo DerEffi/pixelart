@@ -8,12 +8,13 @@ import { OrderList } from 'primereact/orderlist';
 import { Tooltip } from 'primereact/tooltip';
 import { CgMenu } from 'react-icons/cg';
 import { FiEdit2 } from 'react-icons/fi';
-import { BiImage, BiMoviePlay } from 'react-icons/bi';
+import { BiImage, BiMoviePlay, BiUndo } from 'react-icons/bi';
 import { APIError } from '../../../models/Errors';
 import { InputText } from 'primereact/inputtext';
 import { padLeft } from '../../../services/Helper';
 import { v4 as uuid } from 'uuid';
 import { HiArrowNarrowRight } from 'react-icons/hi';
+import { MdDelete } from 'react-icons/md';
 
 export interface IPictureSettingsComponentProps {
 	dataService: DataService;
@@ -84,14 +85,15 @@ export default class PictureSettings extends React.Component<IPictureSettingsCom
 								header="Images"
 								dragdrop
 								itemTemplate={(item: IImageData) =>
-									<div className='images-list-item'>
+									<div className='images-list-item' key={item.folder}>
 										<Tooltip target={".images-list-item-tooltip-" + item.prefix} position='bottom' />
 										<CgMenu className='images-list-item-icon'/>
-										<FiEdit2 style={{cursor: "pointer"}} data-pr-tooltip="Edit Item" className={"images-list-item-input-icon images-list-item-tooltip-" + item.prefix} onClick={() => this.setState({editItem: item})} />
+										{item.delete ? <BiUndo className="images-list-item-icon link warn" onClick={() => this.deleteImage(item)} /> : <MdDelete className="images-list-item-icon link" onClick={() => this.deleteImage(item)} />}
+										<FiEdit2 style={{cursor: item.delete ? "default" : "pointer"}} data-pr-tooltip={item.delete ? "" : "Edit Item"} className={"images-list-item-input-icon images-list-item-tooltip-" + item.prefix + (item.delete ? " error" : "")} onClick={() => this.setState({editItem: item})} />
 										
-										<div  className='images-list-item-input'>
-											{item.animated ? <BiMoviePlay data-pr-tooltip="Animation" className={"images-list-item-input-icon images-list-item-tooltip-" + item.prefix} /> : <BiImage data-pr-tooltip="Image" className={"images-list-item-input-icon images-list-item-tooltip-" + item.prefix} />}
-											<div>{item.rename || item.folder}</div>
+										<div className='images-list-item-input'>
+											{item.animated ? <BiMoviePlay data-pr-tooltip="Animation" className={"images-list-item-input-icon images-list-item-tooltip-" + item.prefix + (item.delete ? " error" : "")} /> : <BiImage data-pr-tooltip="Image" className={"images-list-item-input-icon images-list-item-tooltip-" + item.prefix + (item.delete ? " error" : "")} />}
+											<div className={item.delete ? "error" : ""}>{item.rename || item.folder}</div>
 										</div>
 									</div>
 								}
@@ -105,10 +107,11 @@ export default class PictureSettings extends React.Component<IPictureSettingsCom
 							<tbody>
 								{(this.state.images || this.props.dataService.data.images?.images || []).map((image) => 
 									<tr>
-										<td>{image.animated ? <BiMoviePlay className="images-list-item-input-icon" /> : <BiImage data-pr-tooltip="Image" className="images-list-item-input-icon" />}</td>
+										<td>{image.delete ? <BiUndo className="images-list-item-icon link warn" onClick={() => this.deleteImage(image)} /> : <MdDelete className="images-list-item-icon link" onClick={() => this.deleteImage(image)} />}</td>
+										<td>{image.animated ? <BiMoviePlay className="images-list-item-icon" /> : <BiImage data-pr-tooltip="Image" className="images-list-item-icon" />}</td>
 										<td>{image.folder}</td>
 										<td><HiArrowNarrowRight className='images-list-item-input-icon'/></td>
-										<td><InputText className='input-group-field' value={image.rename || image.folder} onChange={(e) => this.advancedEditItem(image, e.target.value)} /></td>
+										<td><InputText className='input-group-field' value={image.delete ? "" : image.rename || image.folder} onChange={(e) => image.delete ? () => {} : this.advancedEditItem(image, e.target.value)} /></td>
 									</tr>
 								)}
 							</tbody>
@@ -137,6 +140,11 @@ export default class PictureSettings extends React.Component<IPictureSettingsCom
 		}
 	}
 
+	private deleteImage(image: IImageData) {
+		image.delete = !image.delete;
+		this.updateImages(this.state.images || this.props.dataService.data.images?.images || []);
+	}
+
 	private advancedEditItem(image: IImageData, name: string) {
 		let images = this.state.images || this.props.dataService.data.images?.images || [];
 		images.forEach(i => {
@@ -153,8 +161,8 @@ export default class PictureSettings extends React.Component<IPictureSettingsCom
 
 		this.setState({
 			images: images.map(i => {
-				i.prefix = ++counter;
-				i.rename = `${padLeft(counter, 3)} - ${(i.rename || i.folder).substring(6)}`
+				i.prefix = i.delete ? 0 : ++counter;
+				i.rename = `${padLeft(i.prefix, 3)} - ${(i.rename || i.folder).substring(6)}`
 				return i;
 			})
 		});
@@ -179,7 +187,9 @@ export default class PictureSettings extends React.Component<IPictureSettingsCom
 		let targetOperations: IImageOperation[] = [];
 
 		images.forEach(image => {
-			if(image.rename) {
+			if(image.delete) {
+				deleteOperations.push({src: image.folder});
+			} else if(image.rename) {
 				let id: string = uuid();
 				sourceOperations.push({src: image.folder, dst: id});
 				deleteOperations.push({src: image.rename});
@@ -196,7 +206,7 @@ export default class PictureSettings extends React.Component<IPictureSettingsCom
 						images: undefined
 					});
 				});
-			}, 500))
+			}, 1000))
 			.catch((e: APIError) => {
 				if(this.props.toast)
 					this.props.toast.show({

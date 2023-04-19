@@ -122,7 +122,7 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 								</tr>
 								<tr>
 									<td>Color accuracy</td>
-									<td>Because of the limited color-depth of the Display you might want to try experimenting with the colors in your image. FYI: The panel uses RGB-565 and displays in <b>5bit color depth</b>, but due to the color correction of the individuals LEDs the representation on the display itself might not be always accurate.</td>
+									<td>Because of the limited color-depth of the Display you might want to try experimenting with the colors in your image. I personally like to turn up contrast or turn down the highlights a bit, because you can't distinguish pretty similar pixels and would loose a lot of details otherwise. FYI: The panel uses RGB-565 and displays in <b>6bit color depth</b>, but due to the color correction of the individuals LEDs the representation on the display itself might not be always accurate.</td>
 								</tr>
 								<tr>
 									<td>Animations</td>

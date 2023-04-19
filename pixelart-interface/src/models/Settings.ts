@@ -61,6 +61,7 @@ export interface IImageData {
 	folder: string;
 	animated: boolean;
 	rename?: string;
+	delete?: boolean;
 }
 
 export interface IImageOperation {

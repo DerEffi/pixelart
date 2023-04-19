@@ -295,6 +295,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 	//draw selected frame on selected canvas - stop animation if no animation data is present
 	private drawFrame(frame: number = ++this.currentFrame, canvas: CanvasRenderingContext2D = this.getCanvas()) {
 		if(this.state.canvasImages.length > 0) {
+			canvas.clearRect(0, 0, 64, 64);
 			frame = frame % this.state.canvasImages.length;
 			let frameData = this.state.canvasImages[frame];
 			if(frameData instanceof HTMLImageElement)
@@ -446,7 +447,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 			})
 			.then(async () => {
 				return await this.props.dataService.uploadFiles("images", files).then(async () => {
-					await asyncTimeout(500);
+					await asyncTimeout(1000);
 					this.props.dataService.refreshImages();
 					if(this.props.toast)
 						this.props.toast.show({
@@ -778,7 +779,7 @@ export default class Generator extends React.Component<IGeneratorComponentProps,
 		}
 
 		this.setState({
-			cachedItems: images.sort((i1, i2) => i1.created - i2.created)
+			cachedItems: images.sort((i1, i2) => i2.created - i1.created)
 		});
 	}
 

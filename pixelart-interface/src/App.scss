@@ -203,7 +203,7 @@
 }
 
 .warn {
-    color: #fbc02d;
+    color: #fbc02d !important;
 }
 
 a, .link {
@@ -955,4 +955,8 @@ img {
             }
         }
     }
+}
+
+.error {
+    color: var(--primary-color) !important;
 }

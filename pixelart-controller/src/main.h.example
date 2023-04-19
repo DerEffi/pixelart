@@ -19,18 +19,18 @@
 #define GPIO_LEDPANEL_OE        45
 
 //Buttons
-#define GPIO_BTN1               14
-#define GPIO_BTN2               16
-#define GPIO_BTN3               13
+#define GPIO_BTN1               8
+#define GPIO_BTN2               3
+#define GPIO_BTN3               10
 #define GPIO_ROT1_BTN           12
-#define GPIO_ROT1_B             11
-#define GPIO_ROT1_A             10
+#define GPIO_ROT1_B             14
+#define GPIO_ROT1_A             13
 #define GPIO_ROT2_BTN           9
 #define GPIO_ROT2_B             46
-#define GPIO_ROT2_A             3
-#define GPIO_ROT3_BTN           8
-#define GPIO_ROT3_B             18
-#define GPIO_ROT3_A             17
+#define GPIO_ROT2_A             11
+#define GPIO_ROT3_BTN           18
+#define GPIO_ROT3_B             17
+#define GPIO_ROT3_A             16
 
 //RTC
 #define GPIO_RTC_SCL            7
