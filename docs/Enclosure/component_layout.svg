@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="216mm"
+   height="216mm"
+   viewBox="0 0 216 216"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   sodipodi:docname="component_layout.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.6385"
+     inkscape:cx="314.00671"
+     inkscape:cy="401.58682"
+     inkscape:window-width="3840"
+     inkscape:window-height="2054"
+     inkscape:window-x="2869"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer1"
+     inkscape:label="Layer 1">
+    <path
+       id="rect723"
+       style="fill:#c87137;stroke-width:0.797501"
+       d="M 11.999784 11.999784 L 11.999784 27.999841 L 11.999784 194.99998 L 11.999784 203.99995 L 194.00004 203.99995 L 203.99995 203.99995 L 203.99995 187.99989 L 203.99995 27.999841 L 203.99995 11.999784 L 194.00004 11.999784 L 11.999784 11.999784 z M 19.999813 27.999841 L 194.00004 27.999841 L 194.00004 187.99989 L 19.999813 187.99989 L 19.999813 27.999841 z "
+       inkscape:label="inner frame" />
+    <path
+       id="rect388"
+       style="fill:#803300;stroke-width:0.605324"
+       d="M 0 0 L 0 11.999784 L 0 206.99977 L 0 216.00025 L 216.00025 216.00025 L 216.00025 206.99977 L 216.00025 203.99995 L 216.00025 11.999784 L 216.00025 0 L 203.99995 0 L 0 0 z M 11.999784 11.999784 L 203.99995 11.999784 L 203.99995 203.99995 L 11.999784 203.99995 L 11.999784 11.999784 z "
+       inkscape:label="backside" />
+    <g
+       id="g581"
+       inkscape:label="Board"
+       transform="translate(3,7.4996696)">
+      <rect
+         style="fill:#aad400;stroke-width:0.250074"
+         id="rect874"
+         width="90"
+         height="134"
+         x="21.70433"
+         y="-184.17638"
+         transform="rotate(90)"
+         inkscape:label="PCB" />
+      <g
+         id="g315"
+         inkscape:label="ROT"
+         transform="translate(8.9284326,-40.508277)">
+        <circle
+           style="fill:#000000;stroke-width:0.264583"
+           id="path324-9"
+           cx="133.57156"
+           cy="122.00828"
+           r="3.5"
+           inkscape:label="ROT3" />
+        <circle
+           style="fill:#000000;stroke-width:0.264583"
+           id="path324-1"
+           cx="95.571571"
+           cy="122.00828"
+           r="3.5"
+           inkscape:label="ROT2" />
+        <circle
+           style="fill:#000000;stroke-width:0.264583"
+           id="path324"
+           cx="57.571568"
+           cy="122.00828"
+           r="3.5"
+           inkscape:label="ROT1" />
+      </g>
+    </g>
+    <rect
+       style="fill:#ffff00;stroke-width:0.264583"
+       id="rect121"
+       width="29"
+       height="3"
+       x="-151.5"
+       y="68"
+       inkscape:label="SD-Card"
+       transform="rotate(-90)" />
+    <g
+       id="g310"
+       inkscape:label="BTN"
+       transform="matrix(1.2,0,0,1.2,-2,2.4996696)"
+       style="fill:#000080">
+      <circle
+         style="fill:#000080;stroke-width:0.264583"
+         id="path283-9"
+         cy="71.666664"
+         cx="30"
+         r="5"
+         inkscape:label="BTN3" />
+      <circle
+         style="fill:#000080;stroke-width:0.264583"
+         id="path283-5"
+         cy="50.833332"
+         cx="30"
+         r="5"
+         inkscape:label="BTN2" />
+      <circle
+         style="fill:#000080;stroke-width:0.264583"
+         id="path283"
+         cy="30"
+         cx="30"
+         r="5"
+         inkscape:label="BTN1" />
+    </g>
+    <rect
+       style="fill:#000000;stroke-width:0.264583"
+       id="rect361"
+       width="160"
+       height="32"
+       x="28"
+       y="156"
+       inkscape:label="Power Supply" />
+    <g
+       id="g304"
+       inkscape:label="Power switch"
+       transform="translate(24,120.5)">
+      <rect
+         style="fill:#88aa00;stroke-width:0.347443"
+         id="rect299"
+         width="20"
+         height="33"
+         x="0"
+         y="0"
+         inkscape:label="switch pcb" />
+      <circle
+         style="fill:#aa0000;stroke-width:0.190929"
+         id="path245"
+         cx="10"
+         cy="16.5"
+         r="6"
+         inkscape:label="hole" />
+    </g>
+    <rect
+       style="fill:#aa0000;stroke-width:0.212191"
+       id="rect358"
+       width="12"
+       height="25"
+       x="131"
+       y="-179.6458"
+       transform="rotate(90)"
+       inkscape:label="power connector" />
+  </g>
+</svg>
