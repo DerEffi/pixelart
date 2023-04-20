@@ -5,7 +5,7 @@
       "email": "info@dereffi.de",
       "url": "https://dereffi.de"
     },
-    "version": "0.1.0",
+    "version": "1.0.0",
     "type": "firmware",
     "files": [
         "firmware.bin"
