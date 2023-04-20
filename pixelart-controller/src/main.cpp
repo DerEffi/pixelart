@@ -2479,8 +2479,6 @@ void loop() {
 
 	ms_current = millis();
 
-	//display changes
-
 	//diashow and animation routine
 	if(menu == MENU_NONE) {
 		if(current_mode == MODE_IMAGES) {
@@ -2520,11 +2518,56 @@ void loop() {
 		}
 	}
 
-	//diashow speed rot
+	//brightness rot
 	if(rot1_clicks != 0) {
+		if(menu != MENU_DATETIME) {
+			int16_t new_brightness = brightness + rot1_clicks * 8;
+			brightness = new_brightness > 248 ? 248 : new_brightness < 16 ? 16 : new_brightness;
+			display_overlay(OVERLAY_BRIGHTNESS);
+
+			preferences.begin(PREFERENCES_NAMESPACE);
+			preferences.putUInt("brightness", brightness);
+			preferences.end();
+		} else {
+			if(!menu_time_changed)
+				menu_copy_time();
+
+			int8_t new_time;
+			
+			switch(menu_selection) {
+				case 0:
+					new_time = menu_day + rot1_clicks;
+					if(new_time > 31)
+						menu_day = 1;
+					else if(new_time < 1)
+						menu_day = 31;
+					else
+						menu_day = new_time;
+					menu_correct_date();
+					break;
+				case 1:
+					new_time = menu_hour + rot1_clicks;
+					if(new_time > 23)
+						menu_hour = 0;
+					else if(new_time < 0)
+						menu_hour = 23;
+					else
+						menu_hour = new_time;
+					break;
+			}
+
+			menu_time_changed = true;
+		}
+
+		display_change = true;
+		rot1_clicks = 0;
+	}
+
+	//diashow speed rot
+	if(rot2_clicks != 0) {
 		if(menu == MENU_NONE) {
 			diashow_enabled = true;
-			int32_t new_diashow_time = diashow_time - rot1_clicks * 1000;
+			int32_t new_diashow_time = diashow_time - rot2_clicks * 1000;
 			diashow_time = new_diashow_time > 60000 ? 60000 : new_diashow_time < 1000 ? 1000 : new_diashow_time;
 			ms_diashow = ms_current + diashow_time;
 			display_overlay(OVERLAY_DIASHOW_SPEED);
@@ -2541,7 +2584,7 @@ void loop() {
 			
 			switch(menu_selection) {
 				case 0:
-					new_time = menu_year + rot1_clicks;
+					new_time = menu_year + rot2_clicks;
 					if(new_time > 99)
 						menu_year = 0;
 					else if(new_time < 0)
@@ -2551,7 +2594,7 @@ void loop() {
 					menu_correct_date();
 					break;
 				case 1:
-					new_time = menu_second + rot1_clicks;
+					new_time = menu_second + rot2_clicks;
 					if(new_time > 59)
 						menu_second = 0;
 					else if(new_time < 0)
@@ -2565,14 +2608,14 @@ void loop() {
 		}
 
 		display_change = true;
-		rot1_clicks = 0;
+		rot2_clicks = 0;
 	}
 
 	//animation speed rot
-	if(rot2_clicks != 0) {
+	if(rot3_clicks != 0) {
 		if(menu == MENU_NONE) {
 			animation_enabled = true;
-			int16_t new_animation_time = animation_time - rot2_clicks * 20;
+			int16_t new_animation_time = animation_time - rot3_clicks * 20;
 			animation_time = new_animation_time > 500 ? 500 : new_animation_time < 20 ? 20 : new_animation_time;
 			ms_animation = ms_current + animation_time;
 			display_overlay(OVERLAY_ANIMATION_SPEED);
@@ -2589,7 +2632,7 @@ void loop() {
 			
 			switch(menu_selection) {
 				case 0:
-					new_time = menu_month + rot2_clicks;
+					new_time = menu_month + rot3_clicks;
 					if(new_time > 12)
 						menu_month = 1;
 					else if(new_time < 1)
@@ -2599,58 +2642,13 @@ void loop() {
 					menu_correct_date();
 					break;
 				case 1:
-					new_time = menu_minute + rot2_clicks;
+					new_time = menu_minute + rot3_clicks;
 					if(new_time > 59)
 						menu_minute = 0;
 					else if(new_time < 0)
 						menu_minute = 59;
 					else
 						menu_minute = new_time;
-					break;
-			}
-
-			menu_time_changed = true;
-		}
-
-		display_change = true;
-		rot2_clicks = 0;
-	}
-
-	//brightness rot
-	if(rot3_clicks != 0) {
-		if(menu != MENU_DATETIME) {
-			int16_t new_brightness = brightness + rot3_clicks * 8;
-			brightness = new_brightness > 248 ? 248 : new_brightness < 16 ? 16 : new_brightness;
-			display_overlay(OVERLAY_BRIGHTNESS);
-
-			preferences.begin(PREFERENCES_NAMESPACE);
-			preferences.putUInt("brightness", brightness);
-			preferences.end();
-		} else {
-			if(!menu_time_changed)
-				menu_copy_time();
-
-			int8_t new_time;
-			
-			switch(menu_selection) {
-				case 0:
-					new_time = menu_day + rot3_clicks;
-					if(new_time > 31)
-						menu_day = 1;
-					else if(new_time < 1)
-						menu_day = 31;
-					else
-						menu_day = new_time;
-					menu_correct_date();
-					break;
-				case 1:
-					new_time = menu_hour + rot3_clicks;
-					if(new_time > 23)
-						menu_hour = 0;
-					else if(new_time < 0)
-						menu_hour = 23;
-					else
-						menu_hour = new_time;
 					break;
 			}
 
@@ -2818,8 +2816,15 @@ void loop() {
 	}
 
 
-	//rot1 button
+	
+
+	//brightness button
 	if(rot1_pressed) {
+		rot1_pressed = false;
+	}
+
+	//diashow button
+	if(rot2_pressed) {
 		if(menu == MENU_NONE) {
 			diashow_enabled = !diashow_enabled;
 			ms_diashow = ms_current + diashow_time;
@@ -2830,11 +2835,11 @@ void loop() {
 			display_overlay(OVERLAY_TEXT, diashow_enabled ? "Diashow ON" : "Diashow OFF");
 		}		
 
-		rot1_pressed = false;
+		rot2_pressed = false;
 	}
 
-	//rot2 button
-	if(rot2_pressed) {
+	//animation button
+	if(rot3_pressed) {
 		if(menu == MENU_NONE) {
 			animation_enabled = !animation_enabled;
 			ms_animation = ms_current + animation_time;
@@ -2845,11 +2850,6 @@ void loop() {
 			display_overlay(OVERLAY_TEXT, animation_enabled ? "Animation ON" : "Animation OFF");
 		}
 
-		rot2_pressed = false;
-	}
-
-	//rot3 button
-	if(rot3_pressed) {
 		rot3_pressed = false;
 	}
 
