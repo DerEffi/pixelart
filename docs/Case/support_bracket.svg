@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="192mm"
-   height="192mm"
-   viewBox="0 0 192 192"
+   width="55mm"
+   height="30mm"
+   viewBox="0 0 55 30"
    version="1.1"
    id="svg5"
-   sodipodi:docname="backside_frame.svg"
    inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   sodipodi:docname="support_bracket.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -20,13 +20,13 @@
      borderopacity="1"
      inkscape:showpageshadow="0"
      inkscape:pageopacity="0"
-     inkscape:pagecheckerboard="1"
+     inkscape:pagecheckerboard="false"
      inkscape:deskcolor="#505050"
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="1.3140081"
-     inkscape:cx="312.40294"
-     inkscape:cy="560.87934"
+     inkscape:cx="311.64191"
+     inkscape:cy="196.34582"
      inkscape:window-width="3840"
      inkscape:window-height="2054"
      inkscape:window-x="2869"
@@ -39,9 +39,12 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
-    <path
+    <rect
+       style="fill:#000000;stroke:#000000;stroke-width:0;fill-opacity:1"
        id="rect234"
-       style="fill:#000000;stroke:#000000;stroke-width:0"
-       d="M 0 0 L 0 192.00017 L 37.999748 192.00017 L 37.999748 186.00002 L 67.999984 186.00002 L 67.999984 192.00017 L 124.00018 192.00017 L 124.00018 186.00002 L 153.9999 186.00002 L 153.9999 192.00017 L 181.99974 192.00017 L 192.00017 192.00017 L 192.00017 0 L 181.99974 0 L 153.9999 0 L 153.9999 6.0001506 L 124.00018 6.0001506 L 124.00018 0 L 67.999984 0 L 67.999984 6.0001506 L 37.999748 6.0001506 L 37.999748 0 L 0 0 z M 9.9999064 16.000057 L 181.99974 16.000057 L 181.99974 176.00011 L 9.9999064 176.00011 L 9.9999064 16.000057 z " />
+       width="55"
+       height="30"
+       x="5.632877e-07"
+       y="5.632877e-07" />
   </g>
 </svg>
