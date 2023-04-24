@@ -64,7 +64,7 @@
 #define WIFI_HOST_DEFAULT false // Host own wifi network
 
 // Wifi information for hosting own network
-#define WIFI_AP_SSID_DEFAULT "DerEffi's Pixelart"
+#define WIFI_AP_SSID_DEFAULT "DerEffis Pixelart"
 #define WIFI_AP_PASSWORD_DEFAULT "00000000"
 
 // Wifi information for connection to existing network 
