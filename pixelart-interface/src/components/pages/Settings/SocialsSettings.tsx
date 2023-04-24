@@ -17,6 +17,8 @@ import { CgMenu } from 'react-icons/cg';
 import { Dropdown } from 'primereact/dropdown';
 import { FiEdit2 } from 'react-icons/fi';
 import { Tooltip } from 'primereact/tooltip';
+import { BiUndo } from 'react-icons/bi';
+import { MdDelete } from 'react-icons/md';
 
 export interface ISocialsSettingsComponentProps {
 	dataService: DataService;
@@ -129,7 +131,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 
 					<div>
 						<div className='headline'>Display Channel</div>
-						<div  className='input-group'>
+						<div className='input-group'>
 							<Button icon="pi pi-angle-left" style={{borderRadius: "100%"}} onClick={() => this.setSocialData({displayChannel: (this.props.dataService.data.socials && this.props.dataService.data.socials.displayChannel > 0 ? this.props.dataService.data.socials.displayChannel - 1 : (this.props.dataService.data.socials?.channelNumber || 1) - 1)})} />
 							{this.props.dataService.data.socials?.displayChannel}
 							<Button icon="pi pi-angle-right" style={{borderRadius: "100%"}} onClick={() => this.setSocialData({displayChannel: this.props.dataService.data.socials ? this.props.dataService.data.socials.displayChannel + 1 : 1})} />
@@ -146,6 +148,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 									<div className='socials-list-item'>
 										<Tooltip target={".socials-list-item-tooltip-" + item.id} position='bottom' />
 										<CgMenu className='socials-list-item-icon'/>
+										{item.delete ? <BiUndo className="socials-list-item-icon link warn" onClick={() => this.deleteSocialItem(item)} /> : <MdDelete className="socials-list-item-icon link" onClick={() => this.deleteSocialItem(item)} />}
 										<FiEdit2 style={{cursor: "pointer"}} data-pr-tooltip="Edit Item" className={"socials-list-item-input-icon socials-list-item-tooltip-" + item.id} onClick={() => this.setState({editItem: item.id})} />
 										
 										<div  className='socials-list-item-input'>
@@ -165,7 +168,10 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 									</div>
 								}
 								onChange={(e) => this.updateRequest(e.value)}
-							/>	
+							/>
+							<div className='input-group' style={{marginTop: "20px"}}>
+								<Button icon="pi pi-plus" style={{borderRadius: "100%"}} onClick={() => this.addSocialItem()} />
+							</div>
 						</>
 					}
 					
@@ -249,7 +255,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 				</div>
 
 				<div className="socials-edit-submit">
-					<Button>Save</Button>
+					<Button onClick={() => this.setState({editItem: undefined})}>Save</Button>
 				</div>
 			</div>
 		);
@@ -278,7 +284,27 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 		});
 		this.setState({
 			socialList: updated,
-			request: JSON.stringify([...updated].map(x => ({...x})).map(x => {x.id = undefined; return x;}))
+			request: JSON.stringify([...updated].map(x => ({...x})).filter(x => !x.delete).map(x => {x.id = undefined; x.delete = undefined; return x;}))
+		});
+	}
+
+	private deleteSocialItem(item: SocialItem) {
+		item.delete = !item.delete;
+		this.updateSocialItem(item);
+	}
+
+	private addSocialItem() {
+		let id = uuid();
+		this.setState({
+			socialList: [...this.state.socialList, {
+				t: "t",
+				c: "",
+				d: "",
+				f: "",
+				v: "",
+				id: id
+			}],
+			editItem: id
 		});
 	}
 
