@@ -45,10 +45,9 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 					
                     <h1 className='headline'>DerEffi's Pixelart</h1>
 
+					<div className='device-image'><img src='./assets/overview.webp' alt='overview of pixelart device'/></div>
+
 					<div>
-						- Displaying Pixelart on an LED Matrix -
-						<br/>
-						<br/>
 						This Webinterface provides the basic usage of the pixelart display as well as an Image Generator to convert your pictures into a for the display usable format. You can also remote control your device, if you choose to connect your display to a network or via Hotspot directly to your device. WiFi functionality is completely optional, although you can't use the 'Social' mode when not connected to the internet for obvious reasons.
 						<br/>
 						<br/>
@@ -56,6 +55,9 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 					</div>
 
 					<Fieldset legend={<div className='home-header'><BiUser/><div>General</div></div>} id="general">
+
+						<div className='device-image'><img src='./assets/backside.webp' alt='input on the back of the device'/></div>
+						<br/>
 
 						You can control the device with the following buttons and knobs.
 
@@ -104,6 +106,10 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 					</Fieldset>
 
 					<Fieldset legend={<div className='home-header'><BiImages/><div>Pictures</div></div>} id="pictures">
+
+						<div className='device-image'><img src='./assets/pictures.webp' alt='example of a generated pixelart frame'/></div>
+						<br/>
+
 						The panel needs a special file format for the pictures you want to display. You can generate these files from images with the <Link to="/pictures">Picture Generator</Link>. The processed files can be downloaded in a zip and placed in the SD cards <Chip label='images'/> folder or directly uploaded if your display is <Link to="#wifi">connected to the network</Link>. If the folder doesn't exist, feel free to create one with the name <Chip label="images"/>.
 
 						<br/>
@@ -146,6 +152,10 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 
 
 					<Fieldset legend={<div className='home-header'><BiTime/><div>Time</div></div>} id="time">
+
+						<div className='device-image'><img src='./assets/clock.webp' alt='different clock modes'/></div>
+						<br/>
+
 						The Clock mode has different layouts you can switch through with the <Chip label="Next"/> button. For most layouts you can adjust preferences in the menu. If <Link to="#wifi">connected to the network</Link> you can also change the settings with the webinterface or update your time automatically over wifi. Depending on where you live you might want to adjust your timezone by activating the advanced mode in the webinterface.
 
 						<br/>
@@ -169,6 +179,10 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 
 
 					<Fieldset legend={<div className='home-header'><IoShareSocialSharp/><div>Socials</div></div>} id="socials">
+
+						<div className='device-image'><img src='./assets/socials.webp' alt='example of social mode'/></div>
+						<br/>
+
 						Since you need to <Link to="#wifi">connect the display to the network</Link> anyway, you can only adjust this mode on the webinterface. To set it up check the <Link to="/settings/system">System</Link> tab on the left.
 						<br/>
 						<br/>
@@ -190,8 +204,10 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 					<Fieldset legend={<div className='home-header'><IoWarningOutline/><div>Problems</div></div>} id="problems">
 						If you have any problems with your device, sometimes a simple restart can fix it...
 						<br/>
+						The power supply needs a few seconds to discharge, so don't flip the switch back on immediatly and either wait for the display to turn off or if the display isn't showing anything 2 or 3 seconds.
 						<br/>
-						Ocassonaly the display needs some time to connect to your Wifi network. If you were already connected to a network or know that your connection details are correct, please have a little patience. After a few minutes your device should get a connection. If not please check if your sign in information is correct.
+						<br/>
+						Ocassonaly the display needs some time to connect to your Wifi network. If you were already connected to a network or know that your connection details are correct, please have a little patience. After a few minutes your device should get a connection. If not please check if your sign-in information is correct.
 						<br/>
 						<br/>
 						If your problem persist you can reset the device to "Factoy Settings" with the webinterface under <Link to="/settings/system">System</Link> or press and hold the <Chip label='Menu'/> button on your display for 10s.

@@ -79,6 +79,20 @@
             text-align: left;
         }
     }
+
+    .device-image img {
+        max-width: 250px !important;
+        max-height: 250px !important;
+    }
+
+    .home-table td {
+        display: block;
+
+        &:first-child {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    }
 }
 
 //Tablets
@@ -959,4 +973,19 @@ img {
 
 .error {
     color: var(--primary-color) !important;
+}
+
+.device-image {
+    margin: auto;
+
+    & img {
+        display: block;
+        max-width: 90%;
+        max-height: 90%;
+        width: 350px;
+        height: 350px;
+        object-fit: contain;
+        margin: auto;
+        text-align: center;
+    }
 }

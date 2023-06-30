@@ -249,7 +249,8 @@ bool clock_year = true;
 bool wifi_connect = WIFI_CONNECT_DEFAULT;
 bool wifi_host = WIFI_HOST_DEFAULT;
 bool wifi_setup_complete = true;
-bool ms_wifi_scan_requested = 0;
+unsigned long ms_wifi_scan_requested = 0;
+unsigned long ms_wifi_scan_last = 0;
 bool wifi_scan_pending = false;
 std::vector<available_network> available_networks;
 char* wifi_ssid = strdup(WIFI_SSID_DEFAULT);
@@ -314,14 +315,16 @@ void on_socials_response(){
 					const char* c = socials_response_array[i]["c"].as<const char*>();
 					const char* f = socials_response_array[i]["f"].as<const char*>();
 					const char* v = socials_response_array[i]["v"].as<const char*>();
-				
-					socials_channel channel = {
-						t ? strdup(t) : strdup(""),
-						d ? strdup(d) : c ? strdup(c) : strdup(""),
-						f ? strdup(f) : strdup("0"),
-						v ? strdup(v) : strdup("0")
-					};
-					socials_channels.emplace_back(channel);
+
+					if(d || c) {
+						socials_channel channel = {
+							t ? strdup(t) : strdup(""),
+							d ? strdup(d) : c ? strdup(c) : strdup(""),
+							f ? strdup(f) : strdup("0"),
+							v ? strdup(v) : strdup("0")
+						};
+						socials_channels.emplace_back(channel);
+					}
 				}
 			}
 
@@ -1161,9 +1164,11 @@ void display_social_channel(char* type, char* channel, char* subs, char* views) 
 	panel->setTextColor(0xFFFF);
 	panel->setTextSize(1);
 
-	panel->getTextBounds(channel, 0, 0, &x1, &y1, &width, &height);
-	panel->setCursor(64 > width ? .5 * (64 - width) : 0, 42);
-	panel->write(channel);
+	if(channel && strlen(channel) > 0) {
+		panel->getTextBounds(channel, 0, 0, &x1, &y1, &width, &height);
+		panel->setCursor(64 > width ? .5 * (64 - width) : 0, 42);
+		panel->write(channel);
+	}
 
 	int textbox_start_position = 0;
 	int textbox_offset = 0;
@@ -1515,15 +1520,28 @@ void IRAM_ATTR trigger_rot3_btn() {
 
 //Load config data from internal filesystem
 void spiffs_setup() {
-	if(SPIFFS.begin() && SPIFFS.exists("/wifi.conf")) {
-		File file = SPIFFS.open("/wifi.conf");
-		if(!file.isDirectory()) {
-			size_t filesize = file.size();
-			char buffer[filesize];
-			file.readBytes(buffer, filesize);
-			buffer[filesize] = '\0';
-			free(wifi_ap_password);
-			wifi_ap_password = strdup(buffer);
+	if(SPIFFS.begin()) {
+		if(SPIFFS.exists("/wifi.conf")) {
+			File file = SPIFFS.open("/wifi.conf");
+			if(!file.isDirectory()) {
+				size_t filesize = file.size();
+				char buffer[filesize];
+				file.readBytes(buffer, filesize);
+				buffer[filesize] = '\0';
+				free(wifi_ap_password);
+				wifi_ap_password = strdup(buffer);
+			}
+		}
+		if(SPIFFS.exists("/socials.conf")) {
+			File file = SPIFFS.open("/socials.conf");
+			if(!file.isDirectory()) {
+				size_t filesize = file.size();
+				char buffer[filesize];
+				file.readBytes(buffer, filesize);
+				buffer[filesize] = '\0';
+				free(socials_api_key);
+				socials_api_key = strdup(buffer);
+			}
 		}
 	}
 	SPIFFS.end();
@@ -2875,12 +2893,16 @@ void loop() {
 	//Wifi scan
 	if(ms_wifi_scan_requested != 0 && ms_wifi_scan_requested < ms_current && !wifi_scan_pending) {
 		ms_wifi_scan_requested = 0;
-		wifi_scan_pending = true;
 
-		wifi_setup_complete = true;
-		WiFi.mode(WIFI_STA);
-		WiFi.disconnect();
-		WiFi.scanNetworks(true);
+		if(ms_wifi_scan_last == 0 || ms_wifi_scan_last + 90000 < ms_current) {
+			wifi_scan_pending = true;
+
+			wifi_setup_complete = true;
+			WiFi.mode(WIFI_STA);
+			WiFi.disconnect();
+			WiFi.scanNetworks(true);
+			ms_wifi_scan_last = millis();
+		}
 	}
 	if(wifi_scan_pending) {
 		int networks = WiFi.scanComplete();
