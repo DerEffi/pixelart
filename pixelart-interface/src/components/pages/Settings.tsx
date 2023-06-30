@@ -37,58 +37,63 @@ export default class Settings extends React.Component<ISettingsComponentProps, I
 
     public render() {
         return(
-            <div className={'fullwidth' + (this.props.dataService.getStatus() !== Status.connected ? " full-centered" : "")}>
-
-				<div className="content">
+            <>
 
                     {this.props.dataService.getStatus() === Status.connected &&
                         <Routes>
-                            <Route path="/display" element={<DisplaySettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/pictures" element={<PictureSettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/time" element={<TimeSettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/wifi" element={<WifiSettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/socials" element={<SocialsSettings dataService={this.props.dataService} toast={this.props.toast} />} />
-                            <Route path="/system" element={<SystemSettings dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/display" element={<DisplaySettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/pictures" element={<PictureSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/time" element={<TimeSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/wifi" element={<WifiSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/socials" element={<SocialsSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
+                            <Route path="/system" element={<SystemSettings advanced={this.props.advanced} dataService={this.props.dataService} toast={this.props.toast} />} />
                             <Route path="*" element={<NotFound/>} />
                         </Routes>
                     }
 
                     {this.props.dataService.getStatus() === Status.unauthorized &&
-                        <div>
-                            <span className="font-xxl primary">
-                                <BiLockAlt/>
-                            </span>
-                            
-                            <ProgressBar mode='indeterminate' className='progress-bar' />
-                            
-                            <br/>
-                            Please press the 'Menu' button on your device
-                            <br/>
-                            to establish a connection
+                        <div className='fullwidth full-centered'>
+                            <div className="content">
+                                <span className="font-xxl primary">
+                                    <BiLockAlt/>
+                                </span>
+                                
+                                <ProgressBar mode='indeterminate' className='progress-bar' />
+
+                                <p>
+                                    Please press the 'Menu' button on your device
+                                    <br/>
+                                    to establish a connection
+                                </p>
+                            </div>
                         </div>
                     }
 
                     {this.props.dataService.getStatus() === Status.disconnected &&
-                        <div>
-                            <span className="font-xxl primary">
-                                <VscDebugDisconnect/>
-                            </span>
-                            <br/>
-                            Could not establish connection with your device
-                            <br/>
-                            on the address '{this.props.dataService.getDeviceAddress()}'
+                        <div className='fullwidth full-centered'>
+                            <div className="content">
+                                <span className="font-xxl primary">
+                                    <VscDebugDisconnect/>
+                                </span>
+                                
+                                <p>
+                                    Could not establish a connection with your device
+                                    <br/>
+                                    on the address '{this.props.dataService.getDeviceAddress()}'
+                                </p>
+                            </div>
                         </div>
                     }
 
                     {this.props.dataService.getStatus() === Status.pending &&
-                        <div>
-                            <ProgressSpinner strokeWidth='3' />
+                        <div className='fullwidth full-centered'>
+                            <div className="content">
+                                <ProgressSpinner strokeWidth='3' />
+                            </div>
                         </div>
                     }
 
-				</div>
-				
-            </div>
+            </>
         );
     }
 }

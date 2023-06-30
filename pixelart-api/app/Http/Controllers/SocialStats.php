@@ -2,52 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use DOMDocument;
+use DOMXPath;
+use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Spatie\FlareClient\Http\Exceptions\InvalidData;
 use Illuminate\Support\Facades\Validator;
 
 class SocialStats extends Controller
 {
-    //staring from get url param
-    public function get(Request $request) {
-
-        try {
-            $base64_socials = $request->get('socials');
-            if(empty($base64_socials))
-                throw new InvalidData();
-
-            $json_socials = base64_decode($base64_socials);
-            if(empty($json_socials))
-                throw new InvalidData();
-            $socials = json_decode($json_socials, true);
-            if(empty($socials))
-                throw new InvalidData();
-
-            $validator = Validator::make($socials, [
-                "*.t" => "required|in:y,t",
-                "*.c" => "required|min:4|max:60"
-            ]);
-            if($validator->fails())
-                return response()->json(["message" => "wrong request format. Instead use [{'t': 'y' | 't', 'c': %channelname%}]"], 400);
-
-            $socials = $this->retrieveSocials($socials);
-
-            return response()->json($socials);
-        } catch(\Exception $e) {
-            return response()->json(["message" => "get parameter 'socials' is required to have a valid base64 encoded json array of requested channel data"], 400);
-        }
-    }
-
     //starting from post body data
     public function post(Request $request) {
-
         try {
             $socials = $request->all();
             $validator = Validator::make($socials, [
-                "*.t" => "required|in:y,t",
+                "*.t" => "required|in:y,t,i",
                 "*.c" => "required|min:4|max:60"
             ]);
             if($validator->fails())
@@ -57,7 +28,7 @@ class SocialStats extends Controller
 
             return response()->json($socials);
         } catch(\Exception $e) {
-            return response()->json(["message" => "post body is required to have a valid json array of requested channel data"], 400);
+            return response()->json(["message" => "could not process requested channel data"], 500);
         }
     }
 
@@ -68,11 +39,11 @@ class SocialStats extends Controller
      * @param array socials An array of socials to retrieve.
      *
      * @return An array of socials with the following keys:
-     * - t: The type of social (y for youtube, t for twitch)
+     * - t: The type of social (y for youtube, t for twitch, i for instagram)
      * - c: The channel name
      * - d: The display name
      * - f: The number of followers/subs
-     * - v: The number of views
+     * - v: The number of views/follows
      */
     private function retrieveSocials(array $socials) {
         $socials = collect($socials);
@@ -81,7 +52,11 @@ class SocialStats extends Controller
         $youtube = $socials->filter(function($social) {
             return $social["t"] == "y";
         })->map(function($social) {
-            $social["id"] = $this->getYoutubeChannelId($social["c"]);
+            try {
+                $social["id"] = $this->getYoutubeChannelId($social["c"]);
+            } catch(\Exception) {
+                $social["id"] = "";
+            }
             $social["v"] = Cache::get("youtube_channel_views_".$social["id"]);
             $social["f"] = Cache::get("youtube_channel_subs_".$social["id"]);
 
@@ -92,14 +67,20 @@ class SocialStats extends Controller
         if(!$youtube->every(function($social) {
             return $social["v"] != null && $social["f"] != null;
         })) {
-            $youtubeResponse = collect($this->requestYoutubeChannelStats($youtube->map(function($social){ return $social["id"]; })->toArray()));
+            try {
+                $youtubeResponse = collect($this->requestYoutubeChannelStats($youtube->map(function($social){ return $social["id"]; })->toArray()));
+            } catch(\Exception) {}
         }
 
         //Try getting twitch socials from cache else request from twitch
         $twitch = $socials->filter(function($social) {
             return $social["t"] == "t";
         })->map(function($social) {
-            $social["id"] = $this->getTwitchUserId($social["c"]);
+            try {
+                $social["id"] = $this->getTwitchUserId($social["c"]);
+            } catch(\Exception) {
+                $social["id"] = "";
+            }
             $social["v"] = Cache::get("twitch_user_views_".$social["id"]);
             $social["f"] = Cache::get("twitch_user_follower_".$social["id"]) ?? $this->getTwitchFollower($social["id"]);
 
@@ -110,8 +91,29 @@ class SocialStats extends Controller
         if(!$twitch->every(function($social) {
             return $social["v"] != null;
         })) {
-            $twitchResponse = collect($this->requestTwitchViewers($twitch->map(function($social){ return $social["id"]; })->toArray()));
+            try {
+                $twitchResponse = collect($this->requestTwitchViewers($twitch->map(function($social){ return $social["id"]; })->toArray()));
+            } catch(\Exception) {}
         }
+
+        //Try getting instagram socials from cache or else request from instagram
+        $socials = $socials->map(function($social) {
+            if($social["t"] == "i") {
+                $social["f"] = Cache::get("instagram_user_follower_".$social["c"]);
+                $social["v"] = Cache::get("instagram_user_liked_".$social["c"]);
+
+                if(is_null($social["f"]) && is_null($social["v"])) {
+                    try {
+                        $instagramData = $this->requestInstagramStats($social["c"]);
+                        $social["id"] = $instagramData["id"];
+                        $social["f"] = $instagramData["f"];
+                        $social["v"] = $instagramData["v"];
+                    } catch(\Exception) {}
+                }
+            }
+
+            return $social;
+        });
 
         //Merge socials
         return $socials->map(function($social) use ($youtube, $twitch, $youtubeResponse, $twitchResponse) {
@@ -129,14 +131,16 @@ class SocialStats extends Controller
                             $social = array_merge($social, $updatedViews);
                     }
                     break;
+                default:
+                    break;
             }
 
             return [
                 "t" => $social["t"],
                 "c" => $social["c"],
                 "d" => $social["d"] ?? $social["c"],
-                "f" => $social["f"] ? $this->formatNumber($social["f"]) : null,
-                "v" => $social["v"] && $social["v"] != -1 ? $this->formatNumber($social["v"]) : null,
+                "f" => !empty($social["f"]) && $social["f"] != -1 ? $this->formatNumber($social["f"]) : "0",
+                "v" => !empty($social["v"]) && $social["v"] != -1 ? $this->formatNumber($social["v"]) : "0",
             ];
         });
     }
@@ -175,54 +179,6 @@ class SocialStats extends Controller
             Cache::put("twitch_auth", $tokenResponse["access_token"], $tokenResponse["expires_in"] - 60);
             return $tokenResponse["access_token"];
         }
-    }
-
-    /**
-     * It takes an array of twitch usernames and returns an array of objects containing the username
-     * and id of each user
-     *
-     * @param array logins An array of twitch usernames
-     *
-     * @return An array of user objects with the login and id of the user.
-     */
-    private function requestTwitchUserIds(array $logins) {
-
-        $url = "https://api.twitch.tv/helix/users";
-
-        $counter = 0;
-        foreach($logins as $login) {
-            $url .= $counter == 0 ? "?login=".$login : "&login=".$login;
-            $counter++;
-        }
-
-        $response = Http::withHeaders([
-            "Authorization" => "Bearer ".$this->getTwitchToken(),
-            "Client-Id" => config("socials.twitch.client_id")
-        ])->get($url);
-
-        if($response->status() == 401) {
-            $response = Http::withHeaders([
-                "Authorization" => "Bearer ".$this->getTwitchToken(true),
-                "Client-Id" => config("socials.twitch.client_id")
-            ])->get($url);
-        }
-
-        $response->throwUnlessStatus(200);
-
-        $validator = Validator::make($response->collect()->toArray(), [
-            "data" => "required|array",
-            "data.*.id" => "required",
-            "data.*.login" => "required"
-        ]);
-        if($validator->fails())
-            return throw new AuthorizationException("Failed to retrive data from twitch");
-
-        return collect($response["data"]).map(function($user) {
-            return [
-                "login" => $user["login"],
-                "id" => $user["id"],
-            ];
-        });
     }
 
     /**
@@ -272,6 +228,9 @@ class SocialStats extends Controller
      * @return The number of followers the user has.
      */
     private function getTwitchFollower($userId, $fromCache = true) {
+        if(empty($userId))
+            return 0;
+
         if(!$fromCache)
             Cache::forget("twitch_user_follower_".$userId);
 
@@ -316,9 +275,14 @@ class SocialStats extends Controller
 
         $counter = 0;
         foreach($userIds as $userId) {
-            $url .= $counter == 0 ? "?user_id=".$userId : "&user_id=".$userId;
-            $counter++;
+            if(!empty($userId)) {
+                $url .= $counter == 0 ? "?user_id=".$userId : "&user_id=".$userId;
+                $counter++;
+            }
         }
+
+        if($counter == 0)
+            return [];
 
         $response = Http::withHeaders([
             "Authorization" => "Bearer ".$this->getTwitchToken(),
@@ -344,15 +308,15 @@ class SocialStats extends Controller
         }
 
         foreach($userIds as $userId) {
-            Cache::put("twitch_user_views_".$userId, -1, 60);
+            Cache::put("twitch_user_views_".$userId, -1, 300);
         }
 
-        if(!$response["data"])
+        if(empty($response["data"]))
             return [];
 
         return collect($response["data"])->map(function($user) {
 
-            Cache::put("twitch_user_views_".$user["user_id"], $user["viewer_count"], 60);
+            Cache::put("twitch_user_views_".$user["user_id"], $user["viewer_count"], 30);
 
             return [
                 "v" => $user["viewer_count"],
@@ -373,7 +337,12 @@ class SocialStats extends Controller
      * - f
      */
     private function requestYoutubeChannelStats($channelIds) {
-        $response = Http::get("https://www.googleapis.com/youtube/v3/channels?part=statistics&id=".join(",", $channelIds)."&key=".config("socials.youtube.api_key"));
+
+        $filteredIds = array_filter($channelIds, function($id) { return !empty($id); });
+        if($filteredIds == 0)
+            return [];
+
+        $response = Http::get("https://www.googleapis.com/youtube/v3/channels?part=statistics&id=".join(",", $filteredIds)."&key=".config("socials.youtube.api_key"));
 
         $response->throwUnlessStatus(200);
 
@@ -409,6 +378,9 @@ class SocialStats extends Controller
      * @return The channel ID of the channel name provided.
      */
     private function getYoutubeChannelId($channelName, $fromCache = true): string {
+        if(!$fromCache)
+            Cache::forget("youtube_channel_id_".$channelName);
+
         return Cache::rememberForever("youtube_channel_id_".$channelName, function() use ($channelName) {
             $response = Http::get("https://www.googleapis.com/youtube/v3/search?part=id&maxResults=1&q=".$channelName."&key=".config("socials.youtube.api_key"));
 
@@ -426,6 +398,118 @@ class SocialStats extends Controller
     }
 
     /**
+     * It requests the Instagram API for the user's ID, followers and following count
+     *
+     * @param username The username of the user you want to get the stats of.
+     *
+     * @return An array with the user's id, followers, and following.
+     */
+    private function requestInstagramStats($username) {
+        $response = Http::withHeaders([
+            "User-Agent" => "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 118.0.0.25.121 (iPhone11,8; iOS 13_1_3; en_US; en-US; scale=2.00; 828x1792; 180988914)"
+        ])->withCookies([
+            "sessionid" => Cache::get("instagram_sessionid")
+        ], "instagram.com")->get("https://i.instagram.com/api/v1/users/web_profile_info/?username=".$username);
+
+        if(!$response->getHeaders()["Content-Type"] || str_starts_with($response->getHeaders()["Content-Type"][0], "text/html")) {
+            $document = new DOMDocument();
+            $document->loadHTML($response->getBody()->getContents());
+            $result = (new DOMXPath($document))->query('//title');
+
+            if($result->length < 1 || str_contains(strtolower($result->item(0)->nodeValue), "login")) {
+                Cache::delete("instagram_sessionid");
+                $response = Http::withHeaders([
+                    "User-Agent" => "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 118.0.0.25.121 (iPhone11,8; iOS 13_1_3; en_US; en-US; scale=2.00; 828x1792; 180988914)"
+                ])->withCookies([
+                    "sessionid" => Cache::rememberForever("instagram_sessionid", function() { return $this->authInstagram(); })
+                ], "instagram.com")->get("https://i.instagram.com/api/v1/users/web_profile_info/?username=".$username);
+            } else {
+                throw new Exception("Could not authorize against instagram");
+            }
+        }
+
+        if($response->status() == 404) {
+            Cache::put("instagram_user_id_".$username, -1, 21600);
+            Cache::put("instagram_user_follower_".$username, -1, 21600);
+            Cache::put("instagram_user_liked_".$username, -1, 21600);
+        }
+
+        $response->throwUnlessStatus(200);
+        $responseData = $response->collect()->toArray();
+
+        $validator = Validator::make($responseData, [
+            "data.user.id" => "required",
+            "data.user.edge_followed_by.count" => "required|numeric",
+            "data.user.edge_follow.count" => "required|numeric",
+            "data.user.edge_owner_to_timeline_media.edges" => "sometimes|array",
+            "data.user.edge_owner_to_timeline_media.edges.*.node.edge_liked_by.count" => "sometimes|numeric",
+        ]);
+        if($validator->fails())
+            return throw new AuthorizationException("Failed to retrive data from twitch");
+
+        Cache::forever("instagram_user_id_".$username, $responseData["data"]["user"]["id"]);
+        Cache::put("instagram_user_follower_".$username, $responseData["data"]["user"]["edge_followed_by"]["count"], 1800);
+
+        $likes = 0;
+        if(!empty($responseData["data"]["user"]["edge_owner_to_timeline_media"]["edges"]))
+            $likes = $responseData["data"]["user"]["edge_owner_to_timeline_media"]["edges"][0]["node"]["edge_liked_by"]["count"];
+        Cache::put("instagram_user_liked_".$username, $likes, 1800);
+
+        return [
+            "id" => $responseData["data"]["user"]["id"],
+            "f" => $responseData["data"]["user"]["edge_followed_by"]["count"],
+            "v" => $likes,
+        ];
+    }
+
+    /**
+     * It gets the sessionid cookie token from the login page with username and password
+     *
+     * @return string The session cookie value.
+     */
+    private function authInstagram(): string {
+        $username = config("socials.instagram.username");
+        $password = config("socials.instagram.password");
+
+        if(empty($username) || empty($password))
+            throw new AuthorizationException();
+
+        $baseRequest = Http::withHeaders([
+            "User-Agent" => "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 118.0.0.25.121 (iPhone11,8; iOS 13_1_3; en_US; en-US; scale=2.00; 828x1792; 180988914)"
+        ])->get("https://www.instagram.com/");
+
+
+        $html = $baseRequest->getBody()->getContents();
+
+        preg_match('/\\\"csrf_token\\\":\\\"(.*?)\\\"/', $html, $matches);
+
+        if (!isset($matches[1])) {
+            throw new Exception('Unable to extract JSON data');
+        }
+
+        $csrfToken = $matches[1];
+
+        $query = Http::withHeaders([
+                'cookie' => 'ig_cb=1; csrftoken=' . $csrfToken,
+                'referer' => "https://www.instagram.com/",
+                'x-csrftoken' => $csrfToken,
+                "User-Agent" => "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 118.0.0.25.121 (iPhone11,8; iOS 13_1_3; en_US; en-US; scale=2.00; 828x1792; 180988914)",
+                'accept-language' => "en-EN",
+            ])->asForm()->post("https://www.instagram.com/accounts/login/ajax/", [
+                'username' => $username,
+                'enc_password' => '#PWD_INSTAGRAM_BROWSER:0:' . time() . ':' . $password,
+            ]);
+
+        $query->throwUnlessStatus(200);
+
+        $sessionCookie = $query->cookies->getCookieByName('sessionid');
+        if(empty($sessionCookie))
+            throw new Exception();
+
+        return $sessionCookie->getValue();
+    }
+
+    /**
      * It takes a number and returns a string with the number formatted with a thousand separator
      *
      * @param number The number to format.
@@ -434,6 +518,10 @@ class SocialStats extends Controller
      * comma as the decimal separator.
      */
     private function formatNumber($number): string {
-        return number_format($number, 0, ",", ".");
+        try {
+            return number_format($number, 0, ",", ".");
+        } catch(\Exception) {
+            return 0;
+        }
     }
 }

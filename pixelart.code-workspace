@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"name": "pixelart-controller",
+			"path": "pixelart-controller"
+		},
+		{
+			"name": "pixelart-interface",
+			"path": "pixelart-interface"
+		},
+		{
+			"name": "pixelart-api",
+			"path": "pixelart-api"
+		},
+		{
+			"name": "docs",
+			"path": "docs"
+		},
+		{
+			"name": "images",
+			"path": "images"
+		}
+	]
+}

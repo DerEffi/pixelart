@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="192mm"
+   height="192mm"
+   viewBox="0 0 192 192"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="display_frame_adafruit.svg"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="false"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.3140081"
+     inkscape:cx="168.56822"
+     inkscape:cy="380.51516"
+     inkscape:window-width="3840"
+     inkscape:window-height="2054"
+     inkscape:window-x="2869"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect674"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1"
+       unit="px"
+       method="auto"
+       mode="F"
+       radius="23"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="rect234"
+       style="fill:#000000;stroke:#000000;stroke-width:0"
+       d="M 0 0 L 0 192.00017 L 16.000057 192.00017 L 37.999748 192.00017 L 37.999748 186.00002 L 67.999984 186.00002 L 67.999984 192.00017 L 124.00018 192.00017 L 124.00018 186.00002 L 153.9999 186.00002 L 153.9999 192.00017 L 176.00011 192.00017 L 192.00017 192.00017 L 192.00017 0 L 176.00011 0 L 153.9999 0 L 153.9999 6.0001506 L 124.00018 6.0001506 L 124.00018 0 L 67.999984 0 L 67.999984 6.0001506 L 37.999748 6.0001506 L 37.999748 0 L 16.000057 0 L 0 0 z M 16.000057 16.000057 L 72.499967 16.000057 L 72.499967 83.000102 L 85.999919 83.000102 L 85.999919 108.00013 L 72.499967 108.00013 L 72.499967 176.00011 L 16.000057 176.00011 L 16.000057 16.000057 z M 88.500024 16.000057 L 176.00011 16.000057 L 176.00011 176.00011 L 88.500024 176.00011 L 88.500024 124.00018 L 95.914559 124.00018 A 6.0854167 6.0854167 0 0 0 101.99998 117.91477 L 101.99998 73.085461 A 6.0854167 6.0854167 0 0 0 95.914559 67.000045 L 88.500024 67.000045 L 88.500024 16.000057 z M 9.9999064 20.500041 A 1.5 1.5 0 0 1 11.500073 22.000208 A 1.5 1.5 0 0 1 9.9999064 23.499858 A 1.5 1.5 0 0 1 8.5002563 22.000208 A 1.5 1.5 0 0 1 9.9999064 20.500041 z M 185.00008 20.500041 A 1.5 1.5 0 0 1 186.50024 22.000208 A 1.5 1.5 0 0 1 185.00008 23.499858 A 1.5 1.5 0 0 1 183.49991 22.000208 A 1.5 1.5 0 0 1 185.00008 20.500041 z M 7.6248576 30.750061 A 1.375 1.3749998 0 0 1 8.9999674 32.125171 A 1.375 1.3749998 0 0 1 7.6248576 33.499764 A 1.375 1.3749998 0 0 1 6.2497477 32.125171 A 1.375 1.3749998 0 0 1 7.6248576 30.750061 z M 187.12501 161.25011 A 1.375 1.3749998 0 0 1 188.50012 162.62522 A 1.375 1.3749998 0 0 1 187.12501 163.99981 A 1.375 1.3749998 0 0 1 185.7499 162.62522 A 1.375 1.3749998 0 0 1 187.12501 161.25011 z M 9.9999064 171.50013 A 1.5 1.5 0 0 1 11.500073 172.99978 A 1.5 1.5 0 0 1 9.9999064 174.49994 A 1.5 1.5 0 0 1 8.5002563 172.99978 A 1.5 1.5 0 0 1 9.9999064 171.50013 z M 185.00008 171.50013 A 1.5 1.5 0 0 1 186.50024 172.99978 A 1.5 1.5 0 0 1 185.00008 174.49994 A 1.5 1.5 0 0 1 183.49991 172.99978 A 1.5 1.5 0 0 1 185.00008 171.50013 z " />
+  </g>
+</svg>

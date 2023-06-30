@@ -11,17 +11,22 @@ import PrimeReact from 'primereact/api';
 import 'primereact/resources/primereact.min.css';
 import { Tooltip } from 'primereact/tooltip';
 import React from 'react';
-import { BiImages, BiRefresh, BiSun, BiTime, BiWifi } from 'react-icons/bi';
+import { BiDownload, BiImages, BiRefresh, BiSun, BiTime, BiWifi } from 'react-icons/bi';
 import { BsGearFill, BsHouseFill } from 'react-icons/bs';
 import { CgMenu } from 'react-icons/cg';
 import { IoShareSocialSharp } from 'react-icons/io5';
 import { TfiLayoutGrid4Alt } from 'react-icons/tfi';
 import { GoSettings } from 'react-icons/go';
-import { Route, Routes } from 'react-router-dom';
+import { Location, Route, Routes } from 'react-router-dom';
 import Settings from './components/pages/Settings';
 import { Toast } from 'primereact/toast';
+import Downloads from './components/pages/Downloads';
 
 PrimeReact.inputStyle = 'filled';
+
+export interface IAppProps {
+	location: Location;
+}
 
 interface IAppState {
 	loaded: boolean;
@@ -30,12 +35,19 @@ interface IAppState {
 	advanced: boolean;
 }
 
-export default class App extends React.Component<{}, IAppState> {
+export default class App extends React.Component<IAppProps, IAppState> {
 
 	private dataService: DataService = new DataService(() => {this.setState({});});
 	private toast: Toast | null = null;
+	private windowWidth: number = 0;
+	private resizeEvent = () => {
+		if(window.screen.width < 769 && this.windowWidth >= 769 && this.windowWidth !== window.screen.width)
+			this.changeSidebar(false);
 
-	constructor(props: {}) {
+		this.windowWidth = window.screen.width;
+	};
+
+	constructor(props: IAppProps) {
 		super(props);
 
 		this.state = {
@@ -51,6 +63,12 @@ export default class App extends React.Component<{}, IAppState> {
 
 		if(window.screen.width < 769)
 			this.changeSidebar(false);
+
+		window.addEventListener("resize", this.resizeEvent);
+	}
+
+	componentWillUnmount(): void {
+		window.removeEventListener("resize", this.resizeEvent);
 	}
 
 	public render(): JSX.Element {
@@ -85,7 +103,8 @@ export default class App extends React.Component<{}, IAppState> {
 						<Routes>
 							<Route path="/settings/*" element={<Settings advanced={this.state.advanced} dataService={this.dataService} toast={this.toast} />} />
 							<Route path="/pictures" element={<Generator advanced={this.state.advanced} dataService={this.dataService} toast={this.toast} />} />
-							<Route path="/" element={<Home dataService={this.dataService} toast={this.toast} />} />
+							<Route path="/downloads" element={<Downloads advanced={this.state.advanced} dataService={this.dataService} toast={this.toast} />} />
+							<Route path="/" element={<Home location={this.props.location} dataService={this.dataService} toast={this.toast} />} />
 							<Route path="*" element={<NotFound/>} />
 						</Routes>
 					</div>
@@ -129,9 +148,14 @@ const SidebarMenu: ISidebarItem[] = [
 				icon: <BsHouseFill/>
             },
 			{
-                label: 'Pictures',
+                label: 'Picture Generator',
                 url: '/pictures',
 				icon: <BiImages/>
+            },
+			{
+                label: 'Downloads',
+                url: '/downloads',
+				icon: <BiDownload/>
             }
         ]
     },

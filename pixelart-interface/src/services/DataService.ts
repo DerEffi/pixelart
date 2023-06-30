@@ -1,21 +1,34 @@
 import axios, { AxiosResponse, AxiosError } from "axios";
+import moment from "moment";
 import { APIError, APIErrorType } from "../models/Errors";
-import { Display, Time, Wifi } from "../models/Settings";
+import { Display, Images, Socials, Time, Wifi, IWifiNetwork } from "../models/Settings";
+import { IStatistics } from "../models/Statistics";
 import { Status } from "../models/Status";
+import { VersionDetails } from "../models/Version";
 
 export default class DataService {
 
     private deviceAddress: string = process.env.REACT_APP_ENVIRONMENT !== "device" ? "" : window.location.host;
     private darkTheme: boolean = true;
+    public dismissedWifiWarning: boolean = false;
     private status: Status = Status.pending;
     private apiKey: string | undefined;
     private authInterval: NodeJS.Timer | undefined;
     public onChanged: () => void;
     public data: {
+        wifiScan: IWifiNetwork[],
         wifi?: Wifi,
         time?: Time,
-        display?: Display
-    } = {};
+        display?: Display,
+        socials?: Socials,
+        images?: Images,
+    } = {
+        wifiScan: []
+    };
+    public statistics: IStatistics[] = [];
+    public deviceWebinterfaceVersion?: VersionDetails;
+    public newestFirmware?: VersionDetails;
+    public newestWebinterface?: VersionDetails;
 
     constructor(onChanged: () => void) {
         this.onChanged = onChanged;
@@ -23,6 +36,10 @@ export default class DataService {
         let theme: string | null = localStorage.getItem("theme");
         if(theme && theme === "light")
             this.darkTheme = false;
+
+        let dismissedWifiWarning: string | null = localStorage.getItem("dismissedWifiWarning");
+        if(dismissedWifiWarning === "true")
+            this.dismissedWifiWarning = true;
 
         if(process.env.REACT_APP_ENVIRONMENT) {
             let deviceAddress: string | null = localStorage.getItem("deviceAddress");
@@ -34,7 +51,29 @@ export default class DataService {
         if(apiKey)
             this.apiKey = apiKey;
 
+        this.checkUpdateVersions();
         this.refresh();
+    }
+
+    public async checkUpdateVersions() {
+        axios.get(process.env.REACT_APP_UPDATE_SERVER + "/webinterface/version.json")
+        .then(resp => {
+            if(resp.status === 200 && resp.data.version && resp.data.files)
+                this.newestWebinterface = resp.data;
+        })
+        .catch(() => {});
+
+        axios.get(process.env.REACT_APP_UPDATE_SERVER + "/firmware/version.json")
+        .then(resp => {
+            if(resp.status === 200 && resp.data.version && resp.data.files)
+                this.newestFirmware = resp.data;
+        })
+        .catch(() => {});
+    }
+
+    public async dismissWifiWarning() {
+        localStorage.setItem("dismissedWifiWarning", "true");
+        this.dismissedWifiWarning = true;
     }
 
     public getDeviceAddress() {
@@ -64,33 +103,141 @@ export default class DataService {
         this.onChanged();
     }
 
-    public async refresh() {
-        await this.requestDevice<Wifi>("GET", "/api/wifi")
-            .then(resp => {
-                this.data.wifi = resp
-            })
-            .catch((e: APIError) => {
-                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending)
-                    this.setStatus(Status.disconnected);
-            });
+    public async refresh(ignoreError: boolean = false) {
+        await this.refreshDisplay(ignoreError);
+        await this.refreshWifi(ignoreError);
+        await this.refreshTime(ignoreError);
+        await this.refreshSocials(ignoreError);
+        await this.refreshImages(ignoreError);
+        await this.refreshWebinterfaceVersion();
+    }
 
-        await this.requestDevice<Time>("GET", "/api/time")
+    public async refreshWebinterfaceVersion(ignoreError: boolean = false) {
+        await this.requestDevice<VersionDetails>("GET", "/webinterface/version.json")
             .then(resp => {
-                this.data.time = resp
+                if(resp.files && resp.type && resp.version)
+                    this.deviceWebinterfaceVersion = resp;
             })
-            .catch((e: APIError) => {
-                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending)
-                    this.setStatus(Status.disconnected);
-            });
+            .catch(() => {});
+        
+        this.onChanged();
+    }
 
+    public async refreshDisplay(ignoreError: boolean = false) {
         await this.requestDevice<Display>("GET", "/api/display")
             .then(resp => {
                 this.data.display = resp
             })
             .catch((e: APIError) => {
-                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending)
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
                     this.setStatus(Status.disconnected);
             });
+        if(this.data.display)
+            this.statistics.push({
+                internal: this.data.display.freeMemory,
+                external: this.data.display.freeSPIMemory,
+                time: moment()
+            });
+
+        this.onChanged();
+    }
+
+    public async refreshWifi(ignoreError: boolean = false) {
+        await this.requestDevice<Wifi>("GET", "/api/wifi")
+            .then(resp => {
+                this.data.wifi = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
+                    this.setStatus(Status.disconnected);
+            });
+        this.onChanged();
+    }
+
+    public async refreshTime(ignoreError: boolean = false) {
+        await this.requestDevice<Time>("GET", "/api/time")
+            .then(resp => {
+                this.data.time = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
+                    this.setStatus(Status.disconnected);
+            });
+        this.onChanged();
+    }
+
+    public async refreshSocials(ignoreError: boolean = false) {
+        await this.requestDevice<Socials>("GET", "/api/socials")
+            .then(resp => {
+                this.data.socials = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
+                    this.setStatus(Status.disconnected);
+            });
+        this.onChanged();
+    }
+    
+    public async refreshImages(ignoreError: boolean = false) {
+        await this.requestDevice<Images>("GET", "/api/images")
+            .then(resp => {
+                this.data.images = resp
+            })
+            .catch((e: APIError) => {
+                if(e.type !== APIErrorType.UnauthorizedError && e.type !== APIErrorType.AuthPending && !ignoreError)
+                    this.setStatus(Status.disconnected);
+            });
+        this.onChanged();
+    }
+
+    public async scanWifi(): Promise<IWifiNetwork[]> {
+        let networks = await this.requestDevice<{networks: IWifiNetwork[]}>("GET", "/api/wifi/available")
+            .then(resp => {
+                if(resp.networks)
+                    return resp.networks
+                return [];
+            })
+            .catch(() => []);
+        
+        //Sort by strength and remove duplicates
+        this.data.wifiScan = networks
+            .sort((a, b) => b.rssi - a.rssi)
+            .filter((network, index, array) => 
+                index === array.findIndex(n =>
+                    n.ssid === network.ssid
+                )
+            );
+
+        return this.data.wifiScan;
+    }
+
+    public async uploadFiles(type: "images" | "webinterface" | "firmware", files: FormData): Promise<void> {
+
+        files.append("type", type);
+
+        return axios.request({
+            method: "POST",
+            url: "http://" + this.deviceAddress + "/api/file",
+            data: files,
+            headers: {
+                "Content-Type": "multipart/form-data",
+                "apiKey": this.apiKey
+            }
+        }).then((resp: AxiosResponse<any, any>) => {
+            if(resp.status !== 202) {
+                throw new APIError(APIErrorType.ConnectionError, "Error sending data from your device");
+            } else {
+                this.setStatus(Status.connected);
+                return;
+            }
+        }).catch((e: AxiosError) => {
+            if(e.response?.status === 403) {
+                this.setStatus(Status.unauthorized);
+                throw new APIError(APIErrorType.UnauthorizedError, "Please authorize your device");
+            } else {
+                throw new APIError(APIErrorType.ConnectionError, "Error sending data from your device");
+            }
+        });
     }
 
     public async requestDevice<ResponseType>(method: string, endpoint: string, data: any = null): Promise<ResponseType> {
@@ -108,7 +255,7 @@ export default class DataService {
             },
             data: data
         }).then((resp: AxiosResponse<any, any>) => {
-            if(resp.status !== 200) {
+            if(resp.status >= 300) {
                 throw new APIError(APIErrorType.ConnectionError, "Error requesting data from your device");
             } else {
                 this.setStatus(Status.connected);
@@ -148,6 +295,8 @@ export default class DataService {
                     clearInterval(this.authInterval);
                     this.authInterval = undefined;
                     this.setStatus(Status.disconnected);
+                } else {
+                    this.setStatus(Status.unauthorized);
                 }
             }).catch((e: AxiosError) => {
                 this.setStatus(Status.disconnected);

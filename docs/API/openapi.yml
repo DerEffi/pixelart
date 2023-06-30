@@ -1,0 +1,547 @@
+openapi: 3.0.0
+info:
+  title: DerEffi's Pixelart
+  version: 1.0.0
+servers:
+  - url: https://{{socialapiurl}}
+  - url: http://{{deviceip}}
+components:
+  securitySchemes:
+    DeviceAPIKeyAuth:
+      type: apiKey
+      in: header
+      name: apiKey
+    SocialAPIKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+security:
+  - DeviceAPIKeyAuth: []
+tags:
+  - name: DeviceAPI
+  - name: SocialAPI
+paths:
+  /api/apiKey:
+    get:
+      tags:
+        - DeviceAPI
+      summary: Get current API-Key
+      security: []      
+      responses:
+        '204':
+          description: Requesting Menu button press on the device
+          content:
+            application/json: {}
+        '200':
+          description: Successful response if the Menu button was pressed in the last 10 seconds
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey:
+                    type: string
+                    example: supersecretapikey
+    delete:
+      tags:
+        - DeviceAPI
+      summary: Log out on all devices
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /api/display:
+    get:
+      tags:
+        - DeviceAPI
+      summary: Get current display configuration
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  displayMode:
+                    type: number
+                    example: 0
+                  brightness:
+                    type: number
+                    example: 40
+                  version:
+                    type: string
+                    example: '0.0.1'
+                  freeMemory:
+                    type: number
+                    example: 95792
+                  freeSPIMemory:
+                    type: number
+                    example: 0
+                  refreshRate:
+                    type: number
+                    example: 155
+                  diashow:
+                    type: boolean
+                    example: false
+                  animation:
+                    type: boolean
+                    example: true
+                  animationTime:
+                    type: number
+                    example: 50
+                  diashowTime:
+                    type: number
+                    example: 2000
+                  diashowModes:
+                    type: boolean
+                    example: false
+    post:
+      tags:
+        - DeviceAPI
+      summary: Update basic display configuration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayMode:
+                  type: number
+                  example: 0
+                brightness:
+                  type: number
+                  example: 40
+                diashow:
+                  type: boolean
+                  example: false
+                animation:
+                  type: boolean
+                  example: true
+                animationTime:
+                  type: number
+                  example: 50
+                diashowTime:
+                  type: number
+                  example: 2000
+                diashowModes:
+                  type: boolean
+                  example: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /api/images:
+    get:
+      tags:
+        - DeviceAPI
+      summary: List available images
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  displayImage:
+                    type: number
+                    example: 0
+                  imageNumber:
+                    type: number
+                    example: 1
+                  imagePrefixMax:
+                    type: number
+                    example: 1
+                  imageLoaded:
+                    type: boolean
+                    example: true
+                  imageOperations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        prefix: 
+                          type: number
+                          example: 1
+                        folder:
+                          type: string
+                          example: 001 - dereffi
+                        animated:
+                          type: boolean
+                          example: false
+    post:
+      tags:
+        - DeviceAPI
+      summary: Move/Delete images on device
+      description: Image Operations renames/moves folders within the images folder on your sd card. Sending empty destination for any operation will delete the folder. 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayImage:
+                  type: number
+                  example: 0
+                imageOperations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      src: 
+                        type: string
+                        example: 001 - dereffi
+                      dst:
+                        type: string
+                        example: 002 - dereffi
+      responses:
+        '202':
+          description: Successful response
+          content:
+            application/json: {}
+  /api/socials:
+    get:
+      tags:
+        - DeviceAPI
+      summary: Socials
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request:
+                    type: string
+                    example: >-
+                      [{"t":"t","c":"dereffi","d":"@DerEffi"},{"t":"i","c":"jadereffi","d":"@JaDerEffi"},{"t":"y","c":"jadereffi","d":"@JaDerEffi"}]
+                  server:
+                    type: string
+                    example: 'https://{{socialapiurl}}'
+                  apiKey:
+                    type: string
+                    example: '{{socialAPIKey}}'
+                  displayChannel:
+                    type: number
+                    example: 0
+                  channelNumber:
+                    type: number
+                    example: 3
+    post:
+      tags:
+        - DeviceAPI
+      summary: Socials
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                request:
+                  type: string
+                  example: >-
+                    [{"t":"t","c":"dereffi","d":"@DerEffi"},{"t":"i","c":"jadereffi","d":"@JaDerEffi"},{"t":"y","c":"jadereffi","d":"@JaDerEffi"}]
+                server:
+                  type: string
+                  example: 'https://{{socialapiurl}}'
+                apiKey:
+                  type: string
+                  example: '{{socialAPIKey}}'
+                displayChannel:
+                  type: number
+                  example: 0
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /api/time:
+    get:
+      tags:
+        - DeviceAPI
+      summary: Time
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  online:
+                    type: number
+                    example: 3859172
+                  time:
+                    type: number
+                    example: 1682032666
+                  displayMode:
+                    type: number
+                    example: 0
+                  seconds:
+                    type: boolean
+                    example: true
+                  year:
+                    type: boolean
+                    example: true
+                  blink:
+                    type: boolean
+                    example: false
+                  format24:
+                    type: boolean
+                    example: true
+                  externalRTCConnected:
+                    type: boolean
+                    example: true
+                  updateTime:
+                    type: boolean
+                    example: true
+                  ntpServer:
+                    type: string
+                    example: pool.ntp.org
+                  timezone:
+                    type: string
+                    example: CET-1CEST,M3.5.0,M10.5.0/3
+    post:
+      tags:
+        - DeviceAPI
+      summary: Time
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                time:
+                  type: number
+                  example: 1682032666
+                displayMode:
+                  type: number
+                  example: 0
+                seconds:
+                  type: boolean
+                  example: true
+                year:
+                  type: boolean
+                  example: true
+                blink:
+                  type: boolean
+                  example: false
+                format24:
+                  type: boolean
+                  example: true
+                updateTime:
+                  type: boolean
+                  example: true
+                ntpServer:
+                  type: string
+                  example: pool.ntp.org
+                timezone:
+                  type: string
+                  example: CET-1CEST,M3.5.0,M10.5.0/3
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /api/wifi:
+    get:
+      tags:
+        - DeviceAPI
+      summary: Wifi
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ap:
+                    type: boolean
+                    example: true
+                  apSSID:
+                    type: string
+                    example: DerEffi's Pixelart
+                  apPassword:
+                    type: string
+                    example: '00000000'
+                  apIP:
+                    type: string
+                    example: '192.168.4.1'
+                  connect:
+                    type: boolean
+                    example: false
+                  setupComplete:
+                    type: boolean
+                    example: true
+                  ssid:
+                    type: string
+                    example: 'MyWifiNetwork'
+                  ip:
+                    type: string
+                    example: '192.168.2.30'
+                  hostname:
+                    type: string
+                    example: 'dereffis-pixelart'
+                  rssi:
+                    type: number
+                    example: -40
+                  mac:
+                    type: string
+                    example: '00:00:00:00:00:00'
+    post:
+      tags:
+        - DeviceAPI
+      summary: Wifi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ap:
+                  type: boolean
+                  example: true
+                apSSID:
+                  type: string
+                  example: DerEffi's Pixelart
+                apPassword:
+                  type: string
+                  example: '00000000'
+                connect:
+                  type: boolean
+                  example: false
+                ssid:
+                  type: string
+                  example: 'MyWifiNetwork'
+                password:
+                  type: string
+                  example: '00000000'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /api/wifi/available:
+    get:
+      tags:
+        - DeviceAPI
+      summary: Scan Wifi networks
+      description: Returns the result from previous scan and starts a new one. Has to be invoked twice at minimum because no scan was performed before the first call.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  networks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ssid:
+                          type: string
+                          example: MyWifiNetwork
+                        rssi:
+                          type: number
+                          example: -40
+                        encryption:
+                          type: number
+                          example: 4
+  /api/file:
+    post:
+      tags:
+        - DeviceAPI
+      summary: File
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: images
+                  description: Either 'webinterface', 'images' or 'firmware'. Prefixes the specified folder automatically to the filepath (see below).
+                '{{filepath}}':
+                  description: filepath within the selected type above. For images it is the filepath in the 'images/'-folder, so you would specify '001 - dereffi/image.pxart' to upload the image file.
+                  type: string
+                  example: '001 - dereffi/image.pxart'
+                  format: binary
+      responses:
+        '202':
+          description: Successful response
+          content:
+            application/json: {}
+  /api/reset:
+    post:
+      tags:
+        - DeviceAPI
+      summary: Reset all user defined settings
+      requestBody:
+        content: {}
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /api/refresh:
+    post:
+      tags:
+        - DeviceAPI
+      summary: Refresh Display
+      requestBody:
+        content: {}
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+  /socials:
+    post:
+      tags:
+        - SocialAPI
+      summary: Request Social Stats
+      security:
+        - SocialAPIKeyAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  t:
+                    type: string
+                    description: Channel type - one of "t", "y" or "i" for twitch, youtube or instagram respectively
+                    example: "t"
+                  c:
+                    type: string
+                    description: Channel name or Username
+                    example: "DerEffi"
+                  d:
+                    type: string
+                    description: Display name on the device
+                    example: "@DerEffi"
+              example:
+                - t: t
+                  c: dereffi
+                  d: '@DerEffi'
+                - t: 'y'
+                  c: jadereffi
+                  d: '@JaDerEffi'
+                - t: i
+                  c: jadereffi
+                  d: '@JaDerEffi'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}

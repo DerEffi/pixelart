@@ -19,18 +19,18 @@
 #define GPIO_LEDPANEL_OE        45
 
 //Buttons
-#define GPIO_BTN1               14
-#define GPIO_BTN2               16
-#define GPIO_BTN3               13
+#define GPIO_BTN1               8
+#define GPIO_BTN2               3
+#define GPIO_BTN3               10
 #define GPIO_ROT1_BTN           12
-#define GPIO_ROT1_B             11
-#define GPIO_ROT1_A             10
+#define GPIO_ROT1_B             14
+#define GPIO_ROT1_A             13
 #define GPIO_ROT2_BTN           9
 #define GPIO_ROT2_B             46
-#define GPIO_ROT2_A             3
-#define GPIO_ROT3_BTN           8
-#define GPIO_ROT3_B             18
-#define GPIO_ROT3_A             17
+#define GPIO_ROT2_A             11
+#define GPIO_ROT3_BTN           18
+#define GPIO_ROT3_B             17
+#define GPIO_ROT3_A             16
 
 //RTC
 #define GPIO_RTC_SCL            7
@@ -60,12 +60,12 @@
 *  Wifi  *
 **********/
 
-#define WIFI_CONNECT_DEFAULT true // Connect to existing network
+#define WIFI_CONNECT_DEFAULT false // Connect to existing network
 #define WIFI_HOST_DEFAULT false // Host own wifi network
 
 // Wifi information for hosting own network
-#define WIFI_AP_SSID_DEFAULT "DerEffi's Pixelart"
-#define WIFI_AP_PASSWORD_DEFAULT ""
+#define WIFI_AP_SSID_DEFAULT "DerEffis Pixelart"
+#define WIFI_AP_PASSWORD_DEFAULT "00000000"
 
 // Wifi information for connection to existing network 
 #define WIFI_SSID_DEFAULT ""
@@ -79,9 +79,9 @@
 *  Misc  *
 **********/
 
-#define VERSION "0.0.1"
+#define VERSION "1.0.0"
 #define PREFERENCES_NAMESPACE "pixelart"
-#define SOCIAL_REFRESH_INTERVAL 25000
+#define SOCIAL_REFRESH_INTERVAL 31000
 
 #define TIME_UPDATE_AUTO true
 #define TIME_FORMAT24 true
@@ -90,4 +90,4 @@
 
 #define SOCIALS_API_KEY ""
 #define SOCIALS_API_SERVER ""
-#define SOCIALS_REQUEST "[{\"t\":\"t\",\"c\":\"dereffi\",\"d\":\"@DerEffi\"},{\"t\":\"y\",\"c\":\"dereffi\",\"d\":\"@DerEffi\"}]"
+#define SOCIALS_REQUEST "[{\"t\":\"t\",\"c\":\"dereffi\",\"d\":\"@DerEffi\"},{\"t\":\"y\",\"c\":\"jadereffi\",\"d\":\"@JaDerEffi\"},{\"t\":\"i\",\"c\":\"jadereffi\",\"d\":\"@JaDerEffi\"}]"

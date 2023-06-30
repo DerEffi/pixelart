@@ -19,7 +19,7 @@ export default class Sidebar extends React.Component<ISidebarProps, {}> {
                 {process.env.REACT_APP_ENVIRONMENT !== "device" &&
                     <>
                         <Tooltip target=".sidebar-hostname" position='bottom' showDelay={250} />
-                        <InputText className="sidebar-hostname" style={{width: "100%", marginBottom: "7px"}} data-pr-tooltip="Hostname/IP-Address" placeholder='device address' value={this.props.dataService.getDeviceAddress()} onChange={(e) => { this.props.dataService.setDeviceAddress(e.target.value)}} />
+                        <InputText className="sidebar-hostname" style={{width: "100%", marginBottom: "7px"}} data-pr-tooltip="Hostname/IP-Address" placeholder='device address' value={this.props.dataService.getDeviceAddress()} onChange={(e) => { this.props.dataService.setDeviceAddress(e.target.value)}} onBlur={() => this.props.dataService.refresh() } />
                     </>
                 }
                 {this.props.model.map(cat => {
