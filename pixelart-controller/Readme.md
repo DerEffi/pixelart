@@ -10,6 +10,8 @@ For the firmware you need an ESP32-S3 specifically. For other versions either RA
 
 The project should work with any SPI SD-Card reader connected to the according pins and any I2C RTC Module. The device should work without both of these, but can't use the webinterface and displaying images if you are missing an sd card and you would need to set the clock manually every time you start the device or have it connected to wifi to update itself on start if you don't use any RTC module.
 
+The inputs consists of 3 Push buttons and 3 Rotary encoders with additional push functionality. If you want to use the firmware as is, you will need at least the 3 push buttons to enable wifi and authorize your webinterface connection. The rest can be configured via webinterface. If you plan to customize your firmware you can enable wifi by default (either host it or connect directly to your home network) and remove the menu button press for authorization of the webinterface to get rid of all inputs.
+
 For the display, I used a 64x64 LED Matrix connected via HUB75E interface. Although you should be able to use any HUB75 display, you will have to customize a big part of the code when using other dimensions, since I hardcoded most of the bitmaps and positions to that resolution.
 
 ## Wiring
