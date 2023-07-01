@@ -12,9 +12,9 @@ export default class Footer extends React.Component<IFooterProps, {}> {
         return(
             <div id="footer" className={"content " + this.props.className}>
                 <div>
-                    <span className="footer-item"><Link target={"_blank"} to="https://dereffi.de">&copy; DerEffi</Link></span>
-                    <span className="footer-item"><Link target={"_blank"} to="https://dereffi.de/imprint">Imprint</Link></span>
-                    <span className="footer-item"><Link target={"_blank"} to="https://dereffi.de/privacy">Privacy</Link></span>
+                    <span className="footer-item"><Link target={"_blank"} rel='noopener noreferrer' to="https://dereffi.de">&copy; DerEffi</Link></span>
+                    <span className="footer-item"><Link target={"_blank"} rel='noopener noreferrer' to="https://dereffi.de/imprint">Imprint</Link></span>
+                    <span className="footer-item"><Link target={"_blank"} rel='noopener noreferrer' to="https://dereffi.de/privacy">Privacy</Link></span>
                 </div>
                 <div>
                     <span className="footer-item">

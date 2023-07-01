@@ -37,7 +37,7 @@ export default class Sidebar extends React.Component<ISidebarProps, {}> {
                                 {cat.items.map(item => {
                                     return(
                                         <li className="sidebar-item" role="none" key={item.label}>
-                                            <Link onClick={() => {if(this.props.onLink) { this.props.onLink()}}} to={item.url}>{item.icon && item.icon} {item.label}</Link>
+                                            <Link onClick={() => {if(this.props.onLink) { this.props.onLink()}}} rel={item.url.startsWith("http") ? "noopener noreferrer" : ""} target={ item.url.startsWith("http") ? "_blank" : "_self"} to={item.url}>{item.icon && item.icon} {item.label}</Link>
                                         </li>
                                     );
                                 })}

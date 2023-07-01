@@ -11,7 +11,7 @@ import PrimeReact from 'primereact/api';
 import 'primereact/resources/primereact.min.css';
 import { Tooltip } from 'primereact/tooltip';
 import React from 'react';
-import { BiDownload, BiImages, BiRefresh, BiSun, BiTime, BiWifi } from 'react-icons/bi';
+import { BiCodeAlt, BiDownload, BiImages, BiRefresh, BiSun, BiTime, BiWifi } from 'react-icons/bi';
 import { BsGearFill, BsHouseFill } from 'react-icons/bs';
 import { CgMenu } from 'react-icons/cg';
 import { IoShareSocialSharp } from 'react-icons/io5';
@@ -194,4 +194,14 @@ const SidebarMenu: ISidebarItem[] = [
             },
         ]
     },
+	{
+		label: "Project",
+		items: [
+			{
+				label: "Source Code",
+				url: "https://github.com/DerEffi/pixelart",
+				icon: <BiCodeAlt/>
+			}
+		]
+	}
 ];

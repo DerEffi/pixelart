@@ -116,7 +116,7 @@ export default class SocialsSettings extends React.Component<ISocialsSettingsCom
 								}
 
 								return(
-									<Link key={social.t + social.c} target={"_blank"} to={url}>
+									<Link key={social.t + social.c} target={"_blank"} to={url} rel='noopener noreferrer'>
 										<div className='socials-test-item'>
 											<div style={{color: color}} className='socials-test-item-icon'>{icon}</div>
 											<div>{social.d || social.c}</div>
