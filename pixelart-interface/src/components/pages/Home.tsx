@@ -51,7 +51,7 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 						This Webinterface provides the basic usage of the pixelart display as well as an Image Generator to convert your pictures into a for the display usable format. You can also remote control your device, if you choose to connect your display to a network or via Hotspot directly to your device. WiFi functionality is completely optional, although you can't use the 'Social' mode when not connected to the internet for obvious reasons.
 						<br/>
 						<br/>
-						If you want to build a pixelart display yourself, take a look on <Link to="https://github.com/DerEffi/pixelart" target="_blank">GitHub</Link>. It is open source with requirements and build instructions waiting for you.
+						If you want to build a pixelart display yourself, take a look on <Link to="https://github.com/DerEffi/pixelart" target="_blank" rel='noopener noreferrer'>GitHub</Link>. It is open source with requirements and build instructions waiting for you.
 					</div>
 
 					<Fieldset legend={<div className='home-header'><BiUser/><div>General</div></div>} id="general">
@@ -169,7 +169,7 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 						To connect your dispay to a network you first need to enable the <Chip label="Host"/> option in the onboard menu so that you can directly connect to the display itself with a browser of your choice. If you are unsure about the connection details, you can check the <Chip label='Host Stats'/> section for the current settings.
 						<br/>
 						<br/>
-						After connecting to the display's network, you should be redirected to webinterface, where you can enter your network information. If not you can manually browse to <Link to='http://192.168.4.1' target="_blank">192.168.4.1</Link>. Once you are connected to a network your device's IP-Adress will change. Either check your network or the display's onboard menu under <Chip label='Connection Stats'/> to find it.
+						After connecting to the display's network, you should be redirected to webinterface, where you can enter your network information. If not you can manually browse to <Link to='http://192.168.4.1' target="_blank" rel='noopener noreferrer'>192.168.4.1</Link>. Once you are connected to a network your device's IP-Adress will change. Either check your network or the display's onboard menu under <Chip label='Connection Stats'/> to find it.
 						<br/>
 						To adjust your preferences you can use the webinterface on the device itself or navigate to <Link to="https://pixelart.dereffi.de">pixelart.dereffi.de</Link> and enter the IP-Adress in the sidemenu on the left.
 						<br/>
@@ -197,7 +197,7 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 						In the <Link to="/downloads">Downloads</Link> tab you can download the newest version of the firmware and webinterface and place the files on the SD card. The update will be performed on the next start and should only take a few seconds. If you update the firmware, please don't disconnect the power from your device as it might brick the display.
 						<br/>
 						<br/>
-						Notice: If you are or know a software developer you can also compile the firmware/webinterface from my <Link to="https://github.com/DerEffi/pixelart" target="_blank">GitHub</Link> with your personal touch yourself and copy the files onto the SD card.
+						Notice: If you are or know a software developer you can also compile the firmware/webinterface from my <Link to="https://github.com/DerEffi/pixelart" target="_blank" rel='noopener noreferrer'>GitHub</Link> with your personal touch yourself and copy the files onto the SD card.
 					</Fieldset>
 
 
@@ -213,7 +213,7 @@ export default class Home extends React.Component<IHomeComponentProps, IHomeComp
 						If your problem persist you can reset the device to "Factoy Settings" with the webinterface under <Link to="/settings/system">System</Link> or press and hold the <Chip label='Menu'/> button on your display for 10s.
 						<br/>
 						<br/>
-						Still not fixed? - Sent me the details maybe you found a mistake I made (<Link to="mailto:info@dereffi.de">info@dereffi.de</Link>) or open a ticket on <Link to="https://github.com/DerEffi/pixelart/issues" target="_blank">GitHub</Link>
+						Still not fixed? - Sent me the details maybe you found a mistake I made (<Link to="mailto:info@dereffi.de">info@dereffi.de</Link>) or open a ticket on <Link to="https://github.com/DerEffi/pixelart/issues" target="_blank" rel='noopener noreferrer'>GitHub</Link>
 					</Fieldset>
 
 				</div>
