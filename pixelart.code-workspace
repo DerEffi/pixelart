@@ -5,6 +5,10 @@
 			"path": "pixelart-controller"
 		},
 		{
+			"name": "pixelart-controller-rpi",
+			"path": "pixelart-controller-rpi"
+		},
+		{
 			"name": "pixelart-interface",
 			"path": "pixelart-interface"
 		},

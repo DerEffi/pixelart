@@ -1,0 +1,34 @@
+README
+
+The libraries and samples in this directory (and its subdirectories) have to be
+build manually. To build a sample the library has to be build first.
+
+Go to the directory of your choice and do:
+
+make clean
+make
+
+DIRECTORIES
+
+dio		Library providing access to the spi_dio board by BitWizard.nl
+display		Library providing drivers for displays (e.g. LCD dot-matrix)
+fatfs		FatFs - Generic FAT file system module with LFN support (by ChaN)
+gpio		Library providing access to external GPIO expander boards (e.g. RTK.GPIO)
+OneWire		Support library for 1-wire devices (by Paul Stoffregen) and DS18x20 sensors
+Properties	Library providing access to configuration properties saved in a file
+qemu		Support library and demos for using Circle with QEMU
+linux		Linux kernel device driver emulation (used by HDMI sound and accelerated graphics)
+lvgl		LVGL embedded GUI library (by LVGL Kft)
+microbit	Library providing access to features of the micro:bit computer
+pico		Library providing access to features of the Raspberry Pi Pico (e.g. RAM loader)
+profile		Software profiling library for performance analysis
+rtc		Library providing drivers for real-time clocks (RTC)
+SDCard		Driver for SD card access using the internal EMMC controller (by John Cronin)
+sensor		Drivers for I2C and other sensor devices
+Spectrum	ZX Spectrum screen emulator class (by Jose Luis Sanchez)
+tftpfileserver	TFTP file server supporting kernel image and firmware updates
+ugui		Digital oscilloscope sample using the uGUI library (by Achim Doebler)
+vc4		HDMI sound and accelerated graphics (EGL, OpenGL ES, OpenVG, Dispmanx) support
+webconsole	Library providing remote access to the system log using a web browser
+wlan		WLAN support (using Plan 9 driver by R. Miller and WPA Supplicant by J. Malinen)
+WS28XX		Drivers for WS28XX controlled LED stripes/NeoPixels (over SPI and SMI)

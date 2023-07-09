@@ -1,0 +1,28 @@
+0   -
+1   -
+2   I2C - DATA
+3   I2C - CLK
+4   LAT
+5   CLK
+6   IRQ
+7   SPI1 - CE1
+8   SPI1 - CE0
+9   SPI1 - MISO
+10  SPI1 - MOSI
+11  SPI1 - CLK
+12  OE - PWM
+13  
+14  
+15  
+16  
+17  R1
+18  G1
+19  B1
+10  R2
+11  G2
+22  B2
+23  A
+24  B
+25  C
+26  D
+27  E
