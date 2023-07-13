@@ -4,22 +4,12 @@ make="${MAKE:-make}"
 
 cd lib
 
-cd template
+cd ds3231
 $make $1 $2 || exit
 cd ..
 
-# TODO: Add new libs here
-#cd subdir
-#$make $1 $2 || exit
-#cd ..
-
 cd ..
 
-cd template
+cd src
 $make $1 $2 || exit
 cd ..
-
-# TODO: Add new apps here
-#cd subdir
-#$make $1 $2 || exit
-#cd ..

@@ -14,8 +14,9 @@ That being said, in general I'm happy with the current state (althought it's not
 
 ## Usage/Deployment
 
-The project consist of three parts:
+The project consist of these parts:
 - the controller for the display: [/pixelart-controller](./pixelart-controller/)
+- an alternate controller (Raspberry PI) for the display currently under development and not ready for use: [/pixelart-controller-rpi](./pixelart-controller-rpi)
 - the webinterface for remote control of the display: [/pixelart-interface](./pixelart-interface/)
 - the socials api for retrieving social data from different platforms: [/pixelart-api](./pixelart-api/)
 

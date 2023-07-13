@@ -6,9 +6,10 @@
 static const char FromKernel[] = "kernel";
 
 CKernel::CKernel (void)
-:	m_Screen (m_Options.GetWidth (), m_Options.GetHeight ()),
-	m_Timer (&m_Interrupt),
-	m_Logger (m_Options.GetLogLevel (), &m_Timer)
+:	m_Timer (&m_Interrupt),
+	m_Logger (m_Options.GetLogLevel (), &m_Timer),
+	m_I2CMaster(1),
+	m_RTC (&m_I2CMaster)
 {
 }
 
@@ -21,50 +22,32 @@ boolean CKernel::Initialize (void)
 	boolean bOK = TRUE;
 
 	if (bOK)
-	{
-		bOK = m_Screen.Initialize ();
-	}
+		bOK = m_Serial.Initialize(115200);
 
 	if (bOK)
 	{
-		bOK = m_Serial.Initialize (115200);
+		CDevice *pTarget = m_DeviceNameService.GetDevice(m_Options.GetLogDevice (), FALSE);
+		if (pTarget != 0)
+			bOK = m_Logger.Initialize(pTarget);
 	}
 
 	if (bOK)
-	{
-		CDevice *pTarget = m_DeviceNameService.GetDevice (m_Options.GetLogDevice (), FALSE);
-		if (pTarget == 0)
-		{
-			pTarget = &m_Screen;
-		}
-
-		bOK = m_Logger.Initialize (pTarget);
-	}
+		bOK = m_Interrupt.Initialize();
 
 	if (bOK)
-	{
-		bOK = m_Interrupt.Initialize ();
-	}
+		bOK = m_Timer.Initialize();
 
-	if (bOK)
-	{
-		bOK = m_Timer.Initialize ();
-	}
+	if(bOK)
+		bOK = m_I2CMaster.Initialize();
 
 	return bOK;
 }
 
 TShutdownMode CKernel::Run (void)
 {
-	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
+	m_Logger.Write(FromKernel, LogDebug, "Starting kernel");
 
-	while(true) {
-		m_ActLED.On ();
-		CTimer::SimpleMsDelay (200);
 
-		m_ActLED.Off ();
-		CTimer::SimpleMsDelay (500);
-	}
 
 	return ShutdownHalt;
 }

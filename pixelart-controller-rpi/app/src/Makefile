@@ -6,8 +6,11 @@ CIRCLEHOME = ../..
 
 OBJS	= main.o kernel.o
 
-LIBS	= $(CIRCLEHOME)/lib/libcircle.a
+LIBS	= $(CIRCLEHOME)/lib/libcircle.a \
+	  $(CIRCLEHOME)/lib/net/libnet.a \
+	  $(CIRCLEHOME)/lib/sched/libsched.a \
+	  ../lib/ds3231/libds3231.a
 
-include ../Rules.mk
+include $(CIRCLEHOME)/Rules.mk
 
 -include $(DEPS)
