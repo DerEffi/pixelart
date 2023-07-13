@@ -13,6 +13,10 @@
 #include <circle/timer.h>
 #include <circle/logger.h>
 #include <circle/sched/scheduler.h>
+#include <SDCard/emmc.h>
+#include <fatfs/ff.h>
+#include <wlan/bcm4343.h>
+#include <wlan/hostap/wpa_supplicant/wpasupplicant.h>
 #include <circle/net/netsubsystem.h>
 #include <circle/types.h>
 #include <circle/i2cmaster.h>
@@ -46,10 +50,13 @@ private:
 	CTimer				m_Timer;
 	CLogger				m_Logger;
 	CScheduler			m_Scheduler;
-	CNetSubSystem		m_Net;
-
 	CI2CMaster			m_I2CMaster;
 	CDS3231				m_RTC;
+	CEMMCDevice			m_EMMC;
+	FATFS				m_FileSystem;
+	CBcm4343Device		m_WLAN;
+	CNetSubSystem		m_Net;
+	CWPASupplicant		m_WPASupplicant;
 };
 
 #endif

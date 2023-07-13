@@ -1,0 +1,70 @@
+#
+# Makefile
+#
+
+CIRCLEHOME = ../../../..
+
+OBJS	= \
+	  blacklist.o \
+	  config.o \
+	  config_file_circle.o \
+	  events.o \
+	  main_circle.o \
+	  notify.o \
+	  scan.o \
+	  wpa_supplicant.o \
+	  wpas_glue.o \
+	  wpasupplicant.o
+
+OBJS2	= \
+	  ../src/common/wpa_common.o \
+	  ../src/crypto/aes-internal-dec.o \
+	  ../src/crypto/aes-internal.o \
+	  ../src/crypto/aes-unwrap.o \
+	  ../src/crypto/md5-internal.o \
+	  ../src/crypto/md5.o \
+	  ../src/crypto/rc4.o \
+	  ../src/crypto/sha1-internal.o \
+	  ../src/crypto/sha1-pbkdf2.o \
+	  ../src/crypto/sha1.o \
+	  ../src/crypto/tls_none.o \
+	  ../src/drivers/drivers.o \
+	  ../src/drivers/driver_circle.o \
+	  ../src/drivers/scan_helpers.o \
+	  ../src/eapol_supp/eapol_supp_sm.o \
+	  ../src/eap_common/eap_common.o \
+	  ../src/eap_peer/eap.o \
+	  ../src/eap_peer/eap_methods.o \
+	  ../src/l2_packet/l2_packet_circle.o \
+	  ../src/rsn_supp/pmksa_cache.o \
+	  ../src/rsn_supp/preauth.o \
+	  ../src/rsn_supp/wpa.o \
+	  ../src/rsn_supp/wpa_ie.o \
+	  ../src/utils/base64.o \
+	  ../src/utils/common.o \
+	  ../src/utils/eloop_circle.o \
+	  ../src/utils/os_circle.o \
+	  ../src/utils/wpa_debug.o \
+	  ../src/utils/wpabuf.o
+
+OBJS	+= $(OBJS2)
+
+INCLUDE += \
+	  -I ../src \
+	  -I ../src/common \
+	  -I ../src/crypto \
+	  -I ../src/rsn_supp \
+	  -I ../src/utils
+
+DEFINE	+= -DCONFIG_DRIVER_CIRCLE -DIEEE8021X_EAPOL
+
+EXTRACLEAN += $(OBJS2) $(OBJS2:.o=.d)
+
+libwpa_supplicant.a: $(OBJS)
+	@echo "  AR    $@"
+	@rm -f $@
+	@$(AR) cr $@ $(OBJS)
+
+include $(CIRCLEHOME)/Rules.mk
+
+-include $(DEPS)
