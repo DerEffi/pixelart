@@ -2,6 +2,8 @@
 
 ## About
 
+! Currently under development for V2.0, please be patient !
+
 This is the firmware for the controller of the led matrix.
 
 ## Hardware compatibility

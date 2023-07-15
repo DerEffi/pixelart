@@ -1,0 +1,146 @@
+// This configuration stores the default values (factory settings) for your device
+// These values will be overridden by the user settings via the UI until factory reset
+{
+    // Wiring config for gpio pins
+    // Set unused pins to -1
+    "gpio": {
+        // Common I2C interface (used for i.e. RTC Module)
+        "i2c": {
+            "sda": 15,  // Data
+            "clk": 7    // Clock
+        },
+
+        // Common SPI interface (used for i.e. SD Card)
+        "spi": {
+            "clk": 4,
+            "mosi": 5,
+            "miso": 6
+        },
+
+        // SD Card Reader
+        "sd": {
+            "cs": 43 // Chip Select Pin for SPI interface
+        },
+
+        // RTC Module
+        "rtc": {
+            "address": 104 // I2C Address (104 = 0x68 -> default for DS3231)
+        },
+
+        // LED Matrix - HUB75E
+        "display": {
+            "r1":    35,
+            "g1":    36,
+            "b1":    37,
+            "r2":    38,
+            "g2":    39,
+            "b2":    40,
+            "a":     41,
+            "b":     42,
+            "c":     2,
+            "d":     1,
+            "e":     44,
+            "clk":   47, // Clock
+            "lat":   21, // Latch (LAT) or Strobe (STB)
+            "oe":    45  // Output Enabled (PWM)
+        },
+
+        "controls": {
+            "softwareDebounce": false, // uses debouncing logic in interrupt
+            
+            // set expander properties if controls are not directly wired to the gpio of the controller but through an IO Expander
+            "expander": {
+                "enabled": false,
+                "interrupt": -1,    // gpio pin for interrupt from IO Expander (required when using an IO Expander)
+                "cs": -1,           // chip select for using SPI
+                "address": -1       // address for using I2C
+            },
+
+            // Buttons
+            "btn1":       8,    // Next
+            "btn2":       3,    // Mode
+            "btn3":       10,   // Menu
+
+            // Rotary Encoder 1 - Brightness
+            "rot1": {
+                "btn":   12,
+                "b":     13,
+                "a":     14
+            },
+            
+            // Rotary Encoder 2 - Diashow
+            "rot2": {
+                "btn":   9,
+                "b":     11,
+                "a":     46
+            },
+            
+            // Rotary Encoder 3 - Animation
+            "rot3": {
+                "btn":   18,
+                "b":     16,
+                "a":     17
+            }
+        }
+    },
+    "wifi": {
+        "hostname": "dereffis-pixelart",
+
+        // Connection to existing wifi network
+        "connect": {
+            "enabled": false,
+            "ssid": "",
+            "password": ""
+        },
+
+        // Host own network
+        "host": {
+            "enabled": false,
+            "ssid": "DerEffis Pixelart",
+            "password": "00000000"
+        }
+    },
+    "time": {
+        "showSeconds": true,        // show seconds when displaying time
+        "blink": false,             // blinking dots between hours, minutes and seconds
+        "showYear": true,           // Show year when displaying date
+        "format24h": true,          // Display time in 24h or 12h format
+
+        "update": true,             // Auto update when connecting to network
+        "server": "pool.ntp.org",   // NTP-/Time- Server
+
+        // timezone either by timezone identifier like `UTC0` or Location like `Europe/Berlin` or timezone variables
+        // a list with examples: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
+        // description of TZ Variables: https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+        "zone": "CET-1CEST,M3.5.0,M10.5.0/3"
+    },
+    "firmware": {
+        "version": "2.0.0",         // version for updating OTA later via GUI
+        "preferences": "pixelart"   // namespace for saving user preferences onboard
+    },
+    "socials": {
+        "interval": 31000,                              // Interval for fetching social stats from api
+        "key": "",  // Key for authenticating to api server (id in the database)
+        "server": "https://api.pixelart.dereffi.de",    // social server as proxy between social media platforms and controller (see pixelart-interface)
+        "request": "[]" // displayed social media channels
+    },
+    "display": {
+        "brightness": 128, // between 0 and 255 (smaller than 20 will be off)
+        "mode": 0, // 0 - images, 1 - clock, 2 - socials
+
+        "clock": {
+            "mode": 0 // 0 - analog, 1 - digital, 2 - digital with date, 3 - digital with big numbers
+        },
+
+        "diashow": {
+            "enabled": true,
+            "interval": 10000, // time to wait before next image in ms
+            "switchModes": true // switch between images and socials
+        },
+
+        "animation": {
+            "enabled": true,
+            "interval": 300 // time to wait before next frame in ms
+        }
+    }
+}
