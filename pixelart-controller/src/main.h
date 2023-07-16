@@ -1,5 +1,4 @@
-#ifndef MAIN_H_
-#define MAIN_H_
+#pragma once
 
 #define DEBUG true
 
@@ -27,6 +26,4 @@
 #else
     #define STARTLOG
     #define LOG
-#endif
-
 #endif
