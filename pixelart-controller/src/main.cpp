@@ -18,16 +18,11 @@ ConfigService config;
 void setup() {
     STARTLOG(9600);
 
-    Utils::print_ram();
-
     config.init();
-
-    Utils::print_ram();
 }
 
 void loop() {
     while(true) {
         delay(2000);
-        Utils::print_ram();
     }
 }

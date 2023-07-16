@@ -24,5 +24,13 @@
 			"name": "images",
 			"path": "images"
 		}
-	]
+	],
+	"settings": {
+		"files.associations": {
+			"*.json": "jsonc",
+			"*.html": "html",
+			"*.csv": "csv (semicolon)",
+			"ostream": "cpp"
+		}
+	}
 }

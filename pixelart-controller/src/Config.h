@@ -3,11 +3,12 @@
 #include <main.h>
 
 #include <Utils.h>
+#include <Version.h>
 
 namespace Config {
 
     // filepaths
-    const char Path_Config[] = "/config.json";
+    const char Path_Config[] = "/test.json"; //TODO set to config.json after testing
     const char Path_Firmware_Update[] = "/firmware.bin";
     const char Path_Server_Home[] = "/webinterface";
     const char Path_Server_Index[] = "/webinterface/index.html";
@@ -166,7 +167,7 @@ namespace Config {
     };
 
     struct FirmwareConfig {
-        String version = VERSION;
+        Version version = Version(VERSION);
         String preferences = PREFERENCES;
     };
 
@@ -179,7 +180,7 @@ namespace Config {
     };
 
     struct ServerConfig {
-        String key = Utils::generate_uuid();
+        String key = Utils::generateUUID();
     };
 
     struct DisplayConfig {
