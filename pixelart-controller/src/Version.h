@@ -21,6 +21,10 @@
 // 1.2.3.4 -- VALID INPUT VERSION
 // 1-2-3-4 -- INVALID INPUT VERSION
 // 1.2.3-4 -- INVALID INPUT VERSION
+//
+// Credit to:
+// Pankaj Choudhary
+// https://cppsecrets.com/users/41129711010797106994610011511264103109971051084699111109/C00-Compare-version-string.php
 
 struct Version
 {

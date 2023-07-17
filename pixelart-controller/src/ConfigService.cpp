@@ -9,11 +9,15 @@
 #include <Config.h>
 #include <Version.h>
 
+
 Preferences preferences;
 Config::Config _settings;
 
-//save settings to file
-void saveConfig(Config::Config config, fs::FS &fs, String path) {
+// save settings to file
+// @param config Configuration to save to file
+// @param fs Filesystem (i.e. `SD` or `SPIFFS`)
+// @param file path to config on that filesystem
+void ConfigService::saveConfig(Config::Config& config, fs::FS& fs, String path) {
     File configFile = fs.open(path, "w");
     if(configFile) {
         if(configFile.isDirectory()) {
@@ -21,16 +25,123 @@ void saveConfig(Config::Config config, fs::FS &fs, String path) {
             File configFile = fs.open(path, "w");
         }
 
-        DynamicJsonDocument config(8192);
-        //todo settings to json
-        serializeJson(config, configFile);
+        DynamicJsonDocument json(8192);
+        
+        struct GPIOConfig {
+            struct {
+                int8_t cs = 43;
+            } sd;
+
+            struct {
+                int8_t address = 104;
+            } rtc;
+        };
+
+        JsonObject gpio = json.createNestedObject("gpio");
+        JsonObject gpioI2C = gpio.createNestedObject("i2c");
+        gpioI2C["sda"] = config.gpio.i2c.sda;
+        gpioI2C["clk"] = config.gpio.i2c.clk;
+        JsonObject gpioSPI = gpio.createNestedObject("spi");
+        gpioSPI["clk"] = config.gpio.spi.clk;
+        gpioSPI["mosi"] = config.gpio.spi.mosi;
+        gpioSPI["miso"] = config.gpio.spi.miso;
+        JsonObject gpioSD = gpio.createNestedObject("sd");
+        gpioSD["cs"] = config.gpio.sd.cs;
+        JsonObject gpioRTC = gpio.createNestedObject("rtc");
+        gpioRTC["address"] = config.gpio.rtc.address;
+
+        JsonObject gpioDisplay = gpio.createNestedObject("display");
+        gpioDisplay["r1"] = config.gpio.display.r1;
+        gpioDisplay["g1"] = config.gpio.display.g1;
+        gpioDisplay["b1"] = config.gpio.display.b1;
+        gpioDisplay["r2"] = config.gpio.display.r2;
+        gpioDisplay["g2"] = config.gpio.display.g2;
+        gpioDisplay["b2"] = config.gpio.display.b2;
+        gpioDisplay["a"] = config.gpio.display.a;
+        gpioDisplay["b"] = config.gpio.display.b;
+        gpioDisplay["c"] = config.gpio.display.c;
+        gpioDisplay["d"] = config.gpio.display.d;
+        gpioDisplay["e"] = config.gpio.display.e;
+        gpioDisplay["clk"] = config.gpio.display.clk;
+        gpioDisplay["lat"] = config.gpio.display.lat;
+        gpioDisplay["oe"] = config.gpio.display.oe;
+
+        JsonObject gpioControls = gpio.createNestedObject("controls");
+        gpioControls["softwareDebounce"] = config.gpio.controls.softwareDebounce;
+        gpioControls["btn1"] = config.gpio.controls.btn1;
+        gpioControls["btn2"] = config.gpio.controls.btn2;
+        gpioControls["btn3"] = config.gpio.controls.btn3;
+        JsonObject gpioControlsExpander = gpioControls.createNestedObject("expander");
+        gpioControlsExpander["enabled"] = config.gpio.controls.expander.enabled;
+        gpioControlsExpander["interrupt"] = config.gpio.controls.expander.interrupt;
+        gpioControlsExpander["cs"] = config.gpio.controls.expander.cs;
+        gpioControlsExpander["address"] = config.gpio.controls.expander.address;
+        JsonObject gpioControlsRot1 = gpioControls.createNestedObject("rot1");
+        gpioControlsRot1["btn"] = config.gpio.controls.rot1.btn;
+        gpioControlsRot1["a"] = config.gpio.controls.rot1.a;
+        gpioControlsRot1["b"] = config.gpio.controls.rot1.b;
+        JsonObject gpioControlsRot2 = gpioControls.createNestedObject("rot2");
+        gpioControlsRot2["btn"] = config.gpio.controls.rot2.btn;
+        gpioControlsRot2["a"] = config.gpio.controls.rot2.a;
+        gpioControlsRot2["b"] = config.gpio.controls.rot2.b;
+        JsonObject gpioControlsRot3 = gpioControls.createNestedObject("rot3");
+        gpioControlsRot3["btn"] = config.gpio.controls.rot3.btn;
+        gpioControlsRot3["a"] = config.gpio.controls.rot3.a;
+        gpioControlsRot3["b"] = config.gpio.controls.rot3.b;
+
+        JsonObject wifi = json.createNestedObject("wifi");
+        wifi["hostname"] = config.wifi.hostname;
+        JsonObject wifiHost = json.createNestedObject("host");
+        wifiHost["enabled"] = config.wifi.host.enabled;
+        wifiHost["ssid"] = config.wifi.host.ssid;
+        wifiHost["password"] = config.wifi.host.password;
+        JsonObject wifiConnect = json.createNestedObject("connect");
+        wifiConnect["enabled"] = config.wifi.host.enabled;
+        wifiConnect["ssid"] = config.wifi.host.ssid;
+        wifiConnect["password"] = config.wifi.host.password;
+
+        JsonObject time = json.createNestedObject("time");
+        time["showSeconds"] = config.time.showSeconds;
+        time["blink"] = config.time.blink;
+        time["showYear"] = config.time.showYear;
+        time["format24h"] = config.time.format24h;
+        time["update"] = config.time.update;
+        time["server"] = config.time.server;
+        time["zone"] = config.time.zone;
+
+        JsonObject socials = json.createNestedObject("socials");
+        socials["enabled"] = config.socials.enabled;
+        socials["interval"] = config.socials.interval;
+        socials["key"] = config.socials.key;
+        socials["server"] = config.socials.server;
+        socials["request"] = config.socials.request;
+
+        JsonObject display = json.createNestedObject("display");
+        display["brightness"] = config.display.brightness;
+        display["mode"] = (int)config.display.mode;
+        display["position"] = config.display.position;
+        JsonObject displayClock = display.createNestedObject("clock");
+        displayClock["mode"] = (int)config.display.clock.mode;
+        JsonObject displaySocials = display.createNestedObject("socials");
+        displaySocials["position"] = config.display.socials.position;
+        JsonObject diashow = display.createNestedObject("diashow");
+        diashow["enabled"] = config.display.diashow.enabled;
+        diashow["interval"] = config.display.diashow.interval;
+        diashow["switchModes"] = config.display.diashow.switchModes;
+        JsonObject animation = display.createNestedObject("animation");
+        animation["enabled"] = config.display.animation.enabled;
+        animation["interval"] = config.display.animation.interval;
+        
+        serializeJson(json, configFile);
         configFile.close();
     }
 }
 
 // load settings from file
+// @param fs Filesystem (i.e. `SD` or `SPIFFS`)
+// @param file path to config on that filesystem
 // @return success
-bool ConfigService::loadConfig(fs::FS &fs, String path) {
+bool ConfigService::loadConfig(fs::FS& fs, String path) {
     LOG("Info", "Reading config file");
 
     try {
@@ -289,36 +400,193 @@ bool ConfigService::loadConfig(fs::FS &fs, String path) {
 }
 
 // load single preference (String) into settings member
-// @param setting String
+// @param key preference identifier (max 15 chars)
+// @param setting String to load preference into
 void ConfigService::loadPreference(const char *key, String& setting) {
-    if(preferences.isKey(key))
+    if(preferences.isKey(key) && preferences.getType(key) == PT_STR)
         setting = preferences.getString(key, setting);
 }
 // load single preference (bool) into settings member
-// @param setting bool
+// @param key preference identifier (max 15 chars)
+// @param setting bool to load preference into
 void ConfigService::loadPreference(const char *key, bool& setting) {
-    if(preferences.isKey(key))
+    if(preferences.isKey(key) && preferences.getType(key) == PT_U8)
         setting = preferences.getBool(key, setting);
 }
 // load single preference (uint) into settings member
-// @param setting uint
+// @param key preference identifier (max 15 chars)
+// @param setting uint to load preference into
 void ConfigService::loadPreference(const char *key, uint& setting) {
-    if(preferences.isKey(key))
+    if(preferences.isKey(key) && preferences.getType(key) == PT_U32)
         setting = preferences.getUInt(key, setting);
 }
 // load single preference (uint8) into settings member
-// @param setting uint8_t
+// @param key preference identifier (max 15 chars)
+// @param setting uint8_t to load preference into
 void ConfigService::loadPreference(const char *key, uint8_t& setting) {
-    if(preferences.isKey(key))
+    if(preferences.isKey(key) && preferences.getType(key) == PT_U8)
         setting = preferences.getUChar(key, setting);
 }
 // load single preference (enum) into settings member
-// @param setting Enum
+// @param key preference identifier (max 15 chars)
+// @param setting Enum to load preference into
 template<typename SettingType>
 void ConfigService::loadEnumPreference(const char *key, SettingType& setting) {
-    if(preferences.isKey(key))
+    if(preferences.isKey(key) && preferences.getType(key) == PT_U8)
         setting = static_cast<SettingType>(preferences.getUChar(key, 0));
 }
+// load single preference (String) into settings member from blob
+// @param key preference identifier (max 15 chars)
+// @param setting String to load preference into
+void ConfigService::loadBlobPreference(const char *key, String& setting) {
+    if(preferences.isKey(key) && preferences.getType(key) == PT_BLOB) {
+        size_t blobSize = preferences.getBytesLength(key);
+        if(blobSize > 2) {
+            char buffer[blobSize];
+            preferences.getBytes(key, buffer, blobSize);
+            setting = String(buffer);
+        }
+    }
+}
+
+
+// save single preference (String) from settings member
+// @param key preference identifier (max 15 chars)
+// @param setting String
+void ConfigService::savePreference(const char *key, String& setting) {
+    if(preferences.isKey(key) && preferences.getType(key) != PT_STR)
+        preferences.remove(key);
+    preferences.putString(key, setting);
+}
+// save single preference (bool) from settings member
+// @param key preference identifier (max 15 chars)
+// @param setting bool
+void ConfigService::savePreference(const char *key, bool& setting) {
+    if(preferences.isKey(key) && preferences.getType(key) != PT_U8)
+        preferences.remove(key);
+    preferences.putBool(key, setting);
+}
+// save single preference (uint) from settings member
+// @param key preference identifier (max 15 chars)
+// @param setting uint
+void ConfigService::savePreference(const char *key, uint& setting) {
+    if(preferences.isKey(key) && preferences.getType(key) != PT_U32)
+        preferences.remove(key);
+    preferences.putUInt(key, setting);
+}
+// save single preference (uint8) from settings member
+// @param key preference identifier (max 15 chars)
+// @param setting uint8_t
+void ConfigService::savePreference(const char *key, uint8_t& setting) {
+    if(preferences.isKey(key) && preferences.getType(key) != PT_U8)
+        preferences.remove(key);
+    preferences.putUChar(key, setting);
+}
+// save single preference (enum) from settings member
+// @param key preference identifier (max 15 chars)
+// @param setting Enum
+template<typename SettingType>
+void ConfigService::saveEnumPreference(const char *key, SettingType& setting) {
+    if(preferences.isKey(key) && preferences.getType(key) != PT_U8)
+        preferences.remove(key);
+    preferences.putUChar(key, (int)setting);
+}
+// save single preference (String) from settings member as Blob
+// @param key preference identifier (max 15 chars)
+// @param setting String
+void ConfigService::saveBlobPreference(const char *key, String& setting) {
+    if(preferences.isKey(key) && preferences.getType(key) != PT_BLOB)
+        preferences.remove(key);
+    const char * blobData = setting.c_str();
+    preferences.putBytes(key, blobData, sizeof(blobData));
+}
+
+
+// Update current settings for category: Display
+// @param config new configuration to save
+void ConfigService::updateDisplay(Config::DisplayConfig& config) {
+    _settings.display = config;
+    this->saveDisplay();
+}
+void ConfigService::saveDisplay() {
+    preferences.begin("pixelart");
+    this->savePreference(Config::P_Display_Brightness, _settings.display.brightness);
+    this->saveEnumPreference(Config::P_Display_Mode, _settings.display.mode);
+    this->savePreference(Config::P_Display_Position, _settings.display.position);
+    this->saveEnumPreference(Config::P_Display_Clock_Mode, _settings.display.clock.mode);
+    this->savePreference(Config::P_Display_Socials_Position, _settings.display.socials.position);
+    this->savePreference(Config::P_Display_Diashow_Enabled, _settings.display.diashow.enabled);
+    this->savePreference(Config::P_Display_Diashow_Interval, _settings.display.diashow.interval);
+    this->savePreference(Config::P_Display_Diashow_SwitchModes, _settings.display.diashow.switchModes);
+    this->savePreference(Config::P_Display_Animation_Enabled, _settings.display.animation.enabled);
+    this->savePreference(Config::P_Display_Animation_Interval, _settings.display.animation.interval);
+    preferences.end();
+}
+
+// Update current settings for category: Socials
+// @param config new configuration to save
+void ConfigService::updateSocials(Config::SocialsConfig& config) {
+    _settings.socials = config;
+    this->saveSocials();
+}
+void ConfigService::saveSocials() {
+    preferences.begin("pixelart");
+    this->savePreference(Config::P_Socials_Enabled, _settings.socials.enabled);
+    this->savePreference(Config::P_Socials_Interval, _settings.socials.interval);
+    this->savePreference(Config::P_Socials_Server, _settings.socials.server);
+    this->savePreference(Config::P_Socials_Key, _settings.socials.key);
+    this->saveBlobPreference(Config::P_Socials_Key, _settings.socials.request);
+    preferences.end();
+}
+
+// Update current settings for category: Server
+// @param config new configuration to save
+void ConfigService::updateServer(Config::ServerConfig& config) {
+    _settings.server = config;
+    this->saveServer();
+}
+void ConfigService::saveServer() {
+    preferences.begin("pixelart");
+    this->savePreference(Config::P_Server_Key, _settings.server.key);
+    preferences.end();
+}
+
+// Update current settings for category: Time
+// @param config new configuration to save
+void ConfigService::updateTime(Config::TimeConfig& config) {
+    _settings.time = config;
+    this->saveTime();
+}
+void ConfigService::saveTime() {
+    preferences.begin("pixelart");
+    this->savePreference(Config::P_Time_ShowSeconds, _settings.time.showSeconds);
+    this->savePreference(Config::P_Time_ShowYear, _settings.time.showYear);
+    this->savePreference(Config::P_Time_Blink, _settings.time.blink);
+    this->savePreference(Config::P_Time_Format24h, _settings.time.format24h);
+    this->savePreference(Config::P_Time_Update, _settings.time.update);
+    this->savePreference(Config::P_Time_Server, _settings.time.server);
+    this->savePreference(Config::P_Time_Zone, _settings.time.zone);
+    preferences.end();
+}
+
+// Update current settings for category: WiFi
+// @param config new configuration to save
+void ConfigService::updateWifi(Config::WiFiConfig& config) {
+    _settings.wifi = config;
+    this->saveWifi();
+}
+void ConfigService::saveWifi() {
+    preferences.begin("pixelart");
+    this->savePreference(Config::P_WiFi_Hostname, _settings.wifi.hostname);
+    this->savePreference(Config::P_WiFi_Host_Enabled, _settings.wifi.host.enabled);
+    this->savePreference(Config::P_WiFi_Host_SSID, _settings.wifi.host.ssid);
+    this->savePreference(Config::P_WiFi_Host_Password, _settings.wifi.host.password);
+    this->savePreference(Config::P_WiFi_Connect_Enabled, _settings.wifi.connect.enabled);
+    this->savePreference(Config::P_WiFi_Connect_SSID, _settings.wifi.connect.ssid);
+    this->savePreference(Config::P_WiFi_Connect_Password, _settings.wifi.connect.password);
+    preferences.end();
+}
+
 
 // load user preferences from nvm
 void ConfigService::loadPreferences() {
@@ -326,17 +594,6 @@ void ConfigService::loadPreferences() {
 
     try {
         preferences.begin(_settings.firmware.preferences.c_str(), true);
-
-        // checking for older version
-        String version = "0";
-        this->loadPreference(Config::P_Firmware_Version, version);
-        Version pref_version(version);
-        Version firm_version(_settings.firmware.version);
-        if(pref_version < firm_version) {
-            preferences.end();
-            this->migratePreferences(pref_version);
-            preferences.begin(_settings.firmware.preferences.c_str(), true);
-        }
         
         //loading preferences
         this->loadPreference(Config::P_Display_Brightness, _settings.display.brightness);
@@ -354,6 +611,7 @@ void ConfigService::loadPreferences() {
         this->loadPreference(Config::P_Socials_Interval, _settings.socials.interval);
         this->loadPreference(Config::P_Socials_Server, _settings.socials.server);
         this->loadPreference(Config::P_Socials_Key, _settings.socials.key);
+        this->loadBlobPreference(Config::P_Socials_Key, _settings.socials.request);
 
         this->loadPreference(Config::P_Server_Key, _settings.server.key);
 
@@ -373,7 +631,18 @@ void ConfigService::loadPreferences() {
         this->loadPreference(Config::P_WiFi_Connect_SSID, _settings.wifi.connect.ssid);
         this->loadPreference(Config::P_WiFi_Connect_Password, _settings.wifi.connect.password);
 
+        // checking for older version
+        String version = "0";
+        this->loadPreference(Config::P_Firmware_Version, version);
         preferences.end();
+
+        Version pref_version(version);
+        Version firm_version(_settings.firmware.version);
+        if(pref_version < firm_version) {
+            this->migratePreferences(pref_version);
+            return;
+        }
+
     } catch (...) {
         LOG("Error", "Could not load user preferences");
     }
@@ -424,9 +693,51 @@ void ConfigService::migrateConfig() {
 void ConfigService::migratePreferences(Version &preferences_version) {
     LOG("Info", "Migrating preferences from older version or unused device");
 
-    //todo migrate preferences
+    // searching for old preference keys and clear up
+    preferences.begin("pixelart");
+	
+	this->loadPreference("brightness", _settings.display.brightness);
+	this->loadEnumPreference("current_mode", _settings.display.mode);
+	this->loadPreference("selected_image", _settings.display.position);
+	this->loadEnumPreference("clock_mode", _settings.display.clock.mode);
+	this->loadPreference("current_social", _settings.display.socials.position);
+	this->loadPreference("diashow", _settings.display.diashow.enabled);
+	this->loadPreference("diashow_time", _settings.display.diashow.interval);
+	this->loadPreference("diashow_modes", _settings.display.diashow.switchModes);
+	this->loadPreference("animation", _settings.display.animation.enabled);
+	this->loadPreference("animation_time", _settings.display.animation.interval);
 
+	this->loadPreference("wifi_connect", _settings.wifi.connect.enabled);
+	this->loadPreference("wifi_ssid", _settings.wifi.connect.ssid);
+	this->loadPreference("wifi_password", _settings.wifi.connect.password);
+    this->loadPreference("wifi_host", _settings.wifi.host.enabled);
+	this->loadPreference("wifi_ap_ssid", _settings.wifi.host.ssid);
+	this->loadPreference("wifi_ap_pass", _settings.wifi.host.password);
+
+	this->loadPreference("clock_seconds", _settings.time.showSeconds);
+	this->loadPreference("clock_blink", _settings.time.blink);
+	this->loadPreference("clock_year", _settings.time.showYear);
+	this->loadPreference("time_format24", _settings.time.format24h);
+	this->loadPreference("update_time", _settings.time.update);
+	this->loadPreference("ntpServer", _settings.time.server);
+	this->loadPreference("timezone", _settings.time.zone);
+
+	this->loadPreference("socials_server", _settings.socials.server);
+	this->loadPreference("socials_api_key", _settings.socials.key);
+	this->loadPreference("socials_request", _settings.socials.request);
+
+	this->loadPreference("api_key", _settings.server.key);
+    
+    preferences.clear();
+	preferences.end();
+
+    // write new preferences
     preferences.begin(_settings.firmware.preferences.c_str());
+    this->saveDisplay();
+    this->saveSocials();
+    this->saveServer();
+    this->saveTime();
+    this->saveWifi();
     preferences.putString(Config::P_Firmware_Version, _settings.firmware.version.toString());
     preferences.end();
 }

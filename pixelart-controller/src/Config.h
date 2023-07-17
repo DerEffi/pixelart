@@ -5,10 +5,17 @@
 #include <Utils.h>
 #include <Version.h>
 
+/*
+*   Defines datatypes and constant configuration data.
+*   Used by Services to control the application
+*   Used for storing preferences in nvm
+*   Used for storing factory settings in SPIFFS
+*/
+
 namespace Config {
 
     // filepaths
-    const char Path_Config[] = "/test.json"; //TODO set to config.json after testing
+    const char Path_Config[] = "/config.json";
     const char Path_Firmware_Update[] = "/firmware.bin";
     const char Path_Server_Home[] = "/webinterface";
     const char Path_Server_Index[] = "/webinterface/index.html";

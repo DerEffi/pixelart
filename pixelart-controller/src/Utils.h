@@ -3,11 +3,17 @@
 #include <Arduino.h>
 #include <SPIFFS.h>
 
+/*
+*   Common used global functions grouped together as utilities
+*/
+
 namespace Utils {
     void printRAM();
+    
     String generateUUID();
-    String getParentFolder(String folder);
+
+    String getParentDirectory(String folder);
     bool removeRecursive(fs::FS &fs, File &file);
     bool removeRecursive(fs::FS &fs, String path);
-    bool ensureFolder(fs::FS &fs, String path);
+    bool ensureDirectory(fs::FS &fs, String path);
 }

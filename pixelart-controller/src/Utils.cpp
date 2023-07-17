@@ -5,10 +5,13 @@
 
 namespace Utils {
 
+    // Send current RAM stats to Serial interface
     void printRAM() {
         LOG("Debug", "RAM: %u.%03u - PSRAM: %u.%03u.%03u", ESP.getFreeHeap() / 1000, ESP.getFreeHeap() % 1000, ESP.getFreePsram() / 1000000, (ESP.getFreePsram() / 1000) % 1000, ESP.getFreePsram() % 1000);
     }
 
+    // Generate new pseudo-random UUID
+    // @return UUIDv4
     String generateUUID() {
         const char possible[] = "0123456789abcdef";
         char uuid[37];
@@ -28,12 +31,19 @@ namespace Utils {
         return String(uuid);
     }
 
-    String getParentFolder(String folder) {
-        std::string folder_str(folder.c_str());
-        size_t found = folder_str.find_last_of("/\\");
-        return found > 0 ? String(folder_str.substr(0, found).c_str()) : String("/");
+    // Searches for parent directory of given path
+    // @param directory path to search
+    // @return parent directoryr path to search String
+    String getParentDirectory(String directory) {
+        std::string directory_str(directory.c_str());
+        size_t found = directory_str.find_last_of("/\\");
+        return found > 0 ? String(directory_str.substr(0, found).c_str()) : String("/");
     }
 
+    // removes files and directorys with all their sub-elements
+    // @param fs Filesystem (i.e. `SD` or `SPIFFS`)
+    // @param file filesystem element handle
+    // @return success
     bool removeRecursive(fs::FS &fs, File &file) {
         if(file) {
             String path(file.path());
@@ -59,6 +69,10 @@ namespace Utils {
         return false;
     }
 
+    // removes files and directorys with all their sub-elements
+    // @param fs Filesystem (i.e. `SD` or `SPIFFS`)
+    // @param file path to element on that filesystem
+    // @return success
     bool removeRecursive(fs::FS &fs, String path) {
         if(fs.exists(path)) {
             File file = fs.open(path);
@@ -68,7 +82,13 @@ namespace Utils {
         return false;
     }
 
-    bool ensureFolder(fs::FS &fs, String path) {
+    // ensures that a directory on a given path is available
+    // if not creates a directory with all necessary parent directories
+    // files present on given path will be deleted and replaced with a directory
+    // @param fs Filesystem (i.e. `SD` or `SPIFFS`)
+    // @param path to the wanted directory
+    // @return success
+    bool ensureDirectory(fs::FS &fs, String path) {
         if(fs.exists(path)) {
             File path_object = fs.open(path);
             if(path_object) {
@@ -83,9 +103,9 @@ namespace Utils {
                 }
             }
         } else {
-            String parent = getParentFolder(path);
+            String parent = getParentDirectory(path);
             if(parent.length() > 1) {
-                ensureFolder(fs, parent);
+                ensureDirectory(fs, parent);
             }
             return fs.mkdir(path);
         }
