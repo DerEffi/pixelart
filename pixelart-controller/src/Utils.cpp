@@ -34,7 +34,7 @@ namespace Utils {
     // Searches for parent directory of given path
     // @param directory path to search
     // @return parent directoryr path to search String
-    String getParentDirectory(String directory) {
+    String getParentDirectory(const String &directory) {
         std::string directory_str(directory.c_str());
         size_t found = directory_str.find_last_of("/\\");
         return found > 0 ? String(directory_str.substr(0, found).c_str()) : String("/");
@@ -73,7 +73,7 @@ namespace Utils {
     // @param fs Filesystem (i.e. `SD` or `SPIFFS`)
     // @param file path to element on that filesystem
     // @return success
-    bool removeRecursive(fs::FS &fs, String path) {
+    bool removeRecursive(fs::FS &fs, const String &path) {
         if(fs.exists(path)) {
             File file = fs.open(path);
             return removeRecursive(fs, file);		
@@ -88,7 +88,7 @@ namespace Utils {
     // @param fs Filesystem (i.e. `SD` or `SPIFFS`)
     // @param path to the wanted directory
     // @return success
-    bool ensureDirectory(fs::FS &fs, String path) {
+    bool ensureDirectory(fs::FS &fs, const String &path) {
         if(fs.exists(path)) {
             File path_object = fs.open(path);
             if(path_object) {

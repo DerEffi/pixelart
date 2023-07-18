@@ -3,7 +3,7 @@
 #include <main.h>
 
 #include <Utils.h>
-#include <Version.h>
+#include <models/Version.h>
 
 /*
 *   Defines datatypes and constant configuration data.
@@ -15,50 +15,53 @@
 namespace Config {
 
     // filepaths
-    const char Path_Config[] = "/config.json";
-    const char Path_Firmware_Update[] = "/firmware.bin";
-    const char Path_Server_Home[] = "/webinterface";
-    const char Path_Server_Index[] = "/webinterface/index.html";
-    const char Path_Server_Version[] = "/webinterface/version.json";
-    const char Path_Upload[] = "/tmp";
-    const char Path_Images[] = "/images";
-
+    namespace Paths {
+        const char Config[] = "/config.json";
+        const char FirmwareUpdate[] = "/firmware.bin";
+        const char ServerHome[] = "/webinterface";
+        const char ServerIndex[] = "/webinterface/index.html";
+        const char ServerVersion[] = "/webinterface/version.json";
+        const char Upload[] = "/tmp";
+        const char Images[] = "/images";
+    }
     // preference keys (max 15 chars) -> $(category)_$(setting)
-    const char P_Firmware_Version[] = "firm_version";
+    namespace Preferences {
+        const char Firmware_Version[] = "firm_version";
 
-    const char P_Display_Brightness[] = "disp_bright";
-    const char P_Display_Mode[] = "disp_mode";
-    const char P_Display_Position[] = "disp_pos";
-    const char P_Display_Clock_Mode[] = "disp_clk_mode";
-    const char P_Display_Socials_Position[] = "disp_soci_pos";
-    const char P_Display_Diashow_Enabled[] = "disp_dia_en";
-    const char P_Display_Diashow_Interval[] = "disp_dia_int";
-    const char P_Display_Diashow_SwitchModes[] = "disp_dia_sw";
-    const char P_Display_Animation_Enabled[] = "disp_anim_en";
-    const char P_Display_Animation_Interval[] = "disp_anim_int";
+        const char DisplayBrightness[] = "disp_bright";
+        const char DisplayMode[] = "disp_mode";
+        const char DisplayPosition[] = "disp_pos";
+        const char DisplayClockMode[] = "disp_clk_mode";
+        const char DisplaySocialsPosition[] = "disp_soci_pos";
+        const char DisplayDiashowEnabled[] = "disp_dia_en";
+        const char DisplayDiashowInterval[] = "disp_dia_int";
+        const char DisplayDiashowSwitchModes[] = "disp_dia_sw";
+        const char DisplayAnimationEnabled[] = "disp_anim_en";
+        const char DisplayAnimationInterval[] = "disp_anim_int";
 
-    const char P_Socials_Enabled[] = "soci_en";
-    const char P_Socials_Interval[] = "soci_interval";
-    const char P_Socials_Server[] = "soci_server";
-    const char P_Socials_Key[] = "soci_key";
+        const char SocialsEnabled[] = "soci_en";
+        const char SocialsInterval[] = "soci_interval";
+        const char SocialsServer[] = "soci_server";
+        const char SocialsKey[] = "soci_key";
 
-    const char P_Server_Key[] = "serv_key";
+        const char ServerKey[] = "serv_key";
 
-    const char P_Time_ShowSeconds[] = "time_seconds";
-    const char P_Time_ShowYear[] = "time_year";
-    const char P_Time_Blink[] = "time_blink";
-    const char P_Time_Format24h[] = "time_24h";
-    const char P_Time_Update[] = "time_update";
-    const char P_Time_Server[] = "time_server";
-    const char P_Time_Zone[] = "time_zone";
-    
-    const char P_WiFi_Hostname[] = "wifi_hostname";
-    const char P_WiFi_Host_Enabled[] = "wifi_host_en";
-    const char P_WiFi_Host_SSID[] = "wifi_host_ssid";
-    const char P_WiFi_Host_Password[] = "wifi_host_pass";
-    const char P_WiFi_Connect_Enabled[] = "wifi_con_en";
-    const char P_WiFi_Connect_SSID[] = "wifi_con_ssid";
-    const char P_WiFi_Connect_Password[] = "wifi_con_pass";
+        const char TimeShowSeconds[] = "time_seconds";
+        const char TimeShowYear[] = "time_year";
+        const char TimeBlink[] = "time_blink";
+        const char TimeFormat24h[] = "time_24h";
+        const char TimeUpdate[] = "time_update";
+        const char TimeServer[] = "time_server";
+        const char TimeZone[] = "time_zone";
+        
+        const char WiFiHostname[] = "wifi_hostname";
+        const char WiFiHostEnabled[] = "wifi_host_en";
+        const char WiFiHostSSID[] = "wifi_host_ssid";
+        const char WiFiHostPassword[] = "wifi_host_pass";
+        const char WiFiConnectEnabled[] = "wifi_con_en";
+        const char WiFiConnectSSID[] = "wifi_con_ssid";
+        const char WiFiConnectPassword[] = "wifi_con_pass";
+    }
 
     // modes
     const uint8_t ClockModeCount = 4;
@@ -76,6 +79,23 @@ namespace Config {
         DISPLAY_SOCIALS,
     };
 
+    enum OverlayMode {
+        OVERLAY_NONE,
+        OVERLAY_BRIGHTNESS,
+        OVERLAY_ANIMATION_SPEED,
+        OVERLAY_DIASHOW_SPEED,
+        OVERLAY_TEXT
+    };
+
+    enum MenuMode {
+        MENU_NONE,
+        MENU_OVERVIEW,
+        MENU_CLOCK,
+        MENU_DATETIME,
+        MENU_WIFI,
+        MENU_WIFI_CONNECT,
+        MENU_WIFI_HOST
+    };
 
     // consfiguration structure with default values for backwards compatibility
     // for explanation of these settings look in `/data/config.json`
@@ -118,6 +138,7 @@ namespace Config {
 
         struct {
             bool softwareDebounce = false;
+            bool pullup = true;
 
             struct {
                 bool enabled = false;

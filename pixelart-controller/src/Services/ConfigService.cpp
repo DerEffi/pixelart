@@ -1,13 +1,13 @@
 #include <main.h>
-#include <ConfigService.h>
+#include <Services/ConfigService.h>
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <SPIFFS.h>
 
-#include <Config.h>
-#include <Version.h>
+#include <Models/Config.h>
+#include <Models/Version.h>
 
 
 Preferences preferences;
@@ -68,6 +68,7 @@ void ConfigService::saveConfig(Config::Config& config, fs::FS& fs, String path) 
 
         JsonObject gpioControls = gpio.createNestedObject("controls");
         gpioControls["softwareDebounce"] = config.gpio.controls.softwareDebounce;
+        gpioControls["pullup"] = config.gpio.controls.pullup;
         gpioControls["btn1"] = config.gpio.controls.btn1;
         gpioControls["btn2"] = config.gpio.controls.btn2;
         gpioControls["btn3"] = config.gpio.controls.btn3;
@@ -222,7 +223,9 @@ bool ConfigService::loadConfig(fs::FS& fs, String path) {
                             JsonObject controls = gpio["controls"].as<JsonObject>();
 
                             if(controls.containsKey("softwareDebounce") && controls["softwareDebounce"].is<bool>())
-                                _settings.gpio.controls.softwareDebounce = controls["softwareDebounce"].as<bool>();                        
+                                _settings.gpio.controls.softwareDebounce = controls["softwareDebounce"].as<bool>();
+                            if(controls.containsKey("pullup") && controls["pullup"].is<bool>())
+                                _settings.gpio.controls.pullup = controls["pullup"].as<bool>();
                             if(controls.containsKey("expander") && controls["expander"].is<JsonObject>()) {
                                 JsonObject expander = controls["expander"].as<JsonObject>();
 
@@ -453,7 +456,7 @@ void ConfigService::loadBlobPreference(const char *key, String& setting) {
 // save single preference (String) from settings member
 // @param key preference identifier (max 15 chars)
 // @param setting String
-void ConfigService::savePreference(const char *key, String& setting) {
+void ConfigService::savePreference(const char *key, const String& setting) {
     if(preferences.isKey(key) && preferences.getType(key) != PT_STR)
         preferences.remove(key);
     preferences.putString(key, setting);
@@ -461,7 +464,7 @@ void ConfigService::savePreference(const char *key, String& setting) {
 // save single preference (bool) from settings member
 // @param key preference identifier (max 15 chars)
 // @param setting bool
-void ConfigService::savePreference(const char *key, bool& setting) {
+void ConfigService::savePreference(const char *key, const bool& setting) {
     if(preferences.isKey(key) && preferences.getType(key) != PT_U8)
         preferences.remove(key);
     preferences.putBool(key, setting);
@@ -469,7 +472,7 @@ void ConfigService::savePreference(const char *key, bool& setting) {
 // save single preference (uint) from settings member
 // @param key preference identifier (max 15 chars)
 // @param setting uint
-void ConfigService::savePreference(const char *key, uint& setting) {
+void ConfigService::savePreference(const char *key, const uint& setting) {
     if(preferences.isKey(key) && preferences.getType(key) != PT_U32)
         preferences.remove(key);
     preferences.putUInt(key, setting);
@@ -477,7 +480,7 @@ void ConfigService::savePreference(const char *key, uint& setting) {
 // save single preference (uint8) from settings member
 // @param key preference identifier (max 15 chars)
 // @param setting uint8_t
-void ConfigService::savePreference(const char *key, uint8_t& setting) {
+void ConfigService::savePreference(const char *key, const uint8_t& setting) {
     if(preferences.isKey(key) && preferences.getType(key) != PT_U8)
         preferences.remove(key);
     preferences.putUChar(key, setting);
@@ -486,7 +489,7 @@ void ConfigService::savePreference(const char *key, uint8_t& setting) {
 // @param key preference identifier (max 15 chars)
 // @param setting Enum
 template<typename SettingType>
-void ConfigService::saveEnumPreference(const char *key, SettingType& setting) {
+void ConfigService::saveEnumPreference(const char *key, const SettingType& setting) {
     if(preferences.isKey(key) && preferences.getType(key) != PT_U8)
         preferences.remove(key);
     preferences.putUChar(key, (int)setting);
@@ -494,7 +497,7 @@ void ConfigService::saveEnumPreference(const char *key, SettingType& setting) {
 // save single preference (String) from settings member as Blob
 // @param key preference identifier (max 15 chars)
 // @param setting String
-void ConfigService::saveBlobPreference(const char *key, String& setting) {
+void ConfigService::saveBlobPreference(const char *key, const String& setting) {
     if(preferences.isKey(key) && preferences.getType(key) != PT_BLOB)
         preferences.remove(key);
     const char * blobData = setting.c_str();
@@ -504,86 +507,86 @@ void ConfigService::saveBlobPreference(const char *key, String& setting) {
 
 // Update current settings for category: Display
 // @param config new configuration to save
-void ConfigService::updateDisplay(Config::DisplayConfig& config) {
+void ConfigService::updateDisplay(Config::DisplayConfig config) {
     _settings.display = config;
     this->saveDisplay();
 }
 void ConfigService::saveDisplay() {
     preferences.begin("pixelart");
-    this->savePreference(Config::P_Display_Brightness, _settings.display.brightness);
-    this->saveEnumPreference(Config::P_Display_Mode, _settings.display.mode);
-    this->savePreference(Config::P_Display_Position, _settings.display.position);
-    this->saveEnumPreference(Config::P_Display_Clock_Mode, _settings.display.clock.mode);
-    this->savePreference(Config::P_Display_Socials_Position, _settings.display.socials.position);
-    this->savePreference(Config::P_Display_Diashow_Enabled, _settings.display.diashow.enabled);
-    this->savePreference(Config::P_Display_Diashow_Interval, _settings.display.diashow.interval);
-    this->savePreference(Config::P_Display_Diashow_SwitchModes, _settings.display.diashow.switchModes);
-    this->savePreference(Config::P_Display_Animation_Enabled, _settings.display.animation.enabled);
-    this->savePreference(Config::P_Display_Animation_Interval, _settings.display.animation.interval);
+    this->savePreference(Config::Preferences::DisplayBrightness, _settings.display.brightness);
+    this->saveEnumPreference(Config::Preferences::DisplayMode, _settings.display.mode);
+    this->savePreference(Config::Preferences::DisplayPosition, _settings.display.position);
+    this->saveEnumPreference(Config::Preferences::DisplayClockMode, _settings.display.clock.mode);
+    this->savePreference(Config::Preferences::DisplaySocialsPosition, _settings.display.socials.position);
+    this->savePreference(Config::Preferences::DisplayDiashowEnabled, _settings.display.diashow.enabled);
+    this->savePreference(Config::Preferences::DisplayDiashowInterval, _settings.display.diashow.interval);
+    this->savePreference(Config::Preferences::DisplayDiashowSwitchModes, _settings.display.diashow.switchModes);
+    this->savePreference(Config::Preferences::DisplayAnimationEnabled, _settings.display.animation.enabled);
+    this->savePreference(Config::Preferences::DisplayAnimationInterval, _settings.display.animation.interval);
     preferences.end();
 }
 
 // Update current settings for category: Socials
 // @param config new configuration to save
-void ConfigService::updateSocials(Config::SocialsConfig& config) {
+void ConfigService::updateSocials(Config::SocialsConfig config) {
     _settings.socials = config;
     this->saveSocials();
 }
 void ConfigService::saveSocials() {
     preferences.begin("pixelart");
-    this->savePreference(Config::P_Socials_Enabled, _settings.socials.enabled);
-    this->savePreference(Config::P_Socials_Interval, _settings.socials.interval);
-    this->savePreference(Config::P_Socials_Server, _settings.socials.server);
-    this->savePreference(Config::P_Socials_Key, _settings.socials.key);
-    this->saveBlobPreference(Config::P_Socials_Key, _settings.socials.request);
+    this->savePreference(Config::Preferences::SocialsEnabled, _settings.socials.enabled);
+    this->savePreference(Config::Preferences::SocialsInterval, _settings.socials.interval);
+    this->savePreference(Config::Preferences::SocialsServer, _settings.socials.server);
+    this->savePreference(Config::Preferences::SocialsKey, _settings.socials.key);
+    this->saveBlobPreference(Config::Preferences::SocialsKey, _settings.socials.request);
     preferences.end();
 }
 
 // Update current settings for category: Server
 // @param config new configuration to save
-void ConfigService::updateServer(Config::ServerConfig& config) {
+void ConfigService::updateServer(Config::ServerConfig config) {
     _settings.server = config;
     this->saveServer();
 }
 void ConfigService::saveServer() {
     preferences.begin("pixelart");
-    this->savePreference(Config::P_Server_Key, _settings.server.key);
+    this->savePreference(Config::Preferences::ServerKey, _settings.server.key);
     preferences.end();
 }
 
 // Update current settings for category: Time
 // @param config new configuration to save
-void ConfigService::updateTime(Config::TimeConfig& config) {
+void ConfigService::updateTime(Config::TimeConfig config) {
     _settings.time = config;
     this->saveTime();
 }
 void ConfigService::saveTime() {
     preferences.begin("pixelart");
-    this->savePreference(Config::P_Time_ShowSeconds, _settings.time.showSeconds);
-    this->savePreference(Config::P_Time_ShowYear, _settings.time.showYear);
-    this->savePreference(Config::P_Time_Blink, _settings.time.blink);
-    this->savePreference(Config::P_Time_Format24h, _settings.time.format24h);
-    this->savePreference(Config::P_Time_Update, _settings.time.update);
-    this->savePreference(Config::P_Time_Server, _settings.time.server);
-    this->savePreference(Config::P_Time_Zone, _settings.time.zone);
+    this->savePreference(Config::Preferences::TimeShowSeconds, _settings.time.showSeconds);
+    this->savePreference(Config::Preferences::TimeShowYear, _settings.time.showYear);
+    this->savePreference(Config::Preferences::TimeBlink, _settings.time.blink);
+    this->savePreference(Config::Preferences::TimeFormat24h, _settings.time.format24h);
+    this->savePreference(Config::Preferences::TimeUpdate, _settings.time.update);
+    this->savePreference(Config::Preferences::TimeServer, _settings.time.server);
+    this->savePreference(Config::Preferences::TimeZone, _settings.time.zone);
     preferences.end();
 }
 
 // Update current settings for category: WiFi
 // @param config new configuration to save
-void ConfigService::updateWifi(Config::WiFiConfig& config) {
+void ConfigService::updateWifi(Config::WiFiConfig config) {
     _settings.wifi = config;
     this->saveWifi();
 }
 void ConfigService::saveWifi() {
     preferences.begin("pixelart");
-    this->savePreference(Config::P_WiFi_Hostname, _settings.wifi.hostname);
-    this->savePreference(Config::P_WiFi_Host_Enabled, _settings.wifi.host.enabled);
-    this->savePreference(Config::P_WiFi_Host_SSID, _settings.wifi.host.ssid);
-    this->savePreference(Config::P_WiFi_Host_Password, _settings.wifi.host.password);
-    this->savePreference(Config::P_WiFi_Connect_Enabled, _settings.wifi.connect.enabled);
-    this->savePreference(Config::P_WiFi_Connect_SSID, _settings.wifi.connect.ssid);
-    this->savePreference(Config::P_WiFi_Connect_Password, _settings.wifi.connect.password);
+    this->savePreference(Config::Preferences::WiFiHostname, _settings.wifi.hostname);
+    this->savePreference(Config::Preferences::WiFiHostEnabled, _settings.wifi.host.enabled);
+    this->savePreference(Config::Preferences::WiFiHostSSID, _settings.wifi.host.ssid);
+    this->savePreference(Config::Preferences::WiFiHostPassword, _settings.wifi.host.password);
+    this->savePreference(Config::Preferences::WiFiConnectEnabled, _settings.wifi.connect.enabled);
+    this->savePreference(Config::Preferences::WiFiConnectSSID, _settings.wifi.connect.ssid);
+    this->savePreference(Config::Preferences::WiFiConnectPassword, _settings.wifi.connect.password);
     preferences.end();
 }
 
@@ -596,44 +599,44 @@ void ConfigService::loadPreferences() {
         preferences.begin(_settings.firmware.preferences.c_str(), true);
         
         //loading preferences
-        this->loadPreference(Config::P_Display_Brightness, _settings.display.brightness);
-        this->loadEnumPreference(Config::P_Display_Mode, _settings.display.mode);
-        this->loadPreference(Config::P_Display_Position, _settings.display.position);
-        this->loadEnumPreference(Config::P_Display_Clock_Mode, _settings.display.clock.mode);
-        this->loadPreference(Config::P_Display_Socials_Position, _settings.display.socials.position);
-        this->loadPreference(Config::P_Display_Diashow_Enabled, _settings.display.diashow.enabled);
-        this->loadPreference(Config::P_Display_Diashow_Interval, _settings.display.diashow.interval);
-        this->loadPreference(Config::P_Display_Diashow_SwitchModes, _settings.display.diashow.switchModes);
-        this->loadPreference(Config::P_Display_Animation_Enabled, _settings.display.animation.enabled);
-        this->loadPreference(Config::P_Display_Animation_Interval, _settings.display.animation.interval);
+        this->loadPreference(Config::Preferences::DisplayBrightness, _settings.display.brightness);
+        this->loadEnumPreference(Config::Preferences::DisplayMode, _settings.display.mode);
+        this->loadPreference(Config::Preferences::DisplayPosition, _settings.display.position);
+        this->loadEnumPreference(Config::Preferences::DisplayClockMode, _settings.display.clock.mode);
+        this->loadPreference(Config::Preferences::DisplaySocialsPosition, _settings.display.socials.position);
+        this->loadPreference(Config::Preferences::DisplayDiashowEnabled, _settings.display.diashow.enabled);
+        this->loadPreference(Config::Preferences::DisplayDiashowInterval, _settings.display.diashow.interval);
+        this->loadPreference(Config::Preferences::DisplayDiashowSwitchModes, _settings.display.diashow.switchModes);
+        this->loadPreference(Config::Preferences::DisplayAnimationEnabled, _settings.display.animation.enabled);
+        this->loadPreference(Config::Preferences::DisplayAnimationInterval, _settings.display.animation.interval);
 
-        this->loadPreference(Config::P_Socials_Enabled, _settings.socials.enabled);
-        this->loadPreference(Config::P_Socials_Interval, _settings.socials.interval);
-        this->loadPreference(Config::P_Socials_Server, _settings.socials.server);
-        this->loadPreference(Config::P_Socials_Key, _settings.socials.key);
-        this->loadBlobPreference(Config::P_Socials_Key, _settings.socials.request);
+        this->loadPreference(Config::Preferences::SocialsEnabled, _settings.socials.enabled);
+        this->loadPreference(Config::Preferences::SocialsInterval, _settings.socials.interval);
+        this->loadPreference(Config::Preferences::SocialsServer, _settings.socials.server);
+        this->loadPreference(Config::Preferences::SocialsKey, _settings.socials.key);
+        this->loadBlobPreference(Config::Preferences::SocialsKey, _settings.socials.request);
 
-        this->loadPreference(Config::P_Server_Key, _settings.server.key);
+        this->loadPreference(Config::Preferences::ServerKey, _settings.server.key);
 
-        this->loadPreference(Config::P_Time_ShowSeconds, _settings.time.showSeconds);
-        this->loadPreference(Config::P_Time_ShowYear, _settings.time.showYear);
-        this->loadPreference(Config::P_Time_Blink, _settings.time.blink);
-        this->loadPreference(Config::P_Time_Format24h, _settings.time.format24h);
-        this->loadPreference(Config::P_Time_Update, _settings.time.update);
-        this->loadPreference(Config::P_Time_Server, _settings.time.server);
-        this->loadPreference(Config::P_Time_Zone, _settings.time.zone);
+        this->loadPreference(Config::Preferences::TimeShowSeconds, _settings.time.showSeconds);
+        this->loadPreference(Config::Preferences::TimeShowYear, _settings.time.showYear);
+        this->loadPreference(Config::Preferences::TimeBlink, _settings.time.blink);
+        this->loadPreference(Config::Preferences::TimeFormat24h, _settings.time.format24h);
+        this->loadPreference(Config::Preferences::TimeUpdate, _settings.time.update);
+        this->loadPreference(Config::Preferences::TimeServer, _settings.time.server);
+        this->loadPreference(Config::Preferences::TimeZone, _settings.time.zone);
 
-        this->loadPreference(Config::P_WiFi_Hostname, _settings.wifi.hostname);
-        this->loadPreference(Config::P_WiFi_Host_Enabled, _settings.wifi.host.enabled);
-        this->loadPreference(Config::P_WiFi_Host_SSID, _settings.wifi.host.ssid);
-        this->loadPreference(Config::P_WiFi_Host_Password, _settings.wifi.host.password);
-        this->loadPreference(Config::P_WiFi_Connect_Enabled, _settings.wifi.connect.enabled);
-        this->loadPreference(Config::P_WiFi_Connect_SSID, _settings.wifi.connect.ssid);
-        this->loadPreference(Config::P_WiFi_Connect_Password, _settings.wifi.connect.password);
+        this->loadPreference(Config::Preferences::WiFiHostname, _settings.wifi.hostname);
+        this->loadPreference(Config::Preferences::WiFiHostEnabled, _settings.wifi.host.enabled);
+        this->loadPreference(Config::Preferences::WiFiHostSSID, _settings.wifi.host.ssid);
+        this->loadPreference(Config::Preferences::WiFiHostPassword, _settings.wifi.host.password);
+        this->loadPreference(Config::Preferences::WiFiConnectEnabled, _settings.wifi.connect.enabled);
+        this->loadPreference(Config::Preferences::WiFiConnectSSID, _settings.wifi.connect.ssid);
+        this->loadPreference(Config::Preferences::WiFiConnectPassword, _settings.wifi.connect.password);
 
         // checking for older version
         String version = "0";
-        this->loadPreference(Config::P_Firmware_Version, version);
+        this->loadPreference(Config::Preferences::Firmware_Version, version);
         preferences.end();
 
         Version pref_version(version);
@@ -683,7 +686,7 @@ void ConfigService::migrateConfig() {
         }
     }
 
-    this->saveConfig(_settings, SPIFFS, Config::Path_Config);
+    this->saveConfig(_settings, SPIFFS, Config::Paths::Config);
 
 	SPIFFS.end();
 }
@@ -711,8 +714,8 @@ void ConfigService::migratePreferences(Version &preferences_version) {
 	this->loadPreference("wifi_ssid", _settings.wifi.connect.ssid);
 	this->loadPreference("wifi_password", _settings.wifi.connect.password);
     this->loadPreference("wifi_host", _settings.wifi.host.enabled);
-	this->loadPreference("wifi_ap_ssid", _settings.wifi.host.ssid);
-	this->loadPreference("wifi_ap_pass", _settings.wifi.host.password);
+	this->loadPreference("wifi_aPreferences::ssid", _settings.wifi.host.ssid);
+	this->loadPreference("wifi_aPreferences::pass", _settings.wifi.host.password);
 
 	this->loadPreference("clock_seconds", _settings.time.showSeconds);
 	this->loadPreference("clock_blink", _settings.time.blink);
@@ -738,7 +741,7 @@ void ConfigService::migratePreferences(Version &preferences_version) {
     this->saveServer();
     this->saveTime();
     this->saveWifi();
-    preferences.putString(Config::P_Firmware_Version, _settings.firmware.version.toString());
+    preferences.putString(Config::Preferences::Firmware_Version, _settings.firmware.version.toString());
     preferences.end();
 }
 
@@ -747,7 +750,7 @@ void ConfigService::init() {
     LOG("Info", "Starting configuration");
 
     if(SPIFFS.begin()) {
-        bool configLoaded = this->loadConfig(SPIFFS, String(Config::Path_Config));
+        bool configLoaded = this->loadConfig(SPIFFS, String(Config::Paths::Config));
         if(!configLoaded)
             this->migrateConfig();
         

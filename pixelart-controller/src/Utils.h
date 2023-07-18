@@ -12,8 +12,8 @@ namespace Utils {
     
     String generateUUID();
 
-    String getParentDirectory(String folder);
+    String getParentDirectory(const String &folder);
     bool removeRecursive(fs::FS &fs, File &file);
-    bool removeRecursive(fs::FS &fs, String path);
-    bool ensureDirectory(fs::FS &fs, String path);
+    bool removeRecursive(fs::FS &fs, const String &path);
+    bool ensureDirectory(fs::FS &fs, const String &path);
 }

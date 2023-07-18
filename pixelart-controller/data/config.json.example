@@ -47,6 +47,7 @@
 
         "controls": {
             "softwareDebounce": false, // uses debouncing logic in interrupt
+            "pullup": true, // use PULLUP mode (pins are high on idle), if false uses PULLDOWN
             
             // set expander properties if controls are not directly wired to the gpio of the controller but through an IO Expander
             "expander": {
